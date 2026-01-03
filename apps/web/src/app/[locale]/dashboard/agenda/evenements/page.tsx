@@ -222,58 +222,6 @@ function EvenementsContent() {
     }
   }, [deleteEventMutation, showToast]);
 
-  // Handle delete selected (mémorisé avec batch) - gardé pour usage futur
-  const _handleDeleteSelected = useCallback(async () => {
-    if (selectedEvents.size === 0) return;
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedEvents.size} événement(s) ?`)) return;
-
-    try {
-      const eventIds = Array.from(selectedEvents);
-      const batchSize = 10; // Limiter à 10 requêtes parallèles
-      
-      // Traiter par batch
-      for (let i = 0; i < eventIds.length; i += batchSize) {
-        const batch = eventIds.slice(i, i + batchSize);
-        await Promise.all(batch.map(id => deleteEventMutation.mutateAsync(id)));
-      }
-      
-      showToast({ message: `${selectedEvents.size} événement(s) supprimé(s) avec succès`, type: 'success' });
-      setSelectedEvents(new Set());
-    } catch (error) {
-      showToast({ message: 'Erreur lors de la suppression', type: 'error' });
-    }
-  }, [selectedEvents, deleteEventMutation, showToast]);
-
-  // Handle bulk type change (mémorisé avec batch) - gardé pour usage futur
-  const _handleBulkTypeChange = useCallback(async (newType: string) => {
-    if (selectedEvents.size === 0) return;
-
-    try {
-      const eventIds = Array.from(selectedEvents);
-      const batchSize = 10; // Limiter à 10 requêtes parallèles
-      
-      // Traiter par batch
-      for (let i = 0; i < eventIds.length; i += batchSize) {
-        const batch = eventIds.slice(i, i + batchSize);
-        await Promise.all(
-          batch.map(id => {
-            const event = events.find(e => e.id === id);
-            if (!event) return Promise.resolve();
-            return updateEventMutation.mutateAsync({ 
-              id, 
-              data: { type: newType as CalendarEvent['type'] } 
-            });
-          })
-        );
-      }
-      
-      showToast({ message: `${selectedEvents.size} événement(s) mis(e) à jour`, type: 'success' });
-      setSelectedEvents(new Set());
-    } catch (error) {
-      showToast({ message: 'Erreur lors de la mise à jour', type: 'error' });
-    }
-  }, [selectedEvents, events, updateEventMutation, showToast]);
-
   // Handle duplicate (mémorisé)
   const handleDuplicate = useCallback(async (event: CalendarEvent) => {
     try {
@@ -296,47 +244,6 @@ function EvenementsContent() {
     }
   }, [createEventMutation, showToast]);
 
-  // Handle export (mémorisé) - gardé pour usage futur
-  const _handleExport = useCallback(async (format: 'csv' | 'excel') => {
-    try {
-      const headers = ['ID', 'Titre', 'Description', 'Date', 'Date de fin', 'Heure', 'Type', 'Lieu', 'Participants', 'Créé le'];
-      const rows = sortedEvents.map(event => [
-        event.id,
-        event.title,
-        event.description || '',
-        event.date,
-        event.end_date || '',
-        event.time || '',
-        eventTypeLabels[event.type] || event.type,
-        event.location || '',
-        event.attendees?.join(', ') || '',
-        new Date(event.created_at).toLocaleDateString('fr-FR'),
-      ]);
-
-      let content = '';
-      if (format === 'csv') {
-        content = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-      } else {
-        // Excel format (TSV-like)
-        content = [headers, ...rows].map(row => row.join('\t')).join('\n');
-      }
-
-      const blob = new Blob([content], { type: format === 'csv' ? 'text/csv' : 'application/vnd.ms-excel' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `evenements_${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xls'}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      showToast({ message: `Export ${format.toUpperCase()} réussi`, type: 'success' });
-    } catch (error) {
-      showToast({ message: 'Erreur lors de l\'export', type: 'error' });
-    }
-  }, [sortedEvents, showToast, eventTypeLabels]);
-
   // Toggle selection (mémorisé)
   const toggleEventSelection = useCallback((eventId: number) => {
     setSelectedEvents(prev => {
@@ -349,14 +256,6 @@ function EvenementsContent() {
       return newSelection;
     });
   }, []);
-
-  const _toggleSelectAll = useCallback(() => {
-    if (selectedEvents.size === sortedEvents.length && sortedEvents.length > 0) {
-      setSelectedEvents(new Set());
-    } else {
-      setSelectedEvents(new Set(sortedEvents.map(e => e.id)));
-    }
-  }, [sortedEvents, selectedEvents]);
 
   // Handle view details (mémorisé)
   const handleViewDetails = useCallback((event: CalendarEvent) => {
@@ -376,7 +275,7 @@ function EvenementsContent() {
     });
   }, []);
 
-  // Event type labels (mémorisé)
+  // Event type labels (mémorisé) - déclaré avant les fonctions qui l'utilisent
   const eventTypeLabels: Record<string, string> = useMemo(() => ({
     meeting: 'Réunion',
     appointment: 'Rendez-vous',
@@ -389,6 +288,7 @@ function EvenementsContent() {
 
   // Get event type color
   const getEventTypeColor = useCallback((type: string): { bg: string; text: string; border: string } => {
+    const defaultColor = { bg: 'bg-gray-500/10', text: 'text-gray-600 dark:text-gray-400', border: 'border-gray-500/30' };
     const colors: Record<string, { bg: string; text: string; border: string }> = {
       meeting: { bg: 'bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400', border: 'border-primary-500/30' },
       appointment: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' },
@@ -396,9 +296,9 @@ function EvenementsContent() {
       deadline: { bg: 'bg-red-500/10', text: 'text-red-600 dark:text-red-400', border: 'border-red-500/30' },
       vacation: { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400', border: 'border-green-500/30' },
       holiday: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30' },
-      other: { bg: 'bg-gray-500/10', text: 'text-gray-600 dark:text-gray-400', border: 'border-gray-500/30' },
+      other: defaultColor,
     };
-    return colors[type] || colors.other;
+    return colors[type] ?? defaultColor;
   }, []);
 
   // Toggle favorite

@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Badge, Input, Select, Modal, Textarea, Loading, Heading, Text } from '@/components/ui';
 import { 
-  DollarSign, Plus, X, Edit, Trash2, Loader2, PieChart, TrendingUp
+  DollarSign, Plus, Edit, Trash2, Loader2, PieChart, TrendingUp
 } from 'lucide-react';
-import { projectBudgetItemsAPI, type ProjectBudgetItem, type ProjectBudgetItemCreate, type ProjectBudgetItemUpdate, type BudgetCategory, type ProjectBudgetSummary } from '@/lib/api/projects';
+import { projectBudgetItemsAPI, type ProjectBudgetItem, type ProjectBudgetItemCreate, type BudgetCategory, type ProjectBudgetSummary } from '@/lib/api/projects';
 import { useToast } from '@/lib/toast';
 import { logger } from '@/lib/logger';
 
