@@ -1196,6 +1196,7 @@ export default function DepensesPage() {
                       variant={useGridView ? 'outline' : 'primary'}
                       onClick={() => setUseGridView(!useGridView)}
                       size="sm"
+                      className={useGridView ? '!text-white' : ''}
                     >
                       {useGridView ? 'Vue liste' : 'Vue tableau'}
                     </Button>
