@@ -192,4 +192,136 @@ export const facturationsAPI = {
   deletePayment: async (invoiceId: number, paymentId: number): Promise<void> => {
     await apiClient.delete(`/v1/finances/facturations/${invoiceId}/payments/${paymentId}`);
   },
+
+  /**
+   * Generate and download PDF for an invoice
+   */
+  generatePDF: async (invoiceId: number): Promise<void> => {
+    const response = await apiClient.get(`/v1/finances/facturations/${invoiceId}/pdf`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `facture_${invoiceId}_${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Send invoice by email
+   */
+  sendEmail: async (invoiceId: number): Promise<{ message: string; email: string }> => {
+    const response = await apiClient.post(`/v1/finances/facturations/${invoiceId}/send-email`);
+    return extractApiData<{ message: string; email: string }>(response);
+  },
+
+  /**
+   * Duplicate an invoice
+   */
+  duplicate: async (invoiceId: number): Promise<FinanceInvoice> => {
+    const response = await apiClient.post<FinanceInvoice>(`/v1/finances/facturations/${invoiceId}/duplicate`);
+    return extractApiData<FinanceInvoice>(response);
+  },
+
+  /**
+   * Cancel an invoice
+   */
+  cancel: async (invoiceId: number): Promise<FinanceInvoice> => {
+    const response = await apiClient.post<FinanceInvoice>(`/v1/finances/facturations/${invoiceId}/cancel`);
+    return extractApiData<FinanceInvoice>(response);
+  },
+
+  /**
+   * Send reminder for an invoice
+   */
+  remind: async (invoiceId: number): Promise<FinanceInvoice> => {
+    const response = await apiClient.post<FinanceInvoice>(`/v1/finances/facturations/${invoiceId}/remind`);
+    return extractApiData<FinanceInvoice>(response);
+  },
+
+  /**
+   * Export invoices to CSV or Excel
+   */
+  export: async (options?: {
+    format?: 'csv' | 'excel';
+    status?: string;
+    start_date?: string;
+    end_date?: string;
+  }): Promise<void> => {
+    const response = await apiClient.get(`/v1/finances/facturations/export`, {
+      params: {
+        format: options?.format || 'csv',
+        status: options?.status,
+        start_date: options?.start_date,
+        end_date: options?.end_date,
+      },
+      responseType: 'blob',
+    });
+    const format = options?.format || 'csv';
+    const blob = new Blob([response.data], {
+      type: format === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv',
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `factures_${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xlsx' : 'csv'}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Download import template
+   */
+  downloadTemplate: async (format: 'csv' | 'excel' = 'csv'): Promise<void> => {
+    const response = await apiClient.get(`/v1/finances/facturations/import/template`, {
+      params: { format },
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], {
+      type: format === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv',
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `template_factures.${format === 'excel' ? 'xlsx' : 'csv'}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Get invoice statistics
+   */
+  getStats: async (options?: {
+    start_date?: string;
+    end_date?: string;
+  }): Promise<{
+    total: { amount: number; count: number };
+    paid: { amount: number; count: number };
+    pending: { amount: number; count: number };
+    overdue: { amount: number; count: number };
+    by_status: {
+      draft: number;
+      sent: number;
+      paid: number;
+      partial: number;
+      overdue: number;
+      cancelled: number;
+    };
+  }> => {
+    const response = await apiClient.get(`/v1/finances/facturations/stats`, {
+      params: {
+        start_date: options?.start_date,
+        end_date: options?.end_date,
+      },
+    });
+    return extractApiData(response);
+  },
 };

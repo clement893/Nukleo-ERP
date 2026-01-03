@@ -8,7 +8,8 @@ import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   FileText, Plus, Search, Send, Edit, 
   DollarSign, Calendar, User, Building, Clock, AlertCircle,
-  CheckCircle, XCircle, Mail, Phone, MapPin, CreditCard, Loader2, Trash2
+  CheckCircle, XCircle, Mail, Phone, MapPin, CreditCard, Loader2, Trash2,
+  Download, Copy, X, Bell, Upload, FileDown
 } from 'lucide-react';
 import { Badge, Button, Card, Input, Modal, useToast } from '@/components/ui';
 import { 
@@ -16,8 +17,11 @@ import {
   useFacturation, 
   useDeleteFacturation, 
   useSendFacturation,
-  useCreateFacturation
+  useCreateFacturation,
+  useUpdateFacturation
 } from '@/lib/query/queries';
+import { facturationsAPI } from '@/lib/api/finances/facturations';
+import { useMutation } from '@tanstack/react-query';
 import { projectsAPI } from '@/lib/api/projects';
 import { useQuery } from '@tanstack/react-query';
 import InvoiceForm from '@/components/finances/InvoiceForm';
@@ -46,8 +50,12 @@ export default function FacturationsPage() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<number | null>(null);
+  const [invoiceToEdit, setInvoiceToEdit] = useState<any | null>(null);
   const { showToast } = useToast();
 
   // Fetch invoices
@@ -71,6 +79,68 @@ export default function FacturationsPage() {
   const deleteMutation = useDeleteFacturation();
   const sendMutation = useSendFacturation();
   const createMutation = useCreateFacturation();
+  const updateMutation = useUpdateFacturation();
+  
+  // Additional mutations
+  const pdfMutation = useMutation({
+    mutationFn: (invoiceId: number) => facturationsAPI.generatePDF(invoiceId),
+    onSuccess: () => {
+      showToast({ message: 'PDF généré avec succès', type: 'success' });
+    },
+    onError: () => {
+      showToast({ message: 'Erreur lors de la génération du PDF', type: 'error' });
+    },
+  });
+  
+  const emailMutation = useMutation({
+    mutationFn: (invoiceId: number) => facturationsAPI.sendEmail(invoiceId),
+    onSuccess: () => {
+      showToast({ message: 'Email envoyé avec succès', type: 'success' });
+    },
+    onError: () => {
+      showToast({ message: 'Erreur lors de l\'envoi de l\'email', type: 'error' });
+    },
+  });
+  
+  const duplicateMutation = useMutation({
+    mutationFn: (invoiceId: number) => facturationsAPI.duplicate(invoiceId),
+    onSuccess: () => {
+      showToast({ message: 'Facture dupliquée avec succès', type: 'success' });
+    },
+    onError: () => {
+      showToast({ message: 'Erreur lors de la duplication', type: 'error' });
+    },
+  });
+  
+  const cancelMutation = useMutation({
+    mutationFn: (invoiceId: number) => facturationsAPI.cancel(invoiceId),
+    onSuccess: () => {
+      showToast({ message: 'Facture annulée avec succès', type: 'success' });
+    },
+    onError: () => {
+      showToast({ message: 'Erreur lors de l\'annulation', type: 'error' });
+    },
+  });
+  
+  const remindMutation = useMutation({
+    mutationFn: (invoiceId: number) => facturationsAPI.remind(invoiceId),
+    onSuccess: () => {
+      showToast({ message: 'Rappel envoyé avec succès', type: 'success' });
+    },
+    onError: () => {
+      showToast({ message: 'Erreur lors de l\'envoi du rappel', type: 'error' });
+    },
+  });
+  
+  const exportMutation = useMutation({
+    mutationFn: (format: 'csv' | 'excel') => facturationsAPI.export({ format }),
+    onSuccess: () => {
+      showToast({ message: 'Export réussi', type: 'success' });
+    },
+    onError: () => {
+      showToast({ message: 'Erreur lors de l\'export', type: 'error' });
+    },
+  });
 
   const invoices = invoicesData?.items || [];
 
@@ -244,33 +314,106 @@ export default function FacturationsPage() {
                     <p className="text-white/80 text-sm">{projectName}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={`${statusConfig[selectedInvoice.status as keyof typeof statusConfig]?.color || 'bg-gray-500/10 text-gray-600 border-gray-500/30'} border`}>
                     <StatusIcon className="w-3 h-3 mr-1" />
                     {statusConfig[selectedInvoice.status as keyof typeof statusConfig]?.label || selectedInvoice.status}
                   </Badge>
-                  {selectedInvoice.status === 'draft' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => pdfMutation.mutate(selectedInvoice.id)}
+                    disabled={pdfMutation.isPending}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    PDF
+                  </Button>
+                  {selectedInvoice.client_data?.email && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleSendInvoice(selectedInvoice.id)}
-                      disabled={sendMutation.isPending}
+                      onClick={() => emailMutation.mutate(selectedInvoice.id)}
+                      disabled={emailMutation.isPending}
                     >
-                      <Send className="w-4 h-4 mr-2" />
-                      Envoyer
+                      <Mail className="w-4 h-4 mr-2" />
+                      Email
                     </Button>
                   )}
                   {selectedInvoice.status === 'draft' && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setInvoiceToEdit(selectedInvoice);
+                          setShowEditModal(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Modifier
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSendInvoice(selectedInvoice.id)}
+                        disabled={sendMutation.isPending}
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        Envoyer
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteClick(selectedInvoice.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Supprimer
+                      </Button>
+                    </>
+                  )}
+                  {selectedInvoice.status !== 'draft' && selectedInvoice.status !== 'paid' && selectedInvoice.status !== 'cancelled' && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPaymentModal(true)}
+                      >
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        Paiement
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => remindMutation.mutate(selectedInvoice.id)}
+                        disabled={remindMutation.isPending}
+                      >
+                        <Bell className="w-4 h-4 mr-2" />
+                        Rappel
+                      </Button>
+                    </>
+                  )}
+                  {selectedInvoice.status !== 'paid' && selectedInvoice.status !== 'cancelled' && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteClick(selectedInvoice.id)}
-                      className="text-red-600 hover:text-red-700"
+                      onClick={() => cancelMutation.mutate(selectedInvoice.id)}
+                      disabled={cancelMutation.isPending}
+                      className="text-orange-600 hover:text-orange-700"
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Supprimer
+                      <X className="w-4 h-4 mr-2" />
+                      Annuler
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => duplicateMutation.mutate(selectedInvoice.id)}
+                    disabled={duplicateMutation.isPending}
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Dupliquer
+                  </Button>
                 </div>
               </div>
             </div>
@@ -491,13 +634,32 @@ export default function FacturationsPage() {
                   <p className="text-white/80 text-sm">Gestion complète de vos factures</p>
                 </div>
               </div>
-              <Button 
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
-                onClick={() => setShowCreateModal(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvelle facture
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/30 backdrop-blur-sm"
+                  onClick={() => setShowImportModal(true)}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importer
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/30 backdrop-blur-sm"
+                  onClick={() => exportMutation.mutate('csv')}
+                  disabled={exportMutation.isPending}
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Exporter
+                </Button>
+                <Button 
+                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouvelle facture
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -737,7 +899,211 @@ export default function FacturationsPage() {
             projects={projects || []}
           />
         </Modal>
+
+        {/* Edit Invoice Modal */}
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setInvoiceToEdit(null);
+          }}
+          title="Modifier la facture"
+          size="lg"
+        >
+          {invoiceToEdit && (
+            <InvoiceForm
+              invoice={invoiceToEdit}
+              onSubmit={async (data: FinanceInvoiceCreate | FinanceInvoiceUpdate) => {
+                try {
+                  await updateMutation.mutateAsync({ id: invoiceToEdit.id, data: data as FinanceInvoiceUpdate });
+                  showToast({
+                    message: 'Facture modifiée avec succès',
+                    type: 'success',
+                  });
+                  setShowEditModal(false);
+                  setInvoiceToEdit(null);
+                  if (selectedInvoiceId === invoiceToEdit.id) {
+                    // Refresh selected invoice
+                    window.location.reload();
+                  }
+                } catch (error) {
+                  const appError = handleApiError(error);
+                  showToast({
+                    message: appError.message || 'Erreur lors de la modification de la facture',
+                    type: 'error',
+                  });
+                  throw error;
+                }
+              }}
+              onCancel={() => {
+                setShowEditModal(false);
+                setInvoiceToEdit(null);
+              }}
+              loading={updateMutation.isPending}
+              projects={projects || []}
+            />
+          )}
+        </Modal>
+
+        {/* Payment Modal */}
+        <Modal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          title="Enregistrer un paiement"
+          size="md"
+        >
+          {selectedInvoice && (
+            <PaymentForm
+              invoice={selectedInvoice}
+              onSubmit={async (paymentData) => {
+                try {
+                  await facturationsAPI.createPayment(selectedInvoice.id, paymentData);
+                  showToast({
+                    message: 'Paiement enregistré avec succès',
+                    type: 'success',
+                  });
+                  setShowPaymentModal(false);
+                  // Refresh invoice
+                  window.location.reload();
+                } catch (error) {
+                  const appError = handleApiError(error);
+                  showToast({
+                    message: appError.message || 'Erreur lors de l\'enregistrement du paiement',
+                    type: 'error',
+                  });
+                }
+              }}
+              onCancel={() => setShowPaymentModal(false)}
+            />
+          )}
+        </Modal>
+
+        {/* Import Modal */}
+        <Modal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          title="Importer des factures"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Téléchargez d'abord le template pour voir le format attendu, puis importez votre fichier CSV ou Excel.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => facturationsAPI.downloadTemplate('csv')}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger template CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => facturationsAPI.downloadTemplate('excel')}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger template Excel
+              </Button>
+            </div>
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-sm font-medium mb-2">Note: L'import de factures n'est pas encore implémenté côté backend.</p>
+              <p className="text-xs text-gray-500">Cette fonctionnalité sera disponible prochainement.</p>
+            </div>
+          </div>
+        </Modal>
       </MotionDiv>
     </PageContainer>
+  );
+}
+
+// Payment Form Component
+function PaymentForm({ invoice, onSubmit, onCancel }: { invoice: any; onSubmit: (data: any) => Promise<void>; onCancel: () => void }) {
+  const [formData, setFormData] = useState({
+    amount: invoice.amount_due || 0,
+    payment_date: new Date().toISOString().split('T')[0],
+    payment_method: 'bank_transfer' as 'credit_card' | 'bank_transfer' | 'check' | 'cash',
+    reference: '',
+    notes: '',
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.amount <= 0) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-2">Montant *</label>
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          max={invoice.amount_due}
+          value={formData.amount}
+          onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+          required
+        />
+        <p className="text-xs text-gray-500 mt-1">Montant dû: {new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(invoice.amount_due)}</p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-2">Date de paiement *</label>
+        <Input
+          type="date"
+          value={formData.payment_date}
+          onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-2">Méthode de paiement *</label>
+        <Select
+          value={formData.payment_method}
+          onChange={(e) => setFormData({ ...formData, payment_method: e.target.value as any })}
+          options={[
+            { value: 'bank_transfer', label: 'Virement bancaire' },
+            { value: 'credit_card', label: 'Carte de crédit' },
+            { value: 'check', label: 'Chèque' },
+            { value: 'cash', label: 'Comptant' },
+          ]}
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-2">Référence</label>
+        <Input
+          type="text"
+          value={formData.reference}
+          onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+          placeholder="Numéro de transaction, chèque, etc."
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-2">Notes</label>
+        <Input
+          type="text"
+          value={formData.notes}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          placeholder="Notes additionnelles"
+        />
+      </div>
+      <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
+          Annuler
+        </Button>
+        <Button type="submit" variant="primary" loading={loading}>
+          Enregistrer
+        </Button>
+      </div>
+    </form>
   );
 }

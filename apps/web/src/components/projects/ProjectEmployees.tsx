@@ -23,6 +23,7 @@ export default function ProjectEmployees({ projectId }: ProjectEmployeesProps) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [adding, setAdding] = useState(false);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function ProjectEmployees({ projectId }: ProjectEmployeesProps) {
         employeesAPI.list()
       ]);
       setEmployees(assignedEmployees);
-      setAllEmployees(allEmployeesList);
+      setAllEmployees(allEmployeesList || []);
     } catch (error) {
       logger.error('Error loading project employees', error);
       showToast({
@@ -48,6 +49,32 @@ export default function ProjectEmployees({ projectId }: ProjectEmployeesProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadAllEmployees = async () => {
+    try {
+      setLoadingEmployees(true);
+      const allEmployeesList = await employeesAPI.list();
+      setAllEmployees(allEmployeesList || []);
+    } catch (error) {
+      logger.error('Error loading all employees', error);
+      showToast({
+        title: 'Erreur',
+        message: 'Impossible de charger la liste des employés',
+        type: 'error'
+      });
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
+
+  const handleOpenModal = () => {
+    setShowAddModal(true);
+    setSearchTerm('');
+    setSelectedEmployeeId(null);
+    setSelectedRole('');
+    // Recharger les employés lorsque la modal s'ouvre pour avoir les données les plus récentes
+    loadAllEmployees();
   };
 
   const handleAddEmployee = async () => {
@@ -127,7 +154,7 @@ export default function ProjectEmployees({ projectId }: ProjectEmployeesProps) {
           <Button
             variant="primary"
             size="sm"
-            onClick={() => setShowAddModal(true)}
+            onClick={handleOpenModal}
           >
             <Plus className="w-4 h-4 mr-2" />
             Ajouter un employé
@@ -232,50 +259,81 @@ export default function ProjectEmployees({ projectId }: ProjectEmployeesProps) {
         }
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Rechercher un employé</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Nom ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          {loadingEmployees ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-primary-500 mr-2" />
+              <span className="text-muted-foreground">Chargement des employés...</span>
             </div>
-          </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">Rechercher un employé</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Nom ou email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Employé *</label>
-            <Select
-              value={selectedEmployeeId?.toString() || ''}
-              onChange={(e) => setSelectedEmployeeId(e.target.value ? parseInt(e.target.value) : null)}
-              options={[
-                { value: '', label: 'Sélectionner un employé...' },
-                ...availableEmployees.map(emp => ({
-                  value: emp.id.toString(),
-                  label: `${emp.first_name} ${emp.last_name} (${emp.email})`
-                }))
-              ]}
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Employé *</label>
+                {allEmployees.length === 0 ? (
+                  <div className="p-4 border border-border rounded-lg bg-muted/50">
+                    <p className="text-sm text-muted-foreground text-center mb-2">
+                      Aucun employé disponible
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={loadAllEmployees}
+                      className="w-full"
+                    >
+                      Recharger la liste
+                    </Button>
+                  </div>
+                ) : (
+                  <Select
+                    value={selectedEmployeeId?.toString() || ''}
+                    onChange={(e) => setSelectedEmployeeId(e.target.value ? parseInt(e.target.value) : null)}
+                    options={[
+                      { value: '', label: 'Sélectionner un employé...' },
+                      ...availableEmployees.map(emp => ({
+                        value: emp.id.toString(),
+                        label: `${emp.first_name} ${emp.last_name}${emp.email ? ` (${emp.email})` : ''}`
+                      }))
+                    ]}
+                    required
+                  />
+                )}
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Rôle (optionnel)</label>
-            <Input
-              type="text"
-              placeholder="Ex: Lead, Membre, Viewer..."
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Rôle (optionnel)</label>
+                <Input
+                  type="text"
+                  placeholder="Ex: Lead, Membre, Viewer..."
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                />
+              </div>
 
-          {availableEmployees.length === 0 && searchTerm && (
-            <div className="text-center py-4 text-muted-foreground text-sm">
-              Aucun employé trouvé
-            </div>
+              {availableEmployees.length === 0 && allEmployees.length > 0 && searchTerm && (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  Aucun employé trouvé correspondant à "{searchTerm}"
+                </div>
+              )}
+
+              {availableEmployees.length === 0 && allEmployees.length > 0 && !searchTerm && (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  Tous les employés sont déjà assignés à ce projet
+                </div>
+              )}
+            </>
           )}
         </div>
       </Modal>
