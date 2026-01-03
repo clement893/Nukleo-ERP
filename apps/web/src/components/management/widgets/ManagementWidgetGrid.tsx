@@ -9,7 +9,7 @@ import { useMemo, useEffect, useState } from 'react';
 // @ts-ignore - react-grid-layout types may not be available
 import { Responsive } from 'react-grid-layout';
 import { useManagementDashboardStore } from '@/lib/management/store';
-import { ManagementWidgetRenderer } from './ManagementWidgetRenderer';
+import { ManagementWidgetContainer } from './ManagementWidgetContainer';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -133,9 +133,7 @@ export function ManagementWidgetGrid({ className = '' }: ManagementWidgetGridPro
         >
           {currentConfig.layouts.map((widget) => (
             <div key={widget.id} className="widget-wrapper">
-              <ErrorBoundary>
-                <ManagementWidgetRenderer widget={widget} />
-              </ErrorBoundary>
+              <ManagementWidgetContainer widget={widget} isEditMode={isEditMode} />
             </div>
           ))}
         </Responsive>

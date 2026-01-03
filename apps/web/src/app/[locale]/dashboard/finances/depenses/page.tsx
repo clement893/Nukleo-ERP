@@ -471,17 +471,52 @@ export default function DepensesPage() {
   const handleCreate = async () => {
     try {
       setIsSubmitting(true);
-      if (!formData.description.trim() || !formData.amount) {
+      
+      // Validate required fields
+      if (!formData.description.trim()) {
         showToast({ 
-          message: 'Veuillez remplir tous les champs requis', 
+          message: 'Veuillez remplir la description', 
           type: 'error' 
         });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validate and convert amount
+      let amountValue: number;
+      if (typeof formData.amount === 'string') {
+        const parsed = parseFloat(formData.amount);
+        if (isNaN(parsed) || parsed <= 0) {
+          showToast({ 
+            message: 'Le montant doit être supérieur à 0', 
+            type: 'error' 
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        amountValue = parsed;
+      } else if (typeof formData.amount === 'number') {
+        if (formData.amount <= 0) {
+          showToast({ 
+            message: 'Le montant doit être supérieur à 0', 
+            type: 'error' 
+          });
+          setIsSubmitting(false);
+          return;
+        }
+        amountValue = formData.amount;
+      } else {
+        showToast({ 
+          message: 'Veuillez entrer un montant valide', 
+          type: 'error' 
+        });
+        setIsSubmitting(false);
         return;
       }
 
       const transactionData: TransactionCreate = {
         ...formData,
-        amount: typeof formData.amount === 'string' ? parseFloat(formData.amount) : formData.amount,
+        amount: amountValue,
         transaction_date: new Date(formData.transaction_date).toISOString(),
         payment_date: formData.payment_date ? new Date(formData.payment_date as string).toISOString() : null,
       };
@@ -510,9 +545,37 @@ export default function DepensesPage() {
     
     try {
       setIsSubmitting(true);
+      
+      // Validate and convert amount if provided
+      let amountValue: number | undefined = undefined;
+      if (formData.amount !== undefined && formData.amount !== null && formData.amount !== '') {
+        if (typeof formData.amount === 'string') {
+          const parsed = parseFloat(formData.amount);
+          if (isNaN(parsed) || parsed <= 0) {
+            showToast({ 
+              message: 'Le montant doit être supérieur à 0', 
+              type: 'error' 
+            });
+            setIsSubmitting(false);
+            return;
+          }
+          amountValue = parsed;
+        } else if (typeof formData.amount === 'number') {
+          if (formData.amount <= 0) {
+            showToast({ 
+              message: 'Le montant doit être supérieur à 0', 
+              type: 'error' 
+            });
+            setIsSubmitting(false);
+            return;
+          }
+          amountValue = formData.amount;
+        }
+      }
+      
       const updateData: TransactionUpdate = {
         description: formData.description,
-        amount: typeof formData.amount === 'string' ? parseFloat(formData.amount) : formData.amount,
+        ...(amountValue !== undefined && { amount: amountValue }),
         currency: formData.currency,
         category: formData.category,
         transaction_date: new Date(formData.transaction_date).toISOString(),
@@ -638,18 +701,30 @@ export default function DepensesPage() {
   const handleCreateInvoice = async () => {
     try {
       setIsSubmitting(true);
-      if (!invoiceFormData.invoice_number.trim() || !invoiceFormData.supplier_name.trim() || !invoiceFormData.amount) {
+      if (!invoiceFormData.invoice_number.trim() || !invoiceFormData.supplier_name.trim()) {
         showToast({ 
           message: 'Veuillez remplir tous les champs requis (numéro de facture, fournisseur, montant)', 
           type: 'error' 
         });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validate and convert amount
+      const amountValue = parseFloat(invoiceFormData.amount);
+      if (isNaN(amountValue) || amountValue <= 0) {
+        showToast({ 
+          message: 'Le montant doit être supérieur à 0', 
+          type: 'error' 
+        });
+        setIsSubmitting(false);
         return;
       }
 
       const transactionData: TransactionCreate = {
         type: 'expense',
         description: invoiceFormData.description || `Facture ${invoiceFormData.invoice_number} - ${invoiceFormData.supplier_name}`,
-        amount: parseFloat(invoiceFormData.amount),
+        amount: amountValue,
         currency: invoiceFormData.currency,
         category: invoiceFormData.category || null,
         transaction_date: new Date(invoiceFormData.issue_date as string).toISOString(),
@@ -699,10 +774,12 @@ export default function DepensesPage() {
         is_supplier_record: true, // Flag to identify supplier records
       };
 
+      // For supplier records, we use a minimal amount (0.01) since the schema requires gt=0
+      // This is a workaround - ideally we'd have a separate supplier table
       const transactionData: TransactionCreate = {
         type: 'expense',
         description: `Fournisseur: ${supplierFormData.name}`,
-        amount: 0, // No amount for supplier record
+        amount: 0.01, // Minimal amount for supplier record (schema requires gt=0)
         currency: 'CAD',
         category: null,
         transaction_date: new Date().toISOString(),
@@ -734,11 +811,23 @@ export default function DepensesPage() {
   const handleCreateRecurring = async () => {
     try {
       setIsSubmitting(true);
-      if (!recurringFormData.description.trim() || !recurringFormData.amount) {
+      if (!recurringFormData.description.trim()) {
         showToast({ 
-          message: 'Veuillez remplir tous les champs requis (description, montant)', 
+          message: 'Veuillez remplir la description', 
           type: 'error' 
         });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validate and convert amount
+      const amountValue = parseFloat(recurringFormData.amount);
+      if (isNaN(amountValue) || amountValue <= 0) {
+        showToast({ 
+          message: 'Le montant doit être supérieur à 0', 
+          type: 'error' 
+        });
+        setIsSubmitting(false);
         return;
       }
 
@@ -750,7 +839,7 @@ export default function DepensesPage() {
       const transactionData: TransactionCreate = {
         type: 'expense',
         description: recurringFormData.description,
-        amount: parseFloat(recurringFormData.amount),
+        amount: amountValue,
         currency: recurringFormData.currency,
         category: recurringFormData.category || null,
         transaction_date: new Date(recurringFormData.start_date as string).toISOString(),
@@ -1561,9 +1650,13 @@ export default function DepensesPage() {
                 label="Montant *"
                 type="number"
                 step="0.01"
-                min="0"
+                min="0.01"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow empty string for user input, but validate on submit
+                  setFormData({ ...formData, amount: value });
+                }}
                 placeholder="0.00"
                 required
               />
@@ -1681,9 +1774,13 @@ export default function DepensesPage() {
                 label="Montant *"
                 type="number"
                 step="0.01"
-                min="0"
+                min="0.01"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Allow empty string for user input, but validate on submit
+                  setFormData({ ...formData, amount: value });
+                }}
                 placeholder="0.00"
                 required
               />
@@ -1864,9 +1961,12 @@ export default function DepensesPage() {
                 label="Montant *"
                 type="number"
                 step="0.01"
-                min="0"
+                min="0.01"
                 value={recurringFormData.amount}
-                onChange={(e) => setRecurringFormData({ ...recurringFormData, amount: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setRecurringFormData({ ...recurringFormData, amount: value });
+                }}
                 placeholder="0.00"
                 required
               />
@@ -1982,9 +2082,12 @@ export default function DepensesPage() {
                 label="Montant *"
                 type="number"
                 step="0.01"
-                min="0"
+                min="0.01"
                 value={invoiceFormData.amount}
-                onChange={(e) => setInvoiceFormData({ ...invoiceFormData, amount: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setInvoiceFormData({ ...invoiceFormData, amount: value });
+                }}
                 placeholder="0.00"
                 required
               />

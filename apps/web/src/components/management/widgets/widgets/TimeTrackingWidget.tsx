@@ -67,45 +67,43 @@ export function TimeTrackingWidget({ widgetId: _widgetId, config: _config }: Man
   }
 
   return (
-    <Card 
-      className="glass-card p-6 h-full cursor-pointer hover:border-primary-500/40 transition-all"
+    <div 
+      className="h-full w-full cursor-pointer"
       onClick={() => router.push('/dashboard/management/feuilles-temps')}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30">
-            <Clock className="w-5 h-5 text-primary-500" />
-          </div>
-          <h3 className="font-semibold text-foreground">Suivi du Temps</h3>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30 flex-shrink-0">
+          <Clock className="w-5 h-5 text-primary-500" />
         </div>
+        <h3 className="font-semibold text-foreground truncate">Suivi du Temps</h3>
       </div>
       
       <div className="space-y-4">
         <div>
-          <div className="text-3xl font-bold text-foreground mb-1">
+          <div className="text-3xl font-bold text-foreground mb-1 truncate">
             {stats.totalHours}h
           </div>
-          <div className="text-sm text-muted-foreground">Heures totales</div>
+          <div className="text-sm text-muted-foreground truncate">Heures totales</div>
         </div>
         
         <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
-          <div>
-            <div className="text-lg font-semibold text-foreground">{stats.avgHours}h</div>
-            <div className="text-xs text-muted-foreground">Moyenne</div>
+          <div className="min-w-0">
+            <div className="text-lg font-semibold text-foreground truncate">{stats.avgHours}h</div>
+            <div className="text-xs text-muted-foreground truncate">Moyenne</div>
           </div>
           
-          <div>
-            <div className="text-lg font-semibold text-foreground">{stats.thisWeekHours}h</div>
-            <div className="text-xs text-muted-foreground">Cette semaine</div>
+          <div className="min-w-0">
+            <div className="text-lg font-semibold text-foreground truncate">{stats.thisWeekHours}h</div>
+            <div className="text-xs text-muted-foreground truncate">Cette semaine</div>
           </div>
         </div>
         
         <div className="pt-2">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground truncate">
             {stats.totalEntries} entrées enregistrées
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

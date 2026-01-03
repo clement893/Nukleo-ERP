@@ -46,45 +46,43 @@ export function EmployeesStatsWidget({ widgetId: _widgetId, config: _config }: M
   }
 
   return (
-    <Card 
-      className="glass-card p-6 h-full cursor-pointer hover:border-primary-500/40 transition-all"
+    <div 
+      className="h-full w-full cursor-pointer"
       onClick={() => router.push('/dashboard/management/employes')}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30">
-            <Users className="w-5 h-5 text-primary-500" />
-          </div>
-          <h3 className="font-semibold text-foreground">Employés</h3>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30 flex-shrink-0">
+          <Users className="w-5 h-5 text-primary-500" />
         </div>
+        <h3 className="font-semibold text-foreground truncate">Employés</h3>
       </div>
       
       <div className="space-y-4">
         <div>
-          <div className="text-3xl font-bold text-foreground mb-1">
+          <div className="text-3xl font-bold text-foreground mb-1 truncate">
             {stats.total}
           </div>
-          <div className="text-sm text-muted-foreground">Total employés</div>
+          <div className="text-sm text-muted-foreground truncate">Total employés</div>
         </div>
         
         <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border">
-          <div className="flex items-center gap-2">
-            <UserCheck className="w-4 h-4 text-green-500" />
-            <div>
-              <div className="text-lg font-semibold text-foreground">{stats.active}</div>
-              <div className="text-xs text-muted-foreground">Actifs</div>
+          <div className="flex items-center gap-2 min-w-0">
+            <UserCheck className="w-4 h-4 text-green-500 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="text-lg font-semibold text-foreground truncate">{stats.active}</div>
+              <div className="text-xs text-muted-foreground truncate">Actifs</div>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <UserPlus className="w-4 h-4 text-blue-500" />
-            <div>
-              <div className="text-lg font-semibold text-foreground">{stats.newThisMonth}</div>
-              <div className="text-xs text-muted-foreground">Ce mois</div>
+          <div className="flex items-center gap-2 min-w-0">
+            <UserPlus className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            <div className="min-w-0">
+              <div className="text-lg font-semibold text-foreground truncate">{stats.newThisMonth}</div>
+              <div className="text-xs text-muted-foreground truncate">Ce mois</div>
             </div>
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

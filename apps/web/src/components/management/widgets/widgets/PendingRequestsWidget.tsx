@@ -7,7 +7,7 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Badge, Button } from '@/components/ui';
+import { Badge, Button } from '@/components/ui';
 import { AlertCircle, Calendar, Plane } from 'lucide-react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { vacationRequestsAPI } from '@/lib/api/vacationRequests';
@@ -36,7 +36,7 @@ export function PendingRequestsWidget({ widgetId: _widgetId, config: _config }: 
 
   if (isLoading) {
     return (
-      <Card className="glass-card p-6 h-full">
+      <div className="h-full w-full">
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
           <div className="space-y-2">
@@ -44,27 +44,27 @@ export function PendingRequestsWidget({ widgetId: _widgetId, config: _config }: 
             <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
           </div>
         </div>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="glass-card p-6 h-full">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-warning-500/10 border border-warning-500/30">
+    <div className="h-full w-full flex flex-col">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="p-2 rounded-lg bg-warning-500/10 border border-warning-500/30 flex-shrink-0">
             <AlertCircle className="w-5 h-5 text-warning-500" />
           </div>
-          <h3 className="font-semibold text-foreground">Demandes en Attente</h3>
+          <h3 className="font-semibold text-foreground truncate">Demandes en Attente</h3>
         </div>
         {pendingRequests.length > 0 && (
-          <Badge className="bg-warning-500 text-white">
+          <Badge className="bg-warning-500 text-white flex-shrink-0">
             {pendingRequests.length}
           </Badge>
         )}
       </div>
       
-      <div className="space-y-3">
+      <div className="space-y-3 overflow-auto flex-1 min-h-0">
         {pendingRequests.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Plane className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -78,17 +78,17 @@ export function PendingRequestsWidget({ widgetId: _widgetId, config: _config }: 
                 className="p-3 rounded-lg border border-border hover:border-primary-500/30 transition-colors cursor-pointer"
                 onClick={() => router.push('/dashboard/management/vacances')}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <p className="text-sm font-medium text-foreground">
+                <div className="flex items-start justify-between mb-2 gap-2">
+                  <p className="text-sm font-medium text-foreground truncate flex-1">
                     {request.employee_name || 'Employé'}
                   </p>
-                  <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/30 border text-xs">
+                  <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/30 border text-xs flex-shrink-0">
                     En attente
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="w-3 h-3" />
-                  <span>
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">
                     {new Date(request.start_date).toLocaleDateString('fr-CA')} - {new Date(request.end_date).toLocaleDateString('fr-CA')}
                   </span>
                 </div>
@@ -108,6 +108,6 @@ export function PendingRequestsWidget({ widgetId: _widgetId, config: _config }: 
           </>
         )}
       </div>
-    </Card>
+    </div>
   );
 }

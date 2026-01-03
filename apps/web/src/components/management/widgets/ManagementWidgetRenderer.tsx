@@ -6,7 +6,7 @@
  */
 
 import { lazy, Suspense } from 'react';
-import { Card, Loading } from '@/components/ui';
+import { Loading } from '@/components/ui';
 import type { ManagementWidgetConfig } from '@/lib/management/types';
 
 // Lazy load widgets for better performance
@@ -21,11 +21,9 @@ interface ManagementWidgetRendererProps {
 }
 
 const WidgetLoadingFallback = () => (
-  <Card className="glass-card p-6 h-full">
-    <div className="flex items-center justify-center h-32">
-      <Loading />
-    </div>
-  </Card>
+  <div className="h-full w-full flex items-center justify-center">
+    <Loading />
+  </div>
 );
 
 export function ManagementWidgetRenderer({ widget }: ManagementWidgetRendererProps) {
@@ -43,11 +41,11 @@ export function ManagementWidgetRenderer({ widget }: ManagementWidgetRendererPro
         return <UpcomingVacationsWidget widgetId={widget.id} config={widget.config} />;
       default:
         return (
-          <Card className="glass-card p-6">
+          <div className="h-full w-full flex items-center justify-center p-6">
             <p className="text-muted-foreground">
               Widget type "{widget.widget_type}" non implémenté
             </p>
-          </Card>
+          </div>
         );
     }
   };
