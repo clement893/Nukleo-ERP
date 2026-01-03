@@ -375,61 +375,69 @@ function CalendrierContent() {
                 Gérez vos événements, deadlines et jours fériés avec style
               </p>
             </div>
-            <Button className="bg-white text-primary-500 hover:bg-white/90">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button size="sm" className="bg-white text-primary-500 hover:bg-white/90">
+              <Plus className="w-3 h-3 mr-1.5" />
               Nouvel événement
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-danger-500/10 border border-danger-500/30">
-                <Star className="w-6 h-6 text-danger-500" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="glass-card p-3 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between gap-3">
+              <div className="p-2 rounded-lg bg-danger-500/10 border border-danger-500/30 flex-shrink-0">
+                <Star className="w-4 h-4 text-danger-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white font-nukleo">
+                  {stats.holidays}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Jours fériés</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
-              {stats.holidays}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Jours fériés</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
-                <Briefcase className="w-6 h-6 text-success-500" />
+          <div className="glass-card p-3 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between gap-3">
+              <div className="p-2 rounded-lg bg-success-500/10 border border-success-500/30 flex-shrink-0">
+                <Briefcase className="w-4 h-4 text-success-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white font-nukleo">
+                  {stats.vacations}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Vacances</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
-              {stats.vacations}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Vacances</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
-                <Clock className="w-6 h-6 text-primary-500" />
+          <div className="glass-card p-3 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between gap-3">
+              <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30 flex-shrink-0">
+                <Clock className="w-4 h-4 text-primary-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white font-nukleo">
+                  {stats.events}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Événements</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
-              {stats.events}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Événements</div>
           </div>
 
-          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-primary-400/10 border border-primary-400/30">
-                <Cake className="w-6 h-6 text-primary-400" />
+          <div className="glass-card p-3 rounded-xl border border-nukleo-lavender/20 hover:scale-105 transition-transform">
+            <div className="flex items-center justify-between gap-3">
+              <div className="p-2 rounded-lg bg-primary-400/10 border border-primary-400/30 flex-shrink-0">
+                <Cake className="w-4 h-4 text-primary-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white font-nukleo">
+                  {stats.birthdays}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Anniversaires</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
-              {stats.birthdays}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Anniversaires</div>
           </div>
         </div>
 
@@ -449,55 +457,62 @@ function CalendrierContent() {
               </button>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Button onClick={goToToday} variant="outline">Aujourd'hui</Button>
-              <div className="flex gap-2">
-                <Button variant={viewMode === 'month' ? 'primary' : 'outline'} onClick={() => handleViewModeChange('month')}>Mois</Button>
-                <Button variant={viewMode === 'week' ? 'primary' : 'outline'} onClick={() => handleViewModeChange('week')}>Semaine</Button>
-                <Button variant={viewMode === 'day' ? 'primary' : 'outline'} onClick={() => handleViewModeChange('day')}>Jour</Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={goToToday} variant="outline">Aujourd'hui</Button>
+              <div className="flex gap-1">
+                <Button size="sm" variant={viewMode === 'month' ? 'primary' : 'outline'} onClick={() => handleViewModeChange('month')}>Mois</Button>
+                <Button size="sm" variant={viewMode === 'week' ? 'primary' : 'outline'} onClick={() => handleViewModeChange('week')}>Semaine</Button>
+                <Button size="sm" variant={viewMode === 'day' ? 'primary' : 'outline'} onClick={() => handleViewModeChange('day')}>Jour</Button>
               </div>
             </div>
           </div>
 
           {/* Filtres */}
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-1.5 mb-4">
             <Button 
+              size="sm"
               variant={activeFilters.has('holidays') ? 'primary' : 'outline'} 
               onClick={() => toggleFilter('holidays')}
             >
               Jours fériés
             </Button>
             <Button 
+              size="sm"
               variant={activeFilters.has('summer') ? 'primary' : 'outline'} 
               onClick={() => toggleFilter('summer')}
             >
               Vacances d'été
             </Button>
             <Button 
+              size="sm"
               variant={activeFilters.has('vacations') ? 'primary' : 'outline'} 
               onClick={() => toggleFilter('vacations')}
             >
               Vacances approuvées
             </Button>
             <Button 
+              size="sm"
               variant={activeFilters.has('events') ? 'primary' : 'outline'} 
               onClick={() => toggleFilter('events')}
             >
               Événements
             </Button>
             <Button 
+              size="sm"
               variant={activeFilters.has('birthdays') ? 'primary' : 'outline'} 
               onClick={() => toggleFilter('birthdays')}
             >
               Anniversaires
             </Button>
             <Button 
+              size="sm"
               variant={activeFilters.has('hiredates') ? 'primary' : 'outline'} 
               onClick={() => toggleFilter('hiredates')}
             >
               Dates d'embauche
             </Button>
             <Button 
+              size="sm"
               variant={activeFilters.has('deadlines') ? 'primary' : 'outline'} 
               onClick={() => toggleFilter('deadlines')}
             >
