@@ -8,24 +8,54 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, func, and_
 from sqlalchemy.orm import selectinload
 
-from app.models.contact import Contact
-from app.models.company import Company
-from app.models.project import Project, ProjectStatus
 from app.core.logging import logger
 
-try:
-    from app.modules.commercial.models.pipeline import Opportunite
-    OPPORTUNITIES_AVAILABLE = True
-except ImportError:
-    OPPORTUNITIES_AVAILABLE = False
-    logger.warning("Opportunite model not available")
+# Lazy imports to avoid MetaData conflicts - import from app.models which already has them registered
+OPPORTUNITIES_AVAILABLE = None
+EMPLOYEES_AVAILABLE = None
 
-try:
-    from app.models.employee import Employee
-    EMPLOYEES_AVAILABLE = True
-except ImportError:
-    EMPLOYEES_AVAILABLE = False
-    logger.warning("Employee model not available")
+def _get_contact_model():
+    """Get Contact model from app.models to avoid MetaData conflicts"""
+    from app.models import Contact
+    return Contact
+
+def _get_company_model():
+    """Get Company model from app.models to avoid MetaData conflicts"""
+    from app.models import Company
+    return Company
+
+def _get_project_model():
+    """Get Project model from app.models to avoid MetaData conflicts"""
+    from app.models import Project, ProjectStatus
+    return Project, ProjectStatus
+
+def _get_opportunite_model():
+    """Get Opportunite model with availability check"""
+    global OPPORTUNITIES_AVAILABLE
+    if OPPORTUNITIES_AVAILABLE is False:
+        return None
+    try:
+        from app.models import Opportunite
+        OPPORTUNITIES_AVAILABLE = True
+        return Opportunite
+    except (ImportError, AttributeError) as e:
+        OPPORTUNITIES_AVAILABLE = False
+        logger.debug(f"Opportunite model not available: {e}")
+        return None
+
+def _get_employee_model():
+    """Get Employee model from app.models to avoid MetaData conflicts"""
+    global EMPLOYEES_AVAILABLE
+    if EMPLOYEES_AVAILABLE is False:
+        return None
+    try:
+        from app.models import Employee
+        EMPLOYEES_AVAILABLE = True
+        return Employee
+    except (ImportError, AttributeError) as e:
+        EMPLOYEES_AVAILABLE = False
+        logger.debug(f"Employee model not available: {e}")
+        return None
 
 
 class LeoContextService:
@@ -68,14 +98,18 @@ class LeoContextService:
         # Check for employee queries (more specific)
         is_employee_query = any(word in query_lower for word in employee_keywords)
         
+        # Check availability lazily
+        opp_available = _get_opportunite_model() is not None if OPPORTUNITIES_AVAILABLE is None else OPPORTUNITIES_AVAILABLE
+        emp_available = _get_employee_model() is not None if EMPLOYEES_AVAILABLE is None else EMPLOYEES_AVAILABLE
+        
         return {
             "contacts": any(word in query_lower for word in contact_keywords) or has_potential_name or has_qui_est,
             "companies": any(word in query_lower for word in company_keywords),
-            "opportunities": any(word in query_lower for word in opportunity_keywords) if OPPORTUNITIES_AVAILABLE else False,
+            "opportunities": any(word in query_lower for word in opportunity_keywords) if opp_available else False,
             "projects": any(word in query_lower for word in project_keywords),
             "invoices": any(word in query_lower for word in invoice_keywords),
             "events": any(word in query_lower for word in event_keywords),
-            "employees": is_employee_query if EMPLOYEES_AVAILABLE else False,
+            "employees": is_employee_query if emp_available else False,
         }
 
     def _extract_keywords(self, query: str) -> List[str]:
@@ -138,6 +172,9 @@ class LeoContextService:
                     combined_name = f"{potential_names[i]} {potential_names[i+1]}"
                     if combined_name not in all_keywords:
                         all_keywords.append(combined_name)
+            
+            # Lazy import to avoid MetaData conflicts
+            Contact = _get_contact_model()
             
             # Build query
             stmt = select(Contact).options(
@@ -230,6 +267,9 @@ class LeoContextService:
         try:
             keywords = self._extract_keywords(query)
             
+            # Lazy import to avoid MetaData conflicts
+            Company = _get_company_model()
+            
             # Build query
             stmt = select(Company)
             
@@ -284,7 +324,8 @@ class LeoContextService:
         limit: int = None
     ) -> List[Dict[str, Any]]:
         """Get relevant opportunities based on query"""
-        if not OPPORTUNITIES_AVAILABLE:
+        Opportunite = _get_opportunite_model()
+        if Opportunite is None:
             return []
         
         if limit is None:
@@ -292,6 +333,10 @@ class LeoContextService:
         
         try:
             from app.modules.commercial.models.pipeline import Opportunite
+            
+            Opportunite = _get_opportunite_model()
+            if Opportunite is None:
+                return []
             
             keywords = self._extract_keywords(query)
             
@@ -402,7 +447,8 @@ class LeoContextService:
         limit: int = None
     ) -> List[Dict[str, Any]]:
         """Get relevant employees based on query"""
-        if not EMPLOYEES_AVAILABLE:
+        Employee = _get_employee_model()
+        if Employee is None:
             return []
         
         if limit is None:
@@ -415,6 +461,11 @@ class LeoContextService:
             words = query.split()
             potential_names = [w.strip(".,!?;:()[]{}") for w in words if w and w[0].isupper() and len(w) > 2]
             all_keywords = list(set(keywords + potential_names))
+            
+            # Lazy import to avoid MetaData conflicts
+            Employee = _get_employee_model()
+            if Employee is None:
+                return []
             
             # Build query
             stmt = select(Employee).options(
@@ -442,9 +493,7 @@ class LeoContextService:
                             func.concat(Employee.last_name, ' ', Employee.first_name).ilike(f"%{keyword}%"),
                         ])
                 stmt = stmt.where(or_(*conditions))
-            else:
-                # If query is about employees in general (e.g., "qui sont mes employés"), return all active employees
-                # No specific filter needed, will return up to limit
+            # If no keywords and query is about employees in general, return all employees (no filter needed)
             
             # Limit results
             stmt = stmt.limit(limit)
