@@ -194,6 +194,16 @@ class LeoContextService:
                 selectinload(Contact.employee)
             )
             
+            # Check if this is a general query about contacts
+            query_lower = query.lower()
+            is_general_query = any(phrase in query_lower for phrase in [
+                "connais-tu", "connais tu", "connaissez-vous", "connaissez vous", 
+                "nos contacts", "mes contacts", "qui sont nos", "qui sont mes"
+            ])
+            
+            # Also check for single word queries that might be names (e.g., "fabien")
+            is_single_word_name = len(words) == 1 and len(words[0].strip(".,!?;:()[]{}")) > 2 and words[0].strip(".,!?;:()[]{}").lower() not in ["le", "la", "les", "un", "une", "des", "de", "du", "et", "ou", "à", "dans", "sur", "pour", "avec", "sans", "par", "qui", "est", "sont", "nos", "mes", "contact", "contacts", "client", "clients"]
+            
             # Filter by keywords if any
             if all_keywords:
                 conditions = []
@@ -219,6 +229,22 @@ class LeoContextService:
                             func.concat(Contact.last_name, ' ', Contact.first_name).ilike(f"%{keyword}%"),
                         ])
                 stmt = stmt.where(or_(*conditions))
+            elif is_single_word_name:
+                # Single word that might be a name (e.g., "fabien")
+                word = words[0].strip(".,!?;:()[]{}")
+                word_lower = word.lower()
+                conditions = [
+                    Contact.first_name.ilike(f"%{word_lower}%"),
+                    Contact.last_name.ilike(f"%{word_lower}%"),
+                    Contact.first_name.ilike(f"%{word.capitalize()}%"),
+                    Contact.last_name.ilike(f"%{word.capitalize()}%"),
+                    func.concat(Contact.first_name, ' ', Contact.last_name).ilike(f"%{word_lower}%"),
+                    func.concat(Contact.first_name, ' ', Contact.last_name).ilike(f"%{word.capitalize()}%"),
+                ]
+                stmt = stmt.where(or_(*conditions))
+            elif is_general_query:
+                # For general queries, return all contacts (no filter, just limit)
+                limit = min(limit * 3, 100)  # Increase limit for general queries
             else:
                 # If no keywords but query contains capitalized words, still search
                 # This handles cases like "Daly Ann" where stop words might filter everything
@@ -299,11 +325,18 @@ class LeoContextService:
             
             # Check if query mentions "client" or "clients"
             query_lower = query.lower()
-            is_client_query = any(word in query_lower for word in ["client", "clients", "nos clients", "mes clients", "combien de client"])
+            is_client_query = any(phrase in query_lower for phrase in [
+                "client", "clients", "nos clients", "mes clients", "combien de client", 
+                "combien de clients", "avons nous", "avons-nous", "combien avons nous"
+            ])
             if is_client_query:
                 stmt = stmt.where(Company.is_client == True)
-                # For client queries, increase limit
-                limit = min(limit * 2, 100)
+                # For client queries, increase limit significantly
+                limit = min(limit * 5, 200)  # Much higher limit for client queries
+                # Remove keyword filter if it's a general client query
+                if not keywords or all(kw.lower() in ["client", "clients", "combien", "avons", "nous"] for kw in keywords):
+                    # This is a general "how many clients" query, don't filter by keywords
+                    stmt = select(Company).where(Company.is_client == True)
             
             # For general company queries (e.g., "notre entreprise"), return more results
             is_our_company_query = any(phrase in query_lower for phrase in [
@@ -502,7 +535,10 @@ class LeoContextService:
             )
             
             query_lower = query.lower()
-            is_general_employee_query = not all_keywords and any(word in query_lower for word in ["employé", "employee", "employés", "employees", "nos", "mes", "qui sont", "who are"])
+            is_general_employee_query = any(phrase in query_lower for phrase in [
+                "employé", "employee", "employés", "employees", "nos employés", "mes employés",
+                "qui sont nos", "qui sont mes", "qui sont nos employés", "qui sont mes employés"
+            ])
             
             # Filter by keywords if any
             if all_keywords:
