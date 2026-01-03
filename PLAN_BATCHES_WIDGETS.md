@@ -37,11 +37,11 @@
 
 ---
 
-### 👥 Batch 4: Widgets Équipe Priorité HAUTE
-- [ ] `team-growth-timeline` - Évolution effectif
-- [ ] `employees-by-department` - Répartition par département
+### ✅ Batch 4: Widgets Équipe Priorité HAUTE
+- [x] `team-growth-timeline` - Évolution effectif
+- [x] `employees-by-department` - Répartition par département
 
-**Statut:** 0/2 widgets créés
+**Statut:** ✅ COMPLÉTÉ - 2/2 widgets créés et pushés
 
 ---
 
@@ -119,12 +119,12 @@
 
 ## 📈 Progression Globale
 
-- **Batches complétés:** 3/10 (30%)
-- **Widgets créés:** 9/40 (22.5%)
+- **Batches complétés:** 4/10 (40%)
+- **Widgets créés:** 11/40 (27.5%)
 - **Intégrations complétées:** 0/1
 
 ## 🔄 Dernière Mise à Jour
 
-- **Date:** Batch 3 complété et pushé
-- **Batch actif:** Batch 4 (Équipe Priorité HAUTE)
-- **Prochaine étape:** Créer les 2 widgets du Batch 4
+- **Date:** Batch 4 complété et pushé
+- **Batch actif:** Batch 5 (Intégration - Ajout au Registre et Collections)
+- **Prochaine étape:** Ajouter tous les widgets au registre et collections
