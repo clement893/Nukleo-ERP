@@ -5,8 +5,7 @@
  * Similaire à WidgetContainer mais adapté pour les widgets management
  */
 
-import { useState } from 'react';
-import { Settings, RefreshCw, X, GripVertical, AlertCircle } from 'lucide-react';
+import { RefreshCw, X, GripVertical, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useManagementDashboardStore } from '@/lib/management/store';
 import type { ManagementWidgetConfig } from '@/lib/management/types';

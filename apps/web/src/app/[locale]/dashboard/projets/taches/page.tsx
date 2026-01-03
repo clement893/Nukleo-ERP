@@ -108,6 +108,9 @@ export default function TachesPage() {
   const [teams, setTeams] = useState<Array<{ id: number; name: string }>>([]);
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
   const [employees, setEmployees] = useState<Array<{ id: number; name: string }>>([]);
+  
+  // Flag to prevent multiple simultaneous filter data loads
+  const [isLoadingFilters, setIsLoadingFilters] = useState(false);
 
   // Fetch tasks with filters
   const { data, isLoading, error } = useInfiniteProjectTasks(100, {
@@ -151,32 +154,61 @@ export default function TachesPage() {
     }
   }, [taskDetailData]);
 
-  // Load filter data
+  // Load filter data (only once, non-blocking)
   useEffect(() => {
+    // Prevent multiple simultaneous loads
+    if (isLoadingFilters) return;
+    
     const loadFilterData = async () => {
+      setIsLoadingFilters(true);
+      
+      // Load teams (non-blocking)
       try {
-        // Load teams
-        const teamsResponse = await teamsAPI.list(0, 1000);
+        const teamsResponse = await Promise.race([
+          teamsAPI.list(0, 1000),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+        ]) as any;
         const teamsData = teamsResponse.data || teamsResponse;
         const teamsList = (teamsData as any)?.teams || (Array.isArray(teamsData) ? teamsData : []);
         setTeams(teamsList.map((t: any) => ({ id: t.id, name: t.name || t.slug })));
+      } catch (err) {
+        console.warn('Failed to load teams for filters:', err);
+        // Continue even if teams fail
+      }
 
-        // Load projects
-        const projectsData = await projectsAPI.list(0, 1000);
+      // Load projects (non-blocking)
+      try {
+        const projectsData = await Promise.race([
+          projectsAPI.list(0, 1000),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+        ]) as any;
         setProjects(projectsData.map(p => ({ id: p.id, name: p.name })));
+      } catch (err) {
+        console.warn('Failed to load projects for filters:', err);
+        // Continue even if projects fail
+      }
 
-        // Load employees
-        const employeesData = await employeesAPI.list(0, 1000);
-        setEmployees(employeesData.map(e => ({ 
+      // Load employees (non-blocking, with reduced limit and shorter timeout)
+      // This is often the slowest query, so we give it a shorter timeout and smaller limit
+      try {
+        const employeesData = await Promise.race([
+          employeesAPI.list(0, 100), // Reduced from 1000 to 100 for faster response
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000)) // 10s timeout instead of 30s
+        ]) as any;
+        setEmployees(employeesData.map((e: any) => ({ 
           id: e.id, 
-          name: `${e.first_name} ${e.last_name}` 
+          name: `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.email || `Employee ${e.id}`
         })));
       } catch (err) {
-        // Silent fail for filters
+        console.warn('Failed to load employees for filters:', err);
+        // Continue even if employees fail - filters will work without employee filter
+      } finally {
+        setIsLoadingFilters(false);
       }
     };
+    
     loadFilterData();
-  }, []);
+  }, []); // Empty deps - only load once on mount
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
