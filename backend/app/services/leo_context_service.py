@@ -707,6 +707,79 @@ class LeoContextService:
         
         return result
 
+    async def get_structure_context(self) -> str:
+        """Get structural context about the ERP system (pages, tables, structure)"""
+        structure_parts = []
+        
+        # Main application pages/modules
+        structure_parts.append("=== STRUCTURE ERP NUKLEO ===")
+        structure_parts.append("")
+        
+        structure_parts.append("PAGES PRINCIPALES:")
+        pages_info = [
+            ("Dashboard", "/dashboard", "Vue d'ensemble de l'ERP"),
+            ("Contacts", "/dashboard/contacts", "Gestion des contacts"),
+            ("Entreprises", "/dashboard/entreprises", "Gestion des entreprises (clients/prospects)"),
+            ("Projets", "/dashboard/projets", "Gestion des projets"),
+            ("Opportunités", "/dashboard/opportunites", "Pipeline de vente et opportunités"),
+            ("Tâches", "/dashboard/taches", "Gestion des tâches"),
+            ("Équipes", "/dashboard/equipes", "Gestion des équipes"),
+            ("Employés", "/dashboard/employes", "Gestion des employés"),
+            ("Facturation", "/dashboard/facturation", "Factures et finances"),
+            ("Trésorerie", "/dashboard/tresorerie", "Transactions et comptabilité"),
+            ("Calendrier", "/dashboard/calendrier", "Événements et rendez-vous"),
+            ("Feuilles de temps", "/dashboard/feuilles-temps", "Suivi du temps"),
+            ("Vacances", "/dashboard/vacances", "Demandes de congés"),
+            ("Paramètres Leo", "/settings/leo", "Configuration de l'assistant IA"),
+        ]
+        for name, path, desc in pages_info:
+            structure_parts.append(f"  - {name} ({path}): {desc}")
+        structure_parts.append("")
+        
+        # Main database entities/tables
+        structure_parts.append("ENTITÉS PRINCIPALES (Tables):")
+        entities_info = [
+            ("contacts", "Contacts - personnes avec entreprises"),
+            ("companies", "Entreprises - clients et prospects"),
+            ("projects", "Projets - projets et missions"),
+            ("project_tasks", "Tâches de projet"),
+            ("opportunites", "Opportunités - deals et ventes"),
+            ("pipelines", "Pipelines de vente"),
+            ("employees", "Employés - ressources humaines"),
+            ("clients", "Clients - entreprises clientes"),
+            ("quotes", "Devis"),
+            ("invoices", "Factures"),
+            ("transactions", "Transactions financières"),
+            ("bank_accounts", "Comptes bancaires"),
+            ("time_entries", "Feuilles de temps"),
+            ("vacation_requests", "Demandes de vacances"),
+            ("calendar_events", "Événements calendrier"),
+            ("files", "Fichiers et documents"),
+        ]
+        for table, desc in entities_info:
+            structure_parts.append(f"  - {table}: {desc}")
+        structure_parts.append("")
+        
+        # Key relationships
+        structure_parts.append("RELATIONS CLÉS:")
+        relationships = [
+            "Contact → Company (un contact appartient à une entreprise)",
+            "Company → Client (une entreprise peut être un client)",
+            "Opportunite → Company (une opportunité est liée à une entreprise)",
+            "Opportunite → Pipeline (une opportunité appartient à un pipeline)",
+            "Project → Company (un projet est pour une entreprise)",
+            "Project → Employee (un projet a des employés assignés)",
+            "ProjectTask → Project (une tâche appartient à un projet)",
+            "TimeEntry → Project (une feuille de temps est liée à un projet)",
+            "Quote → Company (un devis est pour une entreprise)",
+            "Invoice → Company (une facture est pour une entreprise)",
+        ]
+        for rel in relationships:
+            structure_parts.append(f"  - {rel}")
+        structure_parts.append("")
+        
+        return "\n".join(structure_parts)
+    
     async def build_context_string(
         self,
         data: Dict[str, List[Dict[str, Any]]],
@@ -715,6 +788,16 @@ class LeoContextService:
         """Format data into readable context string - SIMPLIFIED for better AI understanding"""
         context_parts = []
         query_lower = query.lower()
+        
+        # Add structure context for navigation/help queries
+        is_navigation_query = any(phrase in query_lower for phrase in [
+            "où", "where", "comment trouver", "how to find", "page", "module",
+            "structure", "organisation", "naviguer", "navigate", "aide", "help"
+        ])
+        
+        if is_navigation_query:
+            structure_context = await self.get_structure_context()
+            context_parts.append(structure_context)
         
         # Detect counting queries
         is_counting_query = any(phrase in query_lower for phrase in [
@@ -838,5 +921,14 @@ class LeoContextService:
                         line += f" ({employee['email']})"
                     context_parts.append(line)
                 context_parts.append("")
+        
+        # Always add a brief structure summary at the end for context awareness
+        # This helps Leo understand the system structure even for data queries
+        if not is_navigation_query:
+            context_parts.append("")
+            context_parts.append("=== RÉFÉRENCE SYSTÈME ===")
+            context_parts.append("Modules: Dashboard, Contacts, Entreprises, Projets, Opportunités, Tâches, Employés, Facturation, Trésorerie, Calendrier")
+            context_parts.append("Tables: contacts, companies, projects, opportunites, pipelines, employees, invoices, transactions, time_entries")
+            context_parts.append("Relations: Contact→Company, Opportunity→Company→Pipeline, Project→Company→Employee")
         
         return "\n".join(context_parts)
