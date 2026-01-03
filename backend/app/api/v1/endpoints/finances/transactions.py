@@ -72,7 +72,30 @@ async def get_transactions(
         result = await db.execute(query)
         transactions = result.scalars().all()
         
-        return [TransactionResponse.model_validate(t) for t in transactions]
+        # Convert transactions to response format with fallbacks for schema compatibility
+        transaction_responses = []
+        for t in transactions:
+            try:
+                # Fallback: if transaction_date doesn't exist, try to use date
+                if not hasattr(t, 'transaction_date') or t.transaction_date is None:
+                    if hasattr(t, 'date') and t.date is not None:
+                        # Create a new attribute transaction_date from date
+                        t.transaction_date = t.date
+                    else:
+                        logger.warning(f"Transaction {getattr(t, 'id', 'unknown')} has no transaction_date or date")
+                        continue
+                
+                # Fallback: ensure currency exists, default to CAD
+                if not hasattr(t, 'currency') or t.currency is None:
+                    t.currency = 'CAD'
+                
+                transaction_responses.append(TransactionResponse.model_validate(t))
+            except Exception as validation_error:
+                logger.error(f"Error validating transaction {getattr(t, 'id', 'unknown')}: {validation_error}", exc_info=True)
+                # Skip this transaction but continue with others
+                continue
+        
+        return transaction_responses
     except ProgrammingError as e:
         # Check if error is about missing columns
         error_str = str(e).lower()
