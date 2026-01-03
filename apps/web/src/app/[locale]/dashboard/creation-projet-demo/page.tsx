@@ -1,15 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Upload, Edit, Briefcase, Users, DollarSign, Link as LinkIcon, FileText, Download } from 'lucide-react';
-import { Button, Card, Input, Select, Textarea, Modal } from '@/components/ui';
+import { Plus, Upload, Edit, X, Briefcase, Users, Calendar, DollarSign, Link as LinkIcon, FileText, Target, Sparkles, Download } from 'lucide-react';
 
 export default function CreationProjetDemoPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
 
-  // Form data
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -29,7 +27,6 @@ export default function CreationProjetDemoPage() {
     deadline: '',
   });
 
-  // Edit form (pre-filled)
   const [editData, setEditData] = useState({
     name: 'Refonte Site Web Acme Corp',
     description: 'Refonte complète du site web corporate avec nouveau design et CMS',
@@ -82,490 +79,543 @@ export default function CreationProjetDemoPage() {
     { value: '2026', label: '2026' },
   ];
 
+  // Modern Modal Component
+  const ModernModal = ({ isOpen, onClose, title, children, gradient }: any) => {
+    if (!isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div 
+          className="absolute inset-0 bg-black/60 backdrop-blur-md"
+          onClick={onClose}
+        />
+        
+        <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className={`relative overflow-hidden ${gradient}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+            <div className="relative px-8 py-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-3xl font-black text-white" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  {title}
+                </h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 transition-all hover:scale-110"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-900 overflow-y-auto max-h-[calc(90vh-100px)]">
+            <div className="p-8">
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modern Input Component
+  const ModernInput = ({ label, icon: Icon, ...props }: any) => (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+        {Icon && <Icon className="w-4 h-4" />}
+        {label}
+      </label>
+      <input
+        {...props}
+        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 transition-all outline-none font-medium"
+      />
+    </div>
+  );
+
+  // Modern Textarea Component
+  const ModernTextarea = ({ label, icon: Icon, ...props }: any) => (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+        {Icon && <Icon className="w-4 h-4" />}
+        {label}
+      </label>
+      <textarea
+        {...props}
+        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 transition-all outline-none font-medium resize-none"
+      />
+    </div>
+  );
+
+  // Modern Select Component
+  const ModernSelect = ({ label, icon: Icon, options, ...props }: any) => (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300">
+        {Icon && <Icon className="w-4 h-4" />}
+        {label}
+      </label>
+      <select
+        {...props}
+        className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 transition-all outline-none font-medium cursor-pointer"
+      >
+        {options.map((opt: any) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817] opacity-90" />
-        <div className="relative p-8">
-          <h1 className="text-4xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Démo Création de Projets
-          </h1>
-          <p className="text-white/80 text-lg">Cliquez sur les boutons pour voir les popups</p>
+    <div className="space-y-8">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-3xl shadow-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817]" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItMnptMC0ydi0yIDJ6bS0yIDB2Mmgydi0yaC0yem0wLTJ2Mmgydi0yaC0yem0yIDB2Mmgydi0yaC0yem0wIDJ2Mmgydi0yaC0yem0tMiAwdjJoMnYtMmgtMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-30" />
+        <div className="relative px-10 py-12">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Création de Projets
+              </h1>
+              <p className="text-white/90 text-xl font-medium">Design ultra-moderne avec glassmorphism avancé</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Demo Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-lg bg-violet-500/10 border border-violet-500/30">
-              <Plus className="w-6 h-6 text-violet-600" />
-            </div>
-            <div>
-              <h3 className="font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Créer Projet</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Nouveau projet vide</p>
+      {/* Demo Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Create Card */}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 p-[2px] shadow-xl hover:shadow-2xl transition-all hover:scale-105 duration-300">
+          <div className="relative h-full bg-white dark:bg-gray-900 rounded-2xl p-6">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/20 to-purple-600/20 rounded-full blur-3xl" />
+            <div className="relative space-y-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 w-fit shadow-lg">
+                <Plus className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  Créer Projet
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 font-medium">
+                  Nouveau projet avec formulaire vide
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Plus className="w-5 h-5" />
+                Ouvrir
+              </button>
             </div>
           </div>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Ouvrir Modal
-          </Button>
-        </Card>
+        </div>
 
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-              <Edit className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Éditer Projet</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Formulaire pré-rempli</p>
+        {/* Edit Card */}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 p-[2px] shadow-xl hover:shadow-2xl transition-all hover:scale-105 duration-300">
+          <div className="relative h-full bg-white dark:bg-gray-900 rounded-2xl p-6">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/20 to-cyan-600/20 rounded-full blur-3xl" />
+            <div className="relative space-y-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 w-fit shadow-lg">
+                <Edit className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  Éditer Projet
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 font-medium">
+                  Formulaire pré-rempli avec données
+                </p>
+              </div>
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Edit className="w-5 h-5" />
+                Ouvrir
+              </button>
             </div>
           </div>
-          <Button
-            onClick={() => setShowEditModal(true)}
-            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            Ouvrir Modal
-          </Button>
-        </Card>
+        </div>
 
-        <Card className="glass-card p-6 rounded-xl border border-[#A7A2CF]/20">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-              <Upload className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <h3 className="font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Importer</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">CSV / Excel</p>
+        {/* Import Card */}
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 p-[2px] shadow-xl hover:shadow-2xl transition-all hover:scale-105 duration-300">
+          <div className="relative h-full bg-white dark:bg-gray-900 rounded-2xl p-6">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/20 to-emerald-600/20 rounded-full blur-3xl" />
+            <div className="relative space-y-4">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 w-fit shadow-lg">
+                <Upload className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                  Importer
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 font-medium">
+                  Upload CSV ou fichier Excel
+                </p>
+              </div>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Upload className="w-5 h-5" />
+                Ouvrir
+              </button>
             </div>
           </div>
-          <Button
-            onClick={() => setShowImportModal(true)}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Ouvrir Modal
-          </Button>
-        </Card>
+        </div>
       </div>
 
       {/* Create Modal */}
-      <Modal
+      <ModernModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Créer un nouveau projet"
-        size="lg"
+        title="Créer un projet"
+        gradient="bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600"
       >
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Projet créé !'); setShowCreateModal(false); }}>
-          {/* Basic Info */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <Briefcase className="w-5 h-5 text-violet-600" />
-              Informations de base
-            </h3>
+        <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); alert('✨ Projet créé avec succès !'); setShowCreateModal(false); }}>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
+                <Briefcase className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-xl font-black" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Informations de base
+              </h3>
+            </div>
             
-            <Input
+            <ModernInput
               label="Nom du projet *"
+              icon={Target}
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e: any) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Ex: Refonte Site Web"
               required
             />
 
-            <Textarea
+            <ModernTextarea
               label="Description"
+              icon={FileText}
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e: any) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Description détaillée du projet..."
-              rows={3}
+              rows={4}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Select
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ModernSelect
                 label="Statut"
+                icon={Target}
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                onChange={(e: any) => setFormData({ ...formData, status: e.target.value })}
                 options={STATUS_OPTIONS}
               />
 
-              <Select
+              <ModernSelect
                 label="Client"
+                icon={Briefcase}
                 value={formData.client_id}
-                onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
+                onChange={(e: any) => setFormData({ ...formData, client_id: e.target.value })}
                 options={[{ value: '', label: 'Sélectionner...' }, ...CLIENT_OPTIONS]}
               />
             </div>
           </div>
 
-          {/* Team & Stage */}
-          <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <Users className="w-5 h-5 text-blue-600" />
-              Équipe et étape
-            </h3>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-xl font-black" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Équipe et organisation
+              </h3>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Select
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <ModernSelect
                 label="Équipe"
+                icon={Users}
                 value={formData.equipe}
-                onChange={(e) => setFormData({ ...formData, equipe: e.target.value })}
+                onChange={(e: any) => setFormData({ ...formData, equipe: e.target.value })}
                 options={[{ value: '', label: 'Sélectionner...' }, ...EQUIPE_OPTIONS]}
               />
 
-              <Select
+              <ModernSelect
                 label="Étape"
+                icon={Target}
                 value={formData.etape}
-                onChange={(e) => setFormData({ ...formData, etape: e.target.value })}
+                onChange={(e: any) => setFormData({ ...formData, etape: e.target.value })}
                 options={[{ value: '', label: 'Sélectionner...' }, ...ETAPE_OPTIONS]}
               />
 
-              <Select
+              <ModernSelect
                 label="Année"
+                icon={Calendar}
                 value={formData.annee_realisation}
-                onChange={(e) => setFormData({ ...formData, annee_realisation: e.target.value })}
+                onChange={(e: any) => setFormData({ ...formData, annee_realisation: e.target.value })}
                 options={[{ value: '', label: 'Sélectionner...' }, ...ANNEE_OPTIONS]}
               />
             </div>
 
-            <Input
-              label="Contact"
+            <ModernInput
+              label="Contact principal"
+              icon={Users}
               value={formData.contact}
-              onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-              placeholder="Nom du contact principal"
+              onChange={(e: any) => setFormData({ ...formData, contact: e.target.value })}
+              placeholder="Nom du contact"
             />
           </div>
 
-          {/* Budget & Dates */}
-          <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <DollarSign className="w-5 h-5 text-green-600" />
-              Budget et dates
-            </h3>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
+                <DollarSign className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-xl font-black" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Budget et échéances
+              </h3>
+            </div>
 
-            <Input
-              label="Budget"
+            <ModernInput
+              label="Budget ($)"
+              icon={DollarSign}
               type="number"
               value={formData.budget}
-              onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+              onChange={(e: any) => setFormData({ ...formData, budget: e.target.value })}
               placeholder="0"
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <ModernInput
                 label="Date de début"
+                icon={Calendar}
                 type="date"
                 value={formData.start_date}
-                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                onChange={(e: any) => setFormData({ ...formData, start_date: e.target.value })}
               />
 
-              <Input
+              <ModernInput
                 label="Date de fin"
+                icon={Calendar}
                 type="date"
                 value={formData.end_date}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                onChange={(e: any) => setFormData({ ...formData, end_date: e.target.value })}
               />
 
-              <Input
+              <ModernInput
                 label="Deadline"
+                icon={Calendar}
                 type="date"
                 value={formData.deadline}
-                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                onChange={(e: any) => setFormData({ ...formData, deadline: e.target.value })}
               />
             </div>
           </div>
 
-          {/* URLs */}
-          <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <LinkIcon className="w-5 h-5 text-orange-600" />
-              Liens et documents
-            </h3>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 shadow-lg">
+                <LinkIcon className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-xl font-black" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Liens et ressources
+              </h3>
+            </div>
 
-            <Input
-              label="URL Proposition"
-              value={formData.proposal_url}
-              onChange={(e) => setFormData({ ...formData, proposal_url: e.target.value })}
-              placeholder="https://..."
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ModernInput
+                label="URL Proposition"
+                icon={LinkIcon}
+                value={formData.proposal_url}
+                onChange={(e: any) => setFormData({ ...formData, proposal_url: e.target.value })}
+                placeholder="https://..."
+              />
 
-            <Input
-              label="URL Drive"
-              value={formData.drive_url}
-              onChange={(e) => setFormData({ ...formData, drive_url: e.target.value })}
-              placeholder="https://drive.google.com/..."
-            />
+              <ModernInput
+                label="URL Drive"
+                icon={LinkIcon}
+                value={formData.drive_url}
+                onChange={(e: any) => setFormData({ ...formData, drive_url: e.target.value })}
+                placeholder="https://drive.google.com/..."
+              />
 
-            <Input
-              label="URL Slack"
-              value={formData.slack_url}
-              onChange={(e) => setFormData({ ...formData, slack_url: e.target.value })}
-              placeholder="https://slack.com/..."
-            />
+              <ModernInput
+                label="URL Slack"
+                icon={LinkIcon}
+                value={formData.slack_url}
+                onChange={(e: any) => setFormData({ ...formData, slack_url: e.target.value })}
+                placeholder="https://slack.com/..."
+              />
 
-            <Input
-              label="URL Échéancier"
-              value={formData.echeancier_url}
-              onChange={(e) => setFormData({ ...formData, echeancier_url: e.target.value })}
-              placeholder="https://..."
-            />
+              <ModernInput
+                label="URL Échéancier"
+                icon={LinkIcon}
+                value={formData.echeancier_url}
+                onChange={(e: any) => setFormData({ ...formData, echeancier_url: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
+          <div className="flex gap-4 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
+            <button
               type="button"
-              variant="outline"
               onClick={() => setShowCreateModal(false)}
-              className="flex-1"
+              className="flex-1 py-4 rounded-xl border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 font-bold transition-all hover:scale-105"
             >
               Annuler
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
-              className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+              className="flex-1 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center gap-2"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-5 h-5" />
               Créer le projet
-            </Button>
+            </button>
           </div>
         </form>
-      </Modal>
+      </ModernModal>
 
-      {/* Edit Modal (Pre-filled) */}
-      <Modal
+      {/* Edit Modal */}
+      <ModernModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         title="Éditer le projet"
-        size="lg"
+        gradient="bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600"
       >
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Projet modifié !'); setShowEditModal(false); }}>
-          {/* Same structure but with editData */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <Briefcase className="w-5 h-5 text-blue-600" />
-              Informations de base
-            </h3>
+        <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); alert('✨ Projet modifié avec succès !'); setShowEditModal(false); }}>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b-2 border-gray-200 dark:border-gray-700">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg">
+                <Briefcase className="w-5 h-5 text-white" />
+              </div>
+              <h3 className="text-xl font-black" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Informations de base
+              </h3>
+            </div>
             
-            <Input
+            <ModernInput
               label="Nom du projet *"
+              icon={Target}
               value={editData.name}
-              onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+              onChange={(e: any) => setEditData({ ...editData, name: e.target.value })}
               required
             />
 
-            <Textarea
+            <ModernTextarea
               label="Description"
+              icon={FileText}
               value={editData.description}
-              onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-              rows={3}
+              onChange={(e: any) => setEditData({ ...editData, description: e.target.value })}
+              rows={4}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Select
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ModernSelect
                 label="Statut"
+                icon={Target}
                 value={editData.status}
-                onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                onChange={(e: any) => setEditData({ ...editData, status: e.target.value })}
                 options={STATUS_OPTIONS}
               />
 
-              <Select
+              <ModernSelect
                 label="Client"
+                icon={Briefcase}
                 value={editData.client_id}
-                onChange={(e) => setEditData({ ...editData, client_id: e.target.value })}
+                onChange={(e: any) => setEditData({ ...editData, client_id: e.target.value })}
                 options={CLIENT_OPTIONS}
               />
             </div>
           </div>
 
-          <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <Users className="w-5 h-5 text-blue-600" />
-              Équipe et étape
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Select
-                label="Équipe"
-                value={editData.equipe}
-                onChange={(e) => setEditData({ ...editData, equipe: e.target.value })}
-                options={EQUIPE_OPTIONS}
-              />
-
-              <Select
-                label="Étape"
-                value={editData.etape}
-                onChange={(e) => setEditData({ ...editData, etape: e.target.value })}
-                options={ETAPE_OPTIONS}
-              />
-
-              <Select
-                label="Année"
-                value={editData.annee_realisation}
-                onChange={(e) => setEditData({ ...editData, annee_realisation: e.target.value })}
-                options={ANNEE_OPTIONS}
-              />
-            </div>
-
-            <Input
-              label="Contact"
-              value={editData.contact}
-              onChange={(e) => setEditData({ ...editData, contact: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <DollarSign className="w-5 h-5 text-green-600" />
-              Budget et dates
-            </h3>
-
-            <Input
-              label="Budget"
-              type="number"
-              value={editData.budget}
-              onChange={(e) => setEditData({ ...editData, budget: e.target.value })}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
-                label="Date de début"
-                type="date"
-                value={editData.start_date}
-                onChange={(e) => setEditData({ ...editData, start_date: e.target.value })}
-              />
-
-              <Input
-                label="Date de fin"
-                type="date"
-                value={editData.end_date}
-                onChange={(e) => setEditData({ ...editData, end_date: e.target.value })}
-              />
-
-              <Input
-                label="Deadline"
-                type="date"
-                value={editData.deadline}
-                onChange={(e) => setEditData({ ...editData, deadline: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              <LinkIcon className="w-5 h-5 text-orange-600" />
-              Liens et documents
-            </h3>
-
-            <Input
-              label="URL Proposition"
-              value={editData.proposal_url}
-              onChange={(e) => setEditData({ ...editData, proposal_url: e.target.value })}
-            />
-
-            <Input
-              label="URL Drive"
-              value={editData.drive_url}
-              onChange={(e) => setEditData({ ...editData, drive_url: e.target.value })}
-            />
-
-            <Input
-              label="URL Slack"
-              value={editData.slack_url}
-              onChange={(e) => setEditData({ ...editData, slack_url: e.target.value })}
-            />
-
-            <Input
-              label="URL Échéancier"
-              value={editData.echeancier_url}
-              onChange={(e) => setEditData({ ...editData, echeancier_url: e.target.value })}
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
+          <div className="flex gap-4 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
+            <button
               type="button"
-              variant="outline"
               onClick={() => setShowEditModal(false)}
-              className="flex-1"
+              className="flex-1 py-4 rounded-xl border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 font-bold transition-all hover:scale-105"
             >
               Annuler
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
-              className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+              className="flex-1 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center gap-2"
             >
-              <Edit className="w-4 h-4 mr-2" />
+              <Edit className="w-5 h-5" />
               Enregistrer
-            </Button>
+            </button>
           </div>
         </form>
-      </Modal>
+      </ModernModal>
 
       {/* Import Modal */}
-      <Modal
+      <ModernModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         title="Importer des projets"
-        size="md"
+        gradient="bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600"
       >
-        <div className="space-y-6">
-          <div className="text-center">
-            <div className="inline-flex p-4 rounded-full bg-green-500/10 border border-green-500/30 mb-4">
-              <Upload className="w-8 h-8 text-green-600" />
+        <div className="space-y-8">
+          <div className="text-center space-y-4">
+            <div className="inline-flex p-6 rounded-3xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-2xl">
+              <Upload className="w-12 h-12 text-white" />
             </div>
-            <h3 className="text-lg font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              Importer depuis un fichier
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Formats acceptés : CSV, Excel (.xlsx, .xls)
-            </p>
+            <div>
+              <h3 className="text-2xl font-black mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                Importer depuis un fichier
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 font-medium">
+                Formats acceptés : CSV, Excel (.xlsx, .xls)
+              </p>
+            </div>
           </div>
 
-          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-green-500 transition-colors cursor-pointer">
-            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-sm font-medium mb-1">Glissez-déposez votre fichier ici</p>
-            <p className="text-xs text-gray-500">ou cliquez pour parcourir</p>
-            <input type="file" className="hidden" accept=".csv,.xlsx,.xls" />
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+            <div className="relative border-4 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-12 text-center hover:border-green-500 transition-all cursor-pointer bg-gray-50 dark:bg-gray-800">
+              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-lg font-bold mb-2">Glissez-déposez votre fichier ici</p>
+              <p className="text-sm text-gray-500">ou cliquez pour parcourir</p>
+              <input type="file" className="hidden" accept=".csv,.xlsx,.xls" />
+            </div>
           </div>
 
-          <div className="space-y-3">
-            <h4 className="text-sm font-bold">Format attendu :</h4>
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-xs font-mono">
-              <div className="text-gray-600 dark:text-gray-400">
-                nom, description, client, equipe, etape, annee, budget
-              </div>
+          <div className="space-y-4">
+            <h4 className="text-lg font-black" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+              Format attendu :
+            </h4>
+            <div className="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-xl p-4 font-mono text-sm shadow-inner">
+              nom, description, client, equipe, etape, annee, budget
             </div>
-            <Button variant="outline" className="w-full">
-              <Download className="w-4 h-4 mr-2" />
+            <button className="w-full py-4 rounded-xl border-2 border-gray-300 dark:border-gray-600 hover:border-green-500 dark:hover:border-green-500 font-bold transition-all hover:scale-105 flex items-center justify-center gap-2">
+              <Download className="w-5 h-5" />
               Télécharger le modèle CSV
-            </Button>
+            </button>
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              type="button"
-              variant="outline"
+          <div className="flex gap-4 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
+            <button
               onClick={() => setShowImportModal(false)}
-              className="flex-1"
+              className="flex-1 py-4 rounded-xl border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 font-bold transition-all hover:scale-105"
             >
               Annuler
-            </Button>
-            <Button
-              onClick={() => { alert('Import lancé !'); setShowImportModal(false); }}
-              className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+            </button>
+            <button
+              onClick={() => { alert('✨ Import lancé avec succès !'); setShowImportModal(false); }}
+              className="flex-1 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 flex items-center justify-center gap-2"
             >
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="w-5 h-5" />
               Importer
-            </Button>
+            </button>
           </div>
         </div>
-      </Modal>
+      </ModernModal>
     </div>
   );
 }
