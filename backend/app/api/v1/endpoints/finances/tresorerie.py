@@ -7,10 +7,11 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status, File, Uplo
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, cast, String, case, text
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import zipfile
 import os
+import json
 from io import BytesIO
 
 from app.core.database import get_db
@@ -68,34 +69,13 @@ async def list_bank_accounts(
         result = await db.execute(query)
         accounts = result.scalars().all()
         
-        # Calculate current balance for each account
-        # Note: Transaction model doesn't have bank_account_id, so we use all user transactions
+        # Use initial_balance as current_balance for manual balance management
+        # This allows users to set balances directly without calculation from transactions
         accounts_with_balance = []
         for account in accounts:
-            # Calculate balance: initial_balance + sum(entries) - sum(exits)
-            # Since Transaction doesn't have bank_account_id, we use all user transactions
-            entries_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                and_(
-                    Transaction.user_id == current_user.id,
-                    Transaction.type == TransactionTypeEnum.REVENUE,
-                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-                )
-            )
-            exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                and_(
-                    Transaction.user_id == current_user.id,
-                    Transaction.type == TransactionTypeEnum.EXPENSE,
-                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-                )
-            )
-            
-            entries_result = await db.execute(entries_query)
-            exits_result = await db.execute(exits_query)
-            
-            entries_sum = entries_result.scalar() or Decimal(0)
-            exits_sum = exits_result.scalar() or Decimal(0)
-            
-            current_balance = account.initial_balance + entries_sum - exits_sum
+            # Use initial_balance as current_balance for direct balance management
+            # Users can set the balance directly, and it will be saved and displayed as-is
+            current_balance = account.initial_balance
             
             account_dict = {
                 **account.__dict__,
@@ -166,30 +146,9 @@ async def get_bank_account(
                 detail="Bank account not found"
             )
         
-        # Calculate current balance
-        # Note: Transaction model doesn't have bank_account_id, using all user transactions
-        entries_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.type == TransactionTypeEnum.REVENUE,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-            )
-        )
-        exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.type == TransactionTypeEnum.EXPENSE,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-            )
-        )
-        
-        entries_result = await db.execute(entries_query)
-        exits_result = await db.execute(exits_query)
-        
-        entries_sum = entries_result.scalar() or Decimal(0)
-        exits_sum = exits_result.scalar() or Decimal(0)
-        
-        current_balance = account.initial_balance + entries_sum - exits_sum
+        # Use initial_balance as current_balance for manual balance management
+        # Users can set the balance directly, and it will be saved and displayed as-is
+        current_balance = account.initial_balance
         
         account_dict = {
             **account.__dict__,
@@ -233,36 +192,50 @@ async def update_bank_account(
         
         # Update fields
         update_data = account_data.model_dump(exclude_unset=True)
+        
+        # Check if only initial_balance is being updated (manual balance update)
+        is_manual_balance_update = (
+            'initial_balance' in update_data and 
+            len(update_data) == 1
+        )
+        
         for field, value in update_data.items():
             setattr(account, field, value)
         
         await db.commit()
         await db.refresh(account)
         
-        # Calculate current balance
-        # Note: Transaction model doesn't have bank_account_id, using all user transactions
-        entries_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.type == TransactionTypeEnum.REVENUE,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
+        # If this is a manual balance update (only initial_balance changed),
+        # use the initial_balance as the current_balance directly
+        # Otherwise, calculate current balance from transactions
+        if is_manual_balance_update:
+            # Manual balance update: use initial_balance as current_balance
+            current_balance = account.initial_balance
+        else:
+            # Calculate current balance from transactions
+            # Note: Transaction model doesn't have bank_account_id, using all user transactions
+            entries_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+                and_(
+                    Transaction.user_id == current_user.id,
+                    Transaction.type == TransactionTypeEnum.REVENUE,
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
+                )
             )
-        )
-        exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.type == TransactionTypeEnum.EXPENSE,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
+            exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+                and_(
+                    Transaction.user_id == current_user.id,
+                    Transaction.type == TransactionTypeEnum.EXPENSE,
+                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
+                )
             )
-        )
-        
-        entries_result = await db.execute(entries_query)
-        exits_result = await db.execute(exits_query)
-        
-        entries_sum = entries_result.scalar() or Decimal(0)
-        exits_sum = exits_result.scalar() or Decimal(0)
-        
-        current_balance = account.initial_balance + entries_sum - exits_sum
+            
+            entries_result = await db.execute(entries_query)
+            exits_result = await db.execute(exits_query)
+            
+            entries_sum = entries_result.scalar() or Decimal(0)
+            exits_sum = exits_result.scalar() or Decimal(0)
+            
+            current_balance = account.initial_balance + entries_sum - exits_sum
         
         account_dict = {
             **account.__dict__,
@@ -2027,12 +2000,12 @@ async def import_transactions(
             
             # Normalize type
             type_str = str(transaction_type).lower().strip()
-            if type_str in ['entree', 'entrée', 'entry', 'entrées']:
-                transaction_type = 'entry'
-            elif type_str in ['sortie', 'exit', 'sorties']:
-                transaction_type = 'exit'
-            elif type_str not in ['entry', 'exit']:
-                return False, f"Invalid type: {transaction_type}. Must be 'entry' or 'exit'"
+            if type_str in ['entree', 'entrée', 'entry', 'entrées', 'revenue', 'revenu']:
+                transaction_type = 'entry'  # For validation purposes
+            elif type_str in ['sortie', 'exit', 'sorties', 'expense', 'depense', 'dépense']:
+                transaction_type = 'exit'  # For validation purposes
+            elif type_str not in ['entry', 'exit', 'revenue', 'expense', 'entree', 'sortie']:
+                return False, f"Invalid type: {transaction_type}. Must be 'entry'/'revenue' or 'exit'/'expense'"
             
             amount = get_field_value(row_data, ['amount', 'montant', 'montant_transaction'])
             if not amount:
@@ -2098,9 +2071,26 @@ async def import_transactions(
                 "preview": result['data'][:5] if result['data'] else []
             }
         
-        # Get default bank account if not provided
-        default_account_id = bank_account_id
-        if not default_account_id:
+        # Note: Transaction model doesn't have bank_account_id field
+        # We verify the bank account exists for reference but don't store it in the transaction
+        account = None
+        if bank_account_id:
+            account_result = await db.execute(
+                select(BankAccount).where(
+                    and_(
+                        BankAccount.id == bank_account_id,
+                        BankAccount.user_id == current_user.id
+                    )
+                )
+            )
+            account = account_result.scalar_one_or_none()
+            if not account:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Bank account not found"
+                )
+        else:
+            # Try to get a default account for reference (optional)
             account_result = await db.execute(
                 select(BankAccount).where(
                     and_(
@@ -2109,29 +2099,9 @@ async def import_transactions(
                     )
                 ).limit(1)
             )
-            default_account = account_result.scalar_one_or_none()
-            if not default_account:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="No active bank account found. Please create one or specify bank_account_id"
-                )
-            default_account_id = default_account.id
-        
-        # Verify bank account belongs to user
-        account_result = await db.execute(
-            select(BankAccount).where(
-                and_(
-                    BankAccount.id == default_account_id,
-                    BankAccount.user_id == current_user.id
-                )
-            )
-        )
-        account = account_result.scalar_one_or_none()
-        if not account:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Bank account not found"
-            )
+            account = account_result.scalar_one_or_none()
+            if not account:
+                logger.warning(f"No active bank account found for user {current_user.id}, transactions will be created without account reference")
         
         # Process valid rows and create transactions
         created_transactions = []
@@ -2145,10 +2115,10 @@ async def import_transactions(
                     'type', 'type_transaction', 'entree_sortie', 'entry_exit'
                 ])
                 type_str = str(transaction_type).lower().strip()
-                if type_str in ['entree', 'entrée', 'entry', 'entrées']:
-                    transaction_type = 'entry'
+                if type_str in ['entree', 'entrée', 'entry', 'entrées', 'revenue', 'revenu']:
+                    transaction_type_enum = TransactionTypeEnum.REVENUE
                 else:
-                    transaction_type = 'exit'
+                    transaction_type_enum = TransactionTypeEnum.EXPENSE
                 
                 amount = Decimal(str(get_field_value(row_data, ['amount', 'montant', 'montant_transaction'])))
                 
@@ -2210,19 +2180,30 @@ async def import_transactions(
                 reference_number = get_field_value(row_data, ['reference', 'reference_number', 'numero_reference', 'numero'])
                 notes = get_field_value(row_data, ['notes', 'remarques', 'commentaires'])
                 
+                # Build transaction metadata for optional fields that don't have dedicated columns
+                transaction_metadata = {}
+                if payment_method:
+                    transaction_metadata['payment_method'] = str(payment_method)
+                if reference_number:
+                    transaction_metadata['reference_number'] = str(reference_number)
+                
+                # Ensure transaction_date has timezone info
+                if transaction_date and transaction_date.tzinfo is None:
+                    # Assume UTC if no timezone info
+                    transaction_date = transaction_date.replace(tzinfo=timezone.utc)
+                
                 # Create transaction
+                # Note: Transaction model doesn't have bank_account_id field, so we ignore it
                 transaction = Transaction(
                     user_id=current_user.id,
-                    bank_account_id=default_account_id,
-                    type=transaction_type,
+                    type=transaction_type_enum,
                     amount=amount,
-                    date=transaction_date,
+                    transaction_date=transaction_date,
                     description=description,
                     notes=notes,
                     category_id=category_id,
                     status=transaction_status,
-                    payment_method=payment_method,
-                    reference_number=reference_number
+                    transaction_metadata=json.dumps(transaction_metadata) if transaction_metadata else None
                 )
                 
                 db.add(transaction)
@@ -2256,7 +2237,7 @@ async def import_transactions(
             "transactions": [
                 {
                     "id": t.id,
-                    "type": t.type,
+                    "type": t.type.value if hasattr(t.type, 'value') else str(t.type),
                     "amount": float(t.amount),
                     "date": t.transaction_date.isoformat() if t.transaction_date else None,
                     "description": t.description
