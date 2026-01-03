@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Bug, X } from 'lucide-react';
+import { useState } from 'react';
+import { Bug } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 import { FeedbackForm } from './FeedbackForm';
 import Button from '@/components/ui/Button';
