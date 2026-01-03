@@ -153,15 +153,38 @@ async def list_facturations(
             for payment in invoice.payments
         ]
         
+        # Safely parse JSON fields
+        try:
+            client_data = invoice.client_data
+            if not isinstance(client_data, dict):
+                if isinstance(client_data, str):
+                    client_data = json.loads(client_data) if client_data else {}
+                else:
+                    client_data = {}
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.warning(f"Error parsing client_data for invoice {invoice.id}: {e}")
+            client_data = {}
+        
+        try:
+            line_items = invoice.line_items
+            if not isinstance(line_items, list):
+                if isinstance(line_items, str):
+                    line_items = json.loads(line_items) if line_items else []
+                else:
+                    line_items = []
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.warning(f"Error parsing line_items for invoice {invoice.id}: {e}")
+            line_items = []
+        
         invoice_data = {
             "id": invoice.id,
             "user_id": invoice.user_id,
             "invoice_number": invoice.invoice_number,
             "project_id": invoice.project_id,
-            "client_data": invoice.client_data if isinstance(invoice.client_data, dict) else json.loads(invoice.client_data) if invoice.client_data else {},
-            "line_items": invoice.line_items if isinstance(invoice.line_items, list) else json.loads(invoice.line_items) if invoice.line_items else [],
+            "client_data": client_data,
+            "line_items": line_items,
             "subtotal": invoice.subtotal,
-            "tax_rate": float(invoice.tax_rate),
+            "tax_rate": float(invoice.tax_rate) if invoice.tax_rate is not None else 0.0,
             "tax_amount": invoice.tax_amount,
             "total": invoice.total,
             "issue_date": invoice.issue_date,
@@ -178,7 +201,12 @@ async def list_facturations(
             "updated_at": invoice.updated_at,
             "payments": payments,
         }
-        invoice_responses.append(FinanceInvoiceResponse(**invoice_data))
+        try:
+            invoice_responses.append(FinanceInvoiceResponse(**invoice_data))
+        except Exception as e:
+            logger.error(f"Error creating FinanceInvoiceResponse for invoice {invoice.id}: {e}", exc_info=True)
+            # Skip this invoice if it can't be serialized
+            continue
     
     return FinanceInvoiceListResponse(
         items=invoice_responses,
