@@ -94,6 +94,15 @@ def _get_expense_account_model():
         logger.debug(f"ExpenseAccount model not available: {e}")
         return None, None
 
+def _get_transaction_model():
+    """Get Transaction model from app.models to avoid MetaData conflicts"""
+    try:
+        from app.models import Transaction, TransactionStatus
+        return Transaction, TransactionStatus
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"Transaction model not available: {e}")
+        return None, None
+
 
 class LeoContextService:
     """Service for building ERP context for Leo"""
@@ -116,6 +125,7 @@ class LeoContextService:
         task_keywords = ["tâche", "task", "tache", "taches", "tâches", "en cours", "à faire", "todo", "doing", "done", "assigné", "assignee", "assignation"]
         vacation_keywords = ["vacance", "vacances", "congé", "congés", "holiday", "holidays", "demande", "demandes", "request", "requests"]
         expense_keywords = ["dépense", "dépenses", "expense", "expenses", "compte de dépense", "expense account", "remboursement", "reimbursement"]
+        transaction_keywords = ["transaction", "transactions", "finances", "trésorerie", "argent", "cash", "liquidité", "liquidités", "manquer d'argent"]
         invoice_keywords = ["facture", "invoice", "facturation", "facturé"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
         employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés", "qui sont nos", "qui sont mes"]
@@ -172,6 +182,7 @@ class LeoContextService:
             "tasks": any(word in query_lower for word in task_keywords),
             "vacation_requests": any(word in query_lower for word in vacation_keywords),
             "expense_accounts": any(word in query_lower for word in expense_keywords),
+            "transactions": any(word in query_lower for word in transaction_keywords),
             "invoices": any(word in query_lower for word in invoice_keywords),
             "events": any(word in query_lower for word in event_keywords),
             "employees": is_employee_query if emp_available else False,
@@ -982,6 +993,73 @@ class LeoContextService:
             logger.error(f"Error getting relevant expense accounts: {e}", exc_info=True)
             return []
 
+    async def get_relevant_transactions(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant transactions based on query"""
+        Transaction, TransactionStatus = _get_transaction_model()
+        if Transaction is None:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            query_lower = query.lower()
+            
+            # Check if counting query
+            is_counting_query = any(phrase in query_lower for phrase in [
+                "combien", "how many", "nombre", "total", "count", "quantité"
+            ])
+            
+            # Detect if query is about expenses (outgoing money)
+            is_expense_query = any(phrase in query_lower for phrase in [
+                "dépense", "dépenses", "expense", "expenses", "sortie", "sorties"
+            ])
+            
+            # Build query with tenant scoping
+            stmt = select(Transaction)
+            stmt = scope_query(stmt, Transaction)
+            
+            # Filter by type if expense query
+            if is_expense_query:
+                from app.models import TransactionType
+                stmt = stmt.where(Transaction.type == TransactionType.EXPENSE)
+            
+            # For counting queries, increase limit significantly
+            if is_counting_query:
+                limit = min(limit * 10, 500)
+                logger.info(f"Counting transaction query detected - returning all (limit: {limit})")
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            transactions = result.scalars().all()
+            
+            # Format results
+            formatted = []
+            for trans in transactions:
+                formatted.append({
+                    "id": trans.id,
+                    "description": trans.description,
+                    "amount": float(trans.amount) if trans.amount else 0.0,
+                    "type": trans.type.value if hasattr(trans.type, 'value') else str(trans.type),
+                    "status": trans.status.value if hasattr(trans.status, 'value') else str(trans.status),
+                    "date": trans.transaction_date.isoformat() if trans.transaction_date else None,
+                    "currency": trans.currency,
+                })
+            
+            logger.debug(f"Found {len(formatted)} transactions for query: {query}")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant transactions: {e}", exc_info=True)
+            return []
+
     async def get_relevant_data(
         self,
         user_id: int,
@@ -1017,6 +1095,9 @@ class LeoContextService:
         
         if data_types.get("expense_accounts"):
             result["expense_accounts"] = await self.get_relevant_expense_accounts(user_id, query)
+        
+        if data_types.get("transactions"):
+            result["transactions"] = await self.get_relevant_transactions(user_id, query)
         
         return result
 
@@ -1169,6 +1250,12 @@ class LeoContextService:
                     summary_parts.append(f"DÉPENSES EN ATTENTE: {pending}")
                 else:
                     summary_parts.append(f"COMPTES DÉPENSES: {len(eas)} ({approved} approuvés, {pending} en attente)")
+            if data.get("transactions"):
+                transactions = data["transactions"]
+                expenses = [t for t in transactions if t.get("type") == "expense"]
+                total_expenses = sum(float(t.get("amount", 0) or 0) for t in expenses)
+                if is_counting_query:
+                    summary_parts.append(f"TRANSACTIONS: {len(transactions)} (Dépenses: {len(expenses)}, Total: {total_expenses:,.2f}€)")
             
             if summary_parts:
                 context_parts.append("RÉSUMÉ: " + " | ".join(summary_parts))
@@ -1362,6 +1449,38 @@ class LeoContextService:
                         line = f"- {ea['title']}"
                         if ea.get("total_amount"):
                             line += f": {ea['total_amount']:.2f} {ea.get('currency', 'EUR')}"
+                        context_parts.append(line)
+                context_parts.append("")
+        
+        if data.get("transactions"):
+            transactions = data["transactions"]
+            expenses = [t for t in transactions if t.get("type") == "expense"]
+            income = [t for t in transactions if t.get("type") == "income"]
+            total_expenses = sum(float(t.get("amount", 0) or 0) for t in expenses)
+            total_income = sum(float(t.get("amount", 0) or 0) for t in income)
+            
+            query_lower = query.lower()
+            wants_list = any(phrase in query_lower for phrase in ["nomme", "liste", "list", "donne", "montre", "affiche"])
+            
+            if is_counting_query and not wants_list:
+                context_parts.append(f"TRANSACTIONS: {len(transactions)} (Dépenses: {len(expenses)} = {total_expenses:,.2f}€, Revenus: {len(income)} = {total_income:,.2f}€)")
+            else:
+                context_parts.append(f"=== TRANSACTIONS ({len(transactions)}) ===")
+                if expenses:
+                    context_parts.append(f"Dépenses ({len(expenses)}, Total: {total_expenses:,.2f}€):")
+                    for trans in expenses[:20]:
+                        line = f"- {trans['description']}"
+                        if trans.get("amount"):
+                            line += f": {trans['amount']:,.2f} {trans.get('currency', 'EUR')}"
+                        if trans.get("date"):
+                            line += f" [{trans['date']}]"
+                        context_parts.append(line)
+                if income and wants_list:
+                    context_parts.append(f"Revenus ({len(income)}, Total: {total_income:,.2f}€):")
+                    for trans in income[:10]:
+                        line = f"- {trans['description']}"
+                        if trans.get("amount"):
+                            line += f": {trans['amount']:,.2f} {trans.get('currency', 'EUR')}"
                         context_parts.append(line)
             context_parts.append("")
         
