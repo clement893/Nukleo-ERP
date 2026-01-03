@@ -25,7 +25,7 @@ from app.core.logging import logger
 router = APIRouter()
 
 
-@router.get("/projects/{project_id}/budget-items", response_model=List[ProjectBudgetItemSchema])
+@router.get("/{project_id}/budget-items", response_model=List[ProjectBudgetItemSchema])
 async def get_project_budget_items(
     project_id: int,
     db: AsyncSession = Depends(get_db),
@@ -71,7 +71,7 @@ async def get_project_budget_items(
         )
 
 
-@router.get("/projects/{project_id}/budget-items/summary", response_model=ProjectBudgetSummary)
+@router.get("/{project_id}/budget-items/summary", response_model=ProjectBudgetSummary)
 async def get_project_budget_summary(
     project_id: int,
     db: AsyncSession = Depends(get_db),
@@ -132,7 +132,7 @@ async def get_project_budget_summary(
         )
 
 
-@router.post("/projects/{project_id}/budget-items", response_model=ProjectBudgetItemSchema, status_code=http_status.HTTP_201_CREATED)
+@router.post("/{project_id}/budget-items", response_model=ProjectBudgetItemSchema, status_code=http_status.HTTP_201_CREATED)
 async def create_project_budget_item(
     project_id: int,
     item_data: ProjectBudgetItemCreate,
@@ -189,7 +189,7 @@ async def create_project_budget_item(
         )
 
 
-@router.put("/projects/{project_id}/budget-items/{item_id}", response_model=ProjectBudgetItemSchema)
+@router.put("/{project_id}/budget-items/{item_id}", response_model=ProjectBudgetItemSchema)
 async def update_project_budget_item(
     project_id: int,
     item_id: int,
@@ -257,7 +257,7 @@ async def update_project_budget_item(
         )
 
 
-@router.delete("/projects/{project_id}/budget-items/{item_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+@router.delete("/{project_id}/budget-items/{item_id}", status_code=http_status.HTTP_204_NO_CONTENT)
 async def delete_project_budget_item(
     project_id: int,
     item_id: int,
