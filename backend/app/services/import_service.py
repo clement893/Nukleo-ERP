@@ -48,7 +48,27 @@ class ImportService:
             # Try with error handling
             content = file_content.decode(encoding, errors='ignore')
         
+        logger.info(f"CSV content decoded, length: {len(content)} chars, first 500 chars: {content[:500]}")
+        
+        # Check if content is empty
+        if not content or not content.strip():
+            logger.warning("CSV content is empty after decoding")
+            return {
+                'data': [],
+                'errors': [{'row': 0, 'data': {}, 'error': 'File is empty or could not be decoded'}],
+                'warnings': [],
+                'total_rows': 0,
+                'valid_rows': 0,
+                'invalid_rows': 0
+            }
+        
         reader = csv.DictReader(StringIO(content), delimiter=delimiter)
+        
+        # Log fieldnames
+        if reader.fieldnames:
+            logger.info(f"CSV fieldnames detected: {reader.fieldnames}")
+        else:
+            logger.warning("No CSV fieldnames detected - file might be empty or malformed")
         
         data = []
         errors = []
@@ -56,8 +76,16 @@ class ImportService:
         row_num = 0
         
         for row_num, row in enumerate(reader, start=1):
-            # Clean empty values
-            cleaned_row = {k: v.strip() if v else None for k, v in row.items()}
+            logger.debug(f"Processing CSV row {row_num}: {dict(row)}")
+            # Clean empty values - handle None and empty strings
+            cleaned_row = {}
+            for k, v in row.items():
+                if v is None:
+                    cleaned_row[k] = None
+                elif isinstance(v, str):
+                    cleaned_row[k] = v.strip() if v.strip() else None
+                else:
+                    cleaned_row[k] = v
             
             # Validate if validator provided
             if validator:

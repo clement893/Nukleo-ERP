@@ -566,20 +566,30 @@ async def import_transactions(
                 detail="Unsupported file format. Supported: CSV, Excel (.xlsx, .xls), or ZIP"
             )
         
-        # Helper function to get field value (case-insensitive)
+        # Helper function to get field value (case-insensitive, handles accents)
+        def normalize_key(key: str) -> str:
+            """Normalize key by removing accents and converting to lowercase"""
+            import unicodedata
+            # Remove accents
+            nfd = unicodedata.normalize('NFD', key.lower().strip())
+            return ''.join(c for c in nfd if unicodedata.category(c) != 'Mn')
+        
         def get_field_value(row_data: Dict[str, Any], possible_keys: List[str]) -> Any:
+            # Normalize all keys for comparison
+            normalized_row_keys = {normalize_key(k): (k, v) for k, v in row_data.items()}
+            
             for key in possible_keys:
-                for row_key, value in row_data.items():
-                    if row_key.lower().strip() == key.lower().strip():
-                        return value
+                normalized_key = normalize_key(key)
+                if normalized_key in normalized_row_keys:
+                    return normalized_row_keys[normalized_key][1]
             return None
         
         # Validate transaction row
         def validate_transaction(row_data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
             """Validate transaction row"""
-            # Check type
+            # Check type - support both English and French column names
             transaction_type = get_field_value(row_data, [
-                'type', 'type_transaction', 'revenue_expense'
+                'type', 'type_transaction', 'revenue_expense', 'type revenu'
             ])
             if not transaction_type:
                 return False, "Missing required field: type"
@@ -592,15 +602,17 @@ async def import_transactions(
             else:
                 return False, f"Invalid type: {transaction_type}. Must be 'revenue' or 'expense'"
             
-            # Check description
+            # Check description - support French column names
             description = get_field_value(row_data, [
                 'description', 'libelle', 'libellé', 'description_transaction'
             ])
             if not description:
                 return False, "Missing required field: description"
             
-            # Check amount
-            amount = get_field_value(row_data, ['amount', 'montant', 'montant_ht'])
+            # Check amount - support French column names (Montant HT)
+            amount = get_field_value(row_data, [
+                'amount', 'montant', 'montant_ht', 'montant ht'
+            ])
             if not amount:
                 return False, "Missing required field: amount"
             
@@ -611,32 +623,41 @@ async def import_transactions(
             except (ValueError, TypeError):
                 return False, f"Invalid amount: {amount}"
             
-            # Check transaction date
+            # Check transaction date - support French column names (Date Emission)
             date_str = get_field_value(row_data, [
                 'transaction_date', 'date_transaction', 'date_emission', 
-                'date_émission', 'date', 'date_operation'
+                'date_émission', 'date emission', 'date', 'date_operation'
             ])
             if not date_str:
                 return False, "Missing required field: transaction_date"
+            
+            # Skip validation for default/placeholder dates like 1970-01-01
+            if isinstance(date_str, str) and date_str.strip() in ['1970-01-01', '1900-01-01', '']:
+                return False, f"Invalid date: {date_str} (default/placeholder date)"
             
             try:
                 if isinstance(date_str, datetime):
                     pass
                 elif isinstance(date_str, str):
-                    for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d %H:%M:%S']:
+                    for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d %H:%M:%S', '%d-%m-%Y']:
                         try:
-                            datetime.strptime(date_str, fmt)
+                            parsed_date = datetime.strptime(date_str.strip(), fmt)
+                            # Check if date is reasonable (not before 1900)
+                            if parsed_date.year < 1900:
+                                return False, f"Date too old: {date_str}"
                             break
                         except ValueError:
                             continue
                     else:
                         return False, f"Invalid date format: {date_str}"
-            except Exception:
-                return False, f"Invalid date: {date_str}"
+            except Exception as e:
+                return False, f"Invalid date: {date_str} - {str(e)}"
             
             return True, None
         
         # Import data
+        logger.info(f"Importing {format_type} file, size: {len(file_content)} bytes")
+        
         if format_type == 'excel':
             result = ImportService.import_from_excel(
                 file_content=file_content,
@@ -644,12 +665,44 @@ async def import_transactions(
                 validator=validate_transaction
             )
         else:  # CSV
-            result = ImportService.import_from_csv(
-                file_content=file_content,
-                encoding='utf-8',
-                has_headers=True,
-                validator=validate_transaction
-            )
+            # Try different encodings and delimiters
+            result = None
+            encodings = ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']
+            delimiters = [',', ';', '\t']
+            
+            for encoding in encodings:
+                for delimiter in delimiters:
+                    try:
+                        logger.info(f"Trying CSV import with encoding={encoding}, delimiter={repr(delimiter)}")
+                        test_result = ImportService.import_from_csv(
+                            file_content=file_content,
+                            encoding=encoding,
+                            delimiter=delimiter,
+                            has_headers=True,
+                            validator=validate_transaction
+                        )
+                        if test_result['total_rows'] > 0 or len(test_result['data']) > 0:
+                            result = test_result
+                            logger.info(f"CSV import successful with encoding={encoding}, delimiter={repr(delimiter)}, rows={test_result['total_rows']}")
+                            break
+                    except Exception as e:
+                        logger.warning(f"CSV import failed with encoding={encoding}, delimiter={repr(delimiter)}: {e}")
+                        continue
+                if result:
+                    break
+            
+            if not result:
+                # Last attempt without validator to see raw data
+                logger.info("Trying CSV import without validator to check raw data")
+                raw_result = ImportService.import_from_csv(
+                    file_content=file_content,
+                    encoding='utf-8',
+                    delimiter=',',
+                    has_headers=True,
+                    validator=None
+                )
+                logger.info(f"Raw CSV data: total_rows={raw_result['total_rows']}, data_rows={len(raw_result['data'])}, first_row={raw_result['data'][0] if raw_result['data'] else None}")
+                result = raw_result
         
         if dry_run:
             return {
@@ -670,6 +723,12 @@ async def import_transactions(
         logger.info(f"Processing {len(result['data'])} valid rows from {result.get('total_rows', 0)} total rows")
         logger.info(f"Import result: {result.get('valid_rows', 0)} valid, {result.get('invalid_rows', 0)} invalid, {len(warnings)} warnings")
         
+        # Log first few rows for debugging
+        if result.get('data'):
+            logger.info(f"First data row sample: {result['data'][0]}")
+        if result.get('errors'):
+            logger.warning(f"First error sample: {result['errors'][0]}")
+        
         for idx, row_data in enumerate(result['data'], start=2):  # Start at 2 (header + 1-based)
             try:
                 # Get and normalize type
@@ -680,32 +739,43 @@ async def import_transactions(
                 else:
                     final_type = TransactionType.EXPENSE
                 
-                # Get required fields
+                # Get required fields - support French column names
                 description = str(get_field_value(row_data, ['description', 'libelle', 'libellé']))
-                amount = Decimal(str(get_field_value(row_data, ['amount', 'montant', 'montant_ht'])))
+                amount = Decimal(str(get_field_value(row_data, ['amount', 'montant', 'montant_ht', 'montant ht'])))
                 
-                # Parse transaction date
+                # Parse transaction date - support French column names
                 date_str = get_field_value(row_data, [
-                    'transaction_date', 'date_transaction', 'date_emission', 'date'
+                    'transaction_date', 'date_transaction', 'date_emission', 'date emission', 
+                    'date_émission', 'date', 'date_operation'
                 ])
+                transaction_date = None
                 if isinstance(date_str, datetime):
                     transaction_date = date_str
-                else:
-                    for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d %H:%M:%S']:
-                        try:
-                            transaction_date = datetime.strptime(str(date_str), fmt)
-                            break
-                        except ValueError:
-                            continue
-                    else:
-                        transaction_date = datetime.now()
+                elif date_str:
+                    date_str_clean = str(date_str).strip()
+                    # Skip placeholder dates
+                    if date_str_clean not in ['1970-01-01', '1900-01-01', '']:
+                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y-%m-%d %H:%M:%S', '%d-%m-%Y']:
+                            try:
+                                parsed = datetime.strptime(date_str_clean, fmt)
+                                if parsed.year >= 1900:  # Skip placeholder dates
+                                    transaction_date = parsed
+                                    break
+                            except ValueError:
+                                continue
                 
-                # Get optional fields
-                tax_amount = get_field_value(row_data, ['tax_amount', 'montant_taxes', 'taxes'])
+                # Use current date if no valid date found
+                if not transaction_date:
+                    transaction_date = datetime.now()
+                
+                # Get optional fields - support French column names
+                tax_amount = get_field_value(row_data, [
+                    'tax_amount', 'montant_taxes', 'montant taxes', 'taxes', 'montant taxes'
+                ])
                 tax_amount_decimal = Decimal(str(tax_amount)) if tax_amount else Decimal(0)
                 
                 currency = get_field_value(row_data, ['currency', 'devise']) or 'CAD'
-                category_name = get_field_value(row_data, ['category', 'categorie'])
+                category_name = get_field_value(row_data, ['category', 'categorie', 'catégorie'])
                 
                 # Find category by name if provided
                 category_id = None
@@ -729,81 +799,94 @@ async def import_transactions(
                             "message": warning_msg
                         })
                 
-                # Parse dates
+                # Parse dates - support French column names
                 expected_payment_date = None
                 expected_date_str = get_field_value(row_data, [
-                    'expected_payment_date', 'date_reception_prevue', 'date_prevue'
+                    'expected_payment_date', 'date_reception_prevue', 'date reception prevue',
+                    'date_prevue', 'date prevue', 'date_reception_prévue'
                 ])
-                if expected_date_str:
+                if expected_date_str and str(expected_date_str).strip() not in ['1970-01-01', '1900-01-01', '']:
                     if isinstance(expected_date_str, datetime):
                         expected_payment_date = expected_date_str
                     else:
-                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y']:
+                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y']:
                             try:
-                                expected_payment_date = datetime.strptime(str(expected_date_str), fmt)
-                                break
+                                parsed = datetime.strptime(str(expected_date_str).strip(), fmt)
+                                if parsed.year >= 1900:  # Skip placeholder dates
+                                    expected_payment_date = parsed
+                                    break
                             except ValueError:
                                 continue
                 
                 payment_date = None
                 payment_date_str = get_field_value(row_data, [
-                    'payment_date', 'date_reception_reelle', 'date_reelle', 'date_paiement'
+                    'payment_date', 'date_reception_reelle', 'date reception reelle',
+                    'date_reelle', 'date reelle', 'date_paiement', 'date paiement'
                 ])
-                if payment_date_str:
+                if payment_date_str and str(payment_date_str).strip() not in ['1970-01-01', '1900-01-01', '']:
                     if isinstance(payment_date_str, datetime):
                         payment_date = payment_date_str
                     else:
-                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y']:
+                        for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y']:
                             try:
-                                payment_date = datetime.strptime(str(payment_date_str), fmt)
-                                break
+                                parsed = datetime.strptime(str(payment_date_str).strip(), fmt)
+                                if parsed.year >= 1900:  # Skip placeholder dates
+                                    payment_date = parsed
+                                    break
                             except ValueError:
                                 continue
                 
-                # Get status
+                # Get status - support French column names
                 status_str = get_field_value(row_data, ['status', 'statut', 'etat'])
                 if status_str:
-                    status_lower = str(status_str).lower()
-                    if status_lower in ['paid', 'paye', 'payé', 'recu', 'reçu']:
+                    status_lower = str(status_str).lower().strip()
+                    if status_lower in ['paid', 'paye', 'payé', 'recu', 'reçu', 'payée']:
                         transaction_status = TransactionStatus.PAID
-                    elif status_lower in ['cancelled', 'annule', 'annulé']:
+                    elif status_lower in ['cancelled', 'annule', 'annulé', 'annulée']:
                         transaction_status = TransactionStatus.CANCELLED
                     else:
                         transaction_status = TransactionStatus.PENDING
                 else:
                     transaction_status = TransactionStatus.PENDING
                 
-                # Get client/supplier
+                # Get client/supplier - support French column names
                 client_name = None
                 supplier_name = None
                 if final_type == TransactionType.REVENUE:
-                    client_name = get_field_value(row_data, ['client_name', 'client', 'nom_client'])
+                    client_name = get_field_value(row_data, ['client_name', 'client', 'nom_client', 'client name'])
                 else:
-                    supplier_name = get_field_value(row_data, ['supplier_name', 'supplier', 'fournisseur', 'nom_fournisseur'])
+                    supplier_name = get_field_value(row_data, [
+                        'supplier_name', 'supplier', 'fournisseur', 'nom_fournisseur',
+                        'supplier name', 'nom fournisseur'
+                    ])
                 
-                invoice_number = get_field_value(row_data, ['invoice_number', 'numero_facture', 'facture'])
+                invoice_number = get_field_value(row_data, [
+                    'invoice_number', 'numero_facture', 'numero facture', 
+                    'facture', 'numéro_facture', 'numero de facture'
+                ])
                 notes = get_field_value(row_data, ['notes', 'remarques', 'commentaires'])
                 
-                # Detect if recurring expense
+                # Detect if recurring expense - support French column names
                 is_recurring_value = get_field_value(row_data, [
-                    'is_recurring', 'recurring', 'recurrent', 'recurrente', 
-                    'is_recurrent', 'recurrent_expense', 'depense_recurrente'
+                    'is_recurring', 'recurring', 'recurrent', 'recurrente', 'récurrent',
+                    'is_recurrent', 'recurrent_expense', 'depense_recurrente',
+                    'recurrent expense', 'depense récurrente'
                 ])
                 is_recurring = "false"
                 if is_recurring_value:
                     recurring_str = str(is_recurring_value).lower().strip()
-                    if recurring_str in ['true', '1', 'yes', 'oui', 'vrai', 'recurrent', 'recurrente']:
+                    if recurring_str in ['true', '1', 'yes', 'oui', 'vrai', 'recurrent', 'recurrente', 'récurrent']:
                         is_recurring = "true"
                 
                 # Detect if invoice received (has invoice_number and is expense)
                 # Factures reçues sont automatiquement identifiées par la présence d'invoice_number
                 # pour une dépense
                 
-                # Get revenue type for revenues (stored in transaction_metadata)
+                # Get revenue type for revenues (stored in transaction_metadata) - support French
                 transaction_metadata = None
                 if final_type == TransactionType.REVENUE:
                     revenue_type = get_field_value(row_data, [
-                        'revenue_type', 'type_revenu', 'type_revenue', 
+                        'revenue_type', 'type_revenu', 'type_revenue', 'type revenu',
                         'revenu_type', 'categorie_revenu', 'type_revenus'
                     ])
                     if revenue_type:
