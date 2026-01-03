@@ -783,7 +783,9 @@ export default function EditableDataGrid<T extends { [key: string]: any }>({
       // F2 to edit selected cell
       if (e.key === 'F2' && selectedCells.size === 1 && !editingCell) {
         e.preventDefault();
-        const cellKey = Array.from(selectedCells)[0];
+        const cellKeyArray = Array.from(selectedCells);
+        const cellKey = cellKeyArray[0];
+        if (!cellKey) return;
         const parts = cellKey.split('-');
         const rowIdx = parts[0] ? Number(parts[0]) : undefined;
         const colIdx = parts[1] ? Number(parts[1]) : undefined;
@@ -809,6 +811,7 @@ export default function EditableDataGrid<T extends { [key: string]: any }>({
         }
       };
     }
+    return undefined;
   }, [selectedCells, editingCell]);
 
   return (
