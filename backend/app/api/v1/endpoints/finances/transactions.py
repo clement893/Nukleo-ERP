@@ -6,7 +6,7 @@ API endpoints for managing financial transactions (revenues and expenses)
 from fastapi import APIRouter, Depends, Query, HTTPException, status as http_status, File, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func, cast, String, text
+from sqlalchemy import select, and_, or_, func, cast, String, text, inspect
 from sqlalchemy.exc import ProgrammingError
 from typing import List, Optional, Dict, Any
 from datetime import datetime
@@ -45,6 +45,29 @@ async def get_transactions(
     Get list of transactions for the current user
     """
     try:
+        # Check which date column exists in the database using a direct SQL query
+        try:
+            # Try to check columns using information_schema
+            columns_result = await db.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'transactions' 
+                AND column_name IN ('transaction_date', 'date')
+            """))
+            columns = [row[0] for row in columns_result]
+            has_transaction_date = 'transaction_date' in columns
+            has_date = 'date' in columns
+        except Exception as check_error:
+            # If we can't check, assume transaction_date exists (new schema)
+            logger.warning(f"Could not check transaction columns: {check_error}")
+            has_transaction_date = True
+            has_date = False
+        
+        # Determine which date column to use
+        # Note: Transaction model only has transaction_date, so we need to handle this carefully
+        # If only 'date' exists, we'll need to use raw SQL or handle it in the model
+        use_transaction_date = has_transaction_date or not has_date
+        
         query = select(Transaction).where(Transaction.user_id == current_user.id)
         
         if type:
@@ -61,6 +84,8 @@ async def get_transactions(
                 # This would require a join with transaction_categories table
                 # For now, skip category filter if it's not a valid integer
                 pass
+        
+        # Use transaction_date (model column) - if it doesn't exist in DB, the error will be caught
         if start_date:
             query = query.where(Transaction.transaction_date >= start_date)
         if end_date:
