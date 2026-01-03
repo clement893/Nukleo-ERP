@@ -133,10 +133,10 @@ function OpportunityKanbanCard({
       ref={setNodeRef}
       style={style}
       {...attributes}
+      {...listeners}
       className="mb-2"
     >
       <Card 
-        {...listeners}
         className="glass-card p-3 rounded-lg border border-nukleo-lavender/20 hover:border-primary-500/40 hover:shadow-md transition-all duration-200 group relative cursor-pointer"
         onMouseDown={(e: React.MouseEvent) => {
           // Enregistrer la position et le temps du clic initial
@@ -146,6 +146,10 @@ function OpportunityKanbanCard({
             time: Date.now(),
           };
           hasMovedRef.current = false;
+          // Appeler le handler du drag si présent
+          if (listeners.onMouseDown) {
+            (listeners.onMouseDown as (e: React.MouseEvent) => void)(e);
+          }
         }}
         onMouseMove={(e: React.MouseEvent) => {
           // Si on a bougé de plus de 5px, c'est un drag
@@ -155,6 +159,10 @@ function OpportunityKanbanCard({
             if (dx > 5 || dy > 5) {
               hasMovedRef.current = true;
             }
+          }
+          // Appeler le handler du drag si présent
+          if (listeners.onMouseMove) {
+            (listeners.onMouseMove as (e: React.MouseEvent) => void)(e);
           }
         }}
         onClick={(e: React.MouseEvent) => {
