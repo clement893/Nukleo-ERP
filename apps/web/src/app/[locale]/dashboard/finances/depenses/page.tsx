@@ -203,7 +203,7 @@ export default function DepensesPage() {
         loadData();
       }
     }, 500);
-  }, [expenses, showToast]);
+  }, [expenses, showToast, loadData]);
 
   // Handle row add
   const handleRowAdd = useCallback(async () => {
@@ -235,7 +235,7 @@ export default function DepensesPage() {
         type: 'error',
       });
     }
-  }, []);
+  }, [loadData, showToast]);
 
   // Handle bulk update
   const handleBulkUpdate = useCallback(async (updates: CellUpdate[]) => {
@@ -268,7 +268,7 @@ export default function DepensesPage() {
       });
       loadData();
     }
-  }, []);
+  }, [loadData, showToast]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -463,7 +463,12 @@ export default function DepensesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, statusFilter, showToast]);
+
+  // Load data when activeTab or statusFilter changes
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleCreate = async () => {
     try {
