@@ -175,17 +175,68 @@ export default function LeoPage() {
     },
   });
 
-  // Delete conversation mutation
+  // Delete conversation mutation with optimistic update
   const deleteConversationMutation = useMutation({
     mutationFn: (conversationId: number) => leoAgentAPI.deleteConversation(conversationId),
-    onSuccess: (_, conversationId) => {
+    onMutate: async (conversationId: number) => {
+      // Cancel any outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['leo', 'conversations'] });
+      
+      // Snapshot the previous value
+      const previousConversationsData = queryClient.getQueryData(['leo', 'conversations', skip]);
+      const previousConversationsWithLastMsg = conversationsWithLastMessage;
+      
+      // Optimistically update the UI immediately
       if (activeConversation === conversationId) {
         setActiveConversation(null);
       }
+      
+      // Remove conversation from local state immediately
+      setConversationsWithLastMessage(prev => 
+        prev.filter(conv => conv.id !== conversationId)
+      );
+      
+      // Optimistically update the query cache
+      queryClient.setQueryData(['leo', 'conversations', skip], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.filter((conv: LeoConversation) => conv.id !== conversationId),
+          total: old.total - 1,
+        };
+      });
+      
+      // Also update other pages if they exist
+      queryClient.setQueriesData(
+        { queryKey: ['leo', 'conversations'] },
+        (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            items: old.items.filter((conv: LeoConversation) => conv.id !== conversationId),
+            total: old.total - 1,
+          };
+        }
+      );
+      
+      // Return context with previous values for rollback
+      return { previousConversationsData, previousConversationsWithLastMsg };
+    },
+    onSuccess: (_, conversationId) => {
+      // Invalidate to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: ['leo', 'conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['leo', 'messages', conversationId] });
       showToast({ message: 'Conversation supprimée', type: 'success' });
     },
-    onError: (error: any) => {
+    onError: (error: any, conversationId: number, context: any) => {
+      // Rollback on error
+      if (context?.previousConversationsData) {
+        queryClient.setQueryData(['leo', 'conversations', skip], context.previousConversationsData);
+      }
+      if (context?.previousConversationsWithLastMsg) {
+        setConversationsWithLastMessage(context.previousConversationsWithLastMsg);
+      }
+      
       const appError = handleApiError(error);
       showToast({ 
         message: appError.message || 'Erreur lors de la suppression', 
@@ -194,9 +245,40 @@ export default function LeoPage() {
     },
   });
 
-  // Delete all conversations
+  // Delete all conversations with optimistic update
   const deleteAllConversations = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer toutes les conversations ?')) return;
+    
+    // Snapshot previous state for rollback
+    const previousConversationsData = queryClient.getQueryData(['leo', 'conversations', skip]);
+    const previousConversationsWithLastMsg = conversationsWithLastMessage;
+    
+    // Optimistically clear UI immediately
+    setConversationsWithLastMessage([]);
+    setActiveConversation(null);
+    
+    // Optimistically update query cache
+    queryClient.setQueryData(['leo', 'conversations', skip], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        items: [],
+        total: 0,
+      };
+    });
+    
+    // Clear all conversation queries
+    queryClient.setQueriesData(
+      { queryKey: ['leo', 'conversations'] },
+      (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: [],
+          total: 0,
+        };
+      }
+    );
     
     try {
       // Récupérer TOUTES les conversations, pas seulement celles chargées
@@ -240,6 +322,14 @@ export default function LeoPage() {
         showToast({ message: 'Toutes les conversations ont été supprimées', type: 'success' });
       }
     } catch (error: unknown) {
+      // Rollback on error
+      if (previousConversationsData) {
+        queryClient.setQueryData(['leo', 'conversations', skip], previousConversationsData);
+      }
+      if (previousConversationsWithLastMsg) {
+        setConversationsWithLastMessage(previousConversationsWithLastMsg);
+      }
+      
       const appError = handleApiError(error);
       showToast({ 
         message: appError.message || 'Erreur lors de la suppression', 
@@ -340,7 +430,7 @@ export default function LeoPage() {
   };
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-3.5rem)] md:h-[calc(100vh-2rem)] w-full overflow-hidden bg-background">
+    <div className="relative flex flex-col h-screen w-full overflow-hidden bg-background">
       {/* Hero Header with Aurora Borealis Gradient */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
@@ -383,7 +473,7 @@ export default function LeoPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Sidebar - Conversations */}
         {showSidebar && (
           <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex flex-col">
@@ -553,9 +643,9 @@ export default function LeoPage() {
         )}
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
             {messagesLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
@@ -724,8 +814,8 @@ export default function LeoPage() {
             )}
           </div>
 
-          {/* Input Area */}
-          <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+          {/* Input Area - Fixed at bottom */}
+          <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sticky bottom-0 z-10">
             <div className="max-w-4xl mx-auto">
               {messages.length > 0 && (
                 <div className="mb-3 flex items-center justify-between">

@@ -37,9 +37,15 @@ class LeoAgentService:
         Returns:
             Dict with user context information
         """
-        # Get roles
+        # Get roles - convert to simple values to avoid greenlet_spawn errors
         roles = await self.rbac_service.get_user_roles(user.id)
-        role_names = [role.slug for role in roles]
+        # Convert roles to list of slugs immediately to avoid async context issues
+        # Access all attributes in a loop to ensure they're loaded before async context ends
+        role_names = []
+        for role in roles:
+            # Access slug attribute immediately while still in async context
+            slug_value = role.slug
+            role_names.append(str(slug_value))
         
         # Get permissions
         permissions = await self.rbac_service.get_user_permissions(user.id)
@@ -49,7 +55,8 @@ class LeoAgentService:
             TeamMember.user_id == user.id
         ).where(Team.is_active == True).where(TeamMember.is_active == True)
         teams_result = await self.db.execute(teams_query)
-        team_names = list(teams_result.scalars().all())
+        # Convert team names to strings immediately to avoid greenlet_spawn errors
+        team_names = [str(name) for name in teams_result.scalars().all()]
         
         # Get statistics
         # Count projects
@@ -80,14 +87,22 @@ class LeoAgentService:
         contacts_count_result = await self.db.execute(contacts_count_query)
         contacts_count = contacts_count_result.scalar() or 0
         
+        # Access all user attributes immediately to avoid greenlet_spawn errors
+        user_id = user.id
+        user_email = str(user.email) if user.email else ""
+        user_first_name = str(user.first_name) if user.first_name else ""
+        user_last_name = str(user.last_name) if user.last_name else ""
+        user_name = f"{user_first_name} {user_last_name}".strip() or user_email
+        user_is_superadmin = bool(user.is_superadmin) if user.is_superadmin is not None else False
+        
         return {
-            "user_id": user.id,
-            "email": user.email,
-            "name": f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email,
+            "user_id": user_id,
+            "email": user_email,
+            "name": user_name,
             "roles": role_names,
             "permissions": sorted(list(permissions)),
             "teams": team_names,
-            "is_superadmin": user.is_superadmin,
+            "is_superadmin": user_is_superadmin,
             "statistics": {
                 "projects_count": projects_count,
                 "invoices_count": invoices_count,
@@ -118,16 +133,18 @@ class LeoAgentService:
             )
             projects_result = await self.db.execute(projects_query)
             projects = projects_result.scalars().all()
-            data['projects'] = [
-                {
+            # Convert projects to dict format immediately to avoid greenlet_spawn errors
+            projects_list = []
+            for p in projects[:10]:  # Limit to 10
+                status_value = p.status.value if hasattr(p.status, 'value') else str(p.status)
+                projects_list.append({
                     "id": p.id,
-                    "name": p.name,
-                    "description": p.description,
-                    "status": p.status.value if hasattr(p.status, 'value') else str(p.status),
+                    "name": str(p.name) if p.name else "",
+                    "description": str(p.description) if p.description else "",
+                    "status": status_value,
                     "created_at": p.created_at.isoformat() if p.created_at else None,
-                }
-                for p in projects[:10]  # Limit to 10
-            ]
+                })
+            data['projects'] = projects_list
         
         # Tasks
         task_keywords = ['tâche', 'task', 'todo', 'à faire', 'en cours', 'bloqué']
@@ -137,17 +154,20 @@ class LeoAgentService:
             ).order_by(desc(ProjectTask.created_at))
             tasks_result = await self.db.execute(tasks_query)
             tasks = tasks_result.scalars().all()
-            data['tasks'] = [
-                {
+            # Convert tasks to dict format immediately to avoid greenlet_spawn errors
+            tasks_list = []
+            for t in tasks[:10]:  # Limit to 10
+                status_value = t.status.value if hasattr(t.status, 'value') else str(t.status)
+                priority_value = t.priority.value if hasattr(t.priority, 'value') else str(t.priority)
+                tasks_list.append({
                     "id": t.id,
-                    "title": t.title,
-                    "description": t.description,
-                    "status": t.status.value if hasattr(t.status, 'value') else str(t.status),
-                    "priority": t.priority.value if hasattr(t.priority, 'value') else str(t.priority),
+                    "title": str(t.title) if t.title else "",
+                    "description": str(t.description) if t.description else "",
+                    "status": status_value,
+                    "priority": priority_value,
                     "created_at": t.created_at.isoformat() if t.created_at else None,
-                }
-                for t in tasks[:10]  # Limit to 10
-            ]
+                })
+            data['tasks'] = tasks_list
         
         # Invoices
         invoice_keywords = ['facture', 'invoice', 'paiement', 'payment', 'facturation', 'billing']
@@ -157,18 +177,20 @@ class LeoAgentService:
             )
             invoices_result = await self.db.execute(invoices_query)
             invoices = invoices_result.scalars().all()
-            data['invoices'] = [
-                {
+            # Convert invoices to dict format immediately to avoid greenlet_spawn errors
+            invoices_list = []
+            for i in invoices[:10]:  # Limit to 10
+                status_value = i.status.value if hasattr(i.status, 'value') else str(i.status)
+                invoices_list.append({
                     "id": i.id,
-                    "invoice_number": i.invoice_number,
-                    "amount_due": str(i.amount_due),
-                    "amount_paid": str(i.amount_paid),
-                    "status": i.status.value if hasattr(i.status, 'value') else str(i.status),
+                    "invoice_number": str(i.invoice_number) if i.invoice_number else "",
+                    "amount_due": str(i.amount_due) if i.amount_due else "0",
+                    "amount_paid": str(i.amount_paid) if i.amount_paid else "0",
+                    "status": status_value,
                     "due_date": i.due_date.isoformat() if i.due_date else None,
                     "created_at": i.created_at.isoformat() if i.created_at else None,
-                }
-                for i in invoices[:10]  # Limit to 10
-            ]
+                })
+            data['invoices'] = invoices_list
         
         # Companies
         company_keywords = ['entreprise', 'company', 'société', 'client', 'customer', 'organisation']
@@ -176,18 +198,19 @@ class LeoAgentService:
             companies_query = select(Company).order_by(desc(Company.created_at))
             companies_result = await self.db.execute(companies_query)
             companies = companies_result.scalars().all()
-            data['companies'] = [
-                {
+            # Convert companies to dict format immediately to avoid greenlet_spawn errors
+            companies_list = []
+            for c in companies[:10]:  # Limit to 10
+                companies_list.append({
                     "id": c.id,
-                    "name": c.name,
-                    "description": c.description,
-                    "is_client": c.is_client,
-                    "city": c.city,
-                    "country": c.country,
+                    "name": str(c.name) if c.name else "",
+                    "description": str(c.description) if c.description else "",
+                    "is_client": bool(c.is_client) if c.is_client is not None else False,
+                    "city": str(c.city) if c.city else "",
+                    "country": str(c.country) if c.country else "",
                     "created_at": c.created_at.isoformat() if c.created_at else None,
-                }
-                for c in companies[:10]  # Limit to 10
-            ]
+                })
+            data['companies'] = companies_list
         
         # Contacts
         contact_keywords = ['contact', 'personne', 'person', 'client', 'prospect']
@@ -197,19 +220,20 @@ class LeoAgentService:
             ).order_by(desc(Contact.created_at))
             contacts_result = await self.db.execute(contacts_query)
             contacts = contacts_result.scalars().all()
-            data['contacts'] = [
-                {
+            # Convert contacts to dict format immediately to avoid greenlet_spawn errors
+            contacts_list = []
+            for c in contacts[:10]:  # Limit to 10
+                contacts_list.append({
                     "id": c.id,
-                    "first_name": c.first_name,
-                    "last_name": c.last_name,
-                    "email": c.email,
-                    "position": c.position,
-                    "circle": c.circle,
-                    "company_id": c.company_id,
+                    "first_name": str(c.first_name) if c.first_name else "",
+                    "last_name": str(c.last_name) if c.last_name else "",
+                    "email": str(c.email) if c.email else "",
+                    "position": str(c.position) if c.position else "",
+                    "circle": str(c.circle) if c.circle else "",
+                    "company_id": c.company_id if c.company_id else None,
                     "created_at": c.created_at.isoformat() if c.created_at else None,
-                }
-                for c in contacts[:10]  # Limit to 10
-            ]
+                })
+            data['contacts'] = contacts_list
         
         return data
     

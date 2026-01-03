@@ -299,6 +299,7 @@ export default function PipelineDetailPage() {
   const [sortField, setSortField] = useState<'name' | 'amount' | 'probability' | 'expected_close_date' | 'stage_name'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [selectedOpportunities, setSelectedOpportunities] = useState<Set<string>>(new Set());
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const pipelineId = params?.id ? String(params.id) : null;
   const locale = params?.locale as string || 'fr';
@@ -847,131 +848,138 @@ export default function PipelineDetailPage() {
     <PageContainer maxWidth="full" className="flex flex-col h-full">
       <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
         {/* Hero Header with Aurora Borealis Gradient */}
-        <div className="relative rounded-2xl overflow-hidden px-6 pt-6 pb-8">
-          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
-            backgroundSize: '200px 200px'
-          }} />
-          
-          <div className="relative">
-            <Link href={`/${locale}/dashboard/commercial/pipeline-client`}>
-              <button className="flex items-center gap-2 text-white/80 hover:text-white mb-3 transition-colors">
-                <ArrowLeft className="w-4 h-4" />
-                <span>Retour aux pipelines</span>
-              </button>
-            </Link>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-5xl font-black text-white font-nukleo">
-                    {pipeline.name}
-                  </h1>
+        {!isFullscreen && (
+          <>
+            <div className="relative rounded-2xl overflow-hidden px-4 pt-4 pb-5">
+              <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
+              <div className="absolute inset-0 opacity-20" style={{
+                backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
+                backgroundSize: '200px 200px'
+              }} />
+              
+              <div className="relative">
+                <Link href={`/${locale}/dashboard/commercial/pipeline-client`}>
+                  <button className="flex items-center gap-2 text-white/80 hover:text-white mb-2 transition-colors">
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="text-sm">Retour aux pipelines</span>
+                  </button>
+                </Link>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h1 className="text-3xl font-black text-white font-nukleo">
+                        {pipeline.name}
+                      </h1>
+                    </div>
+                    {pipeline.description && (
+                      <p className="text-white/80 text-sm line-clamp-1">{pipeline.description}</p>
+                    )}
+                    <div className="flex items-center gap-3 mt-2">
+                      {pipeline.is_default && (
+                        <Badge className="bg-white/20 text-white border-white/30 text-xs">
+                          Par défaut
+                        </Badge>
+                      )}
+                      <span className="text-xs text-white/70">
+                        {pipeline.stages?.length || 0} étapes
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm"
+                      className="bg-white text-primary-500 hover:bg-white/90"
+                      onClick={() => setShowCreateOpportunityModal(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nouvelle opportunité
+                    </Button>
+                    <Button 
+                      size="sm"
+                      variant="outline" 
+                      className="text-white border-white/30 hover:bg-white/10" 
+                      onClick={() => setShowEditPipelineModal(true)}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Modifier
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-white border-white/30 hover:bg-white/10" onClick={handleDelete}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                {pipeline.description && (
-                  <p className="text-white/80 text-lg">{pipeline.description}</p>
-                )}
-                <div className="flex items-center gap-3 mt-3">
-                  {pipeline.is_default && (
-                    <Badge className="bg-white/20 text-white border-white/30">
-                      Par défaut
-                    </Badge>
-                  )}
-                  <span className="text-sm text-white/70">
-                    {pipeline.stages?.length || 0} étapes
-                  </span>
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-success-500/10 border border-success-500/30">
+                    <DollarSign className="w-5 h-5 text-success-500" />
+                  </div>
                 </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
+                  {formatCurrency(totalValueEnCours)}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Valeur totale (en cours)</div>
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  className="bg-white text-primary-500 hover:bg-white/90"
-                  onClick={() => setShowCreateOpportunityModal(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nouvelle opportunité
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="text-white border-white/30 hover:bg-white/10" 
-                  onClick={() => setShowEditPipelineModal(true)}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Modifier
-                </Button>
-                <Button variant="outline" className="text-white border-white/30 hover:bg-white/10" onClick={handleDelete}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-success-500/10 border border-success-500/30">
-                <DollarSign className="w-6 h-6 text-success-500" />
+              <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                    <Target className="w-5 h-5 text-primary-500" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
+                  {activeOpportunities.length}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">{activeOpportunities.length} opportunité{activeOpportunities.length > 1 ? 's' : ''} ACTIVE{activeOpportunities.length > 1 ? 'S' : ''}</div>
               </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
-              {formatCurrency(totalValueEnCours)}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Valeur totale (en cours)</div>
-          </div>
 
-          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
-                <Target className="w-6 h-6 text-primary-500" />
+              <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-warning-500/10 border border-warning-500/30">
+                    <TrendingUp className="w-5 h-5 text-warning-500" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
+                  {formatCurrency(totalClosedWon)}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Total Closed won</div>
               </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
-              {activeOpportunities.length}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">{activeOpportunities.length} opportunité{activeOpportunities.length > 1 ? 's' : ''} ACTIVE{activeOpportunities.length > 1 ? 'S' : ''}</div>
-          </div>
 
-          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-warning-500/10 border border-warning-500/30">
-                <TrendingUp className="w-6 h-6 text-warning-500" />
+              <div className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="p-2 rounded-lg bg-primary-500/10 border border-primary-500/30">
+                    <Settings className="w-5 h-5 text-primary-500" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
+                  {pipeline.stages?.length || 0}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Étapes</div>
               </div>
             </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
-              {formatCurrency(totalClosedWon)}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Total Closed won</div>
-          </div>
-
-          <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 rounded-lg bg-primary-500/10 border border-primary-500/30">
-                <Settings className="w-6 h-6 text-primary-500" />
-              </div>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1 font-nukleo">
-              {pipeline.stages?.length || 0}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Étapes</div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Tabs */}
         <div className="glass-card rounded-xl border border-nukleo-lavender/20 overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <div className="flex">
-              <button
-                onClick={() => setActiveTab('kanban')}
-                className={`px-6 py-4 text-sm font-medium transition-colors ${
-                  activeTab === 'kanban'
-                    ? 'border-b-2 border-primary-500 text-white bg-primary-500'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                Kanban
-              </button>
+            <div className="flex items-center justify-between">
+              <div className="flex">
+                <button
+                  onClick={() => setActiveTab('kanban')}
+                  className={`px-6 py-4 text-sm font-medium transition-colors ${
+                    activeTab === 'kanban'
+                      ? 'border-b-2 border-primary-500 text-white bg-primary-500'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Kanban
+                </button>
               <button
                 onClick={() => setActiveTab('overview')}
                 className={`px-6 py-4 text-sm font-medium transition-colors ${
@@ -1002,6 +1010,29 @@ export default function PipelineDetailPage() {
               >
                 Étapes ({pipeline.stages?.length || 0})
               </button>
+              </div>
+              {activeTab === 'kanban' && (
+                <div className="px-4">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsFullscreen(!isFullscreen)}
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  >
+                    {isFullscreen ? (
+                      <>
+                        <Minimize2 className="w-4 h-4 mr-2" />
+                        Sortir du plein écran
+                      </>
+                    ) : (
+                      <>
+                        <Maximize2 className="w-4 h-4 mr-2" />
+                        Plein écran
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 

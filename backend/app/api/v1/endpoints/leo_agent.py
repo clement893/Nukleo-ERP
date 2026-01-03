@@ -148,8 +148,22 @@ async def get_conversation_messages(
     # Get messages
     messages = await leo_service.get_conversation_messages(conversation_id)
     
+    # Convert messages to dict format to avoid greenlet_spawn errors
+    # Ensure metadata is properly serialized as dict
+    message_items = []
+    for msg in messages:
+        msg_dict = {
+            "id": msg.id,
+            "conversation_id": msg.conversation_id,
+            "role": msg.role,
+            "content": msg.content,
+            "created_at": msg.created_at,
+            "metadata": msg.message_metadata if isinstance(msg.message_metadata, dict) else (msg.message_metadata or {}),
+        }
+        message_items.append(LeoMessage.model_validate(msg_dict))
+    
     return LeoMessageListResponse(
-        items=[LeoMessage.model_validate(msg) for msg in messages],
+        items=message_items,
         total=len(messages),
         conversation_id=conversation_id
     )
@@ -175,7 +189,7 @@ async def leo_query(
     if not AIService.is_configured():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No AI provider is configured. Please set OPENAI_API_KEY or ANTHROPIC_API_KEY.",
+            detail="No AI provider is configured. Please set ANTHROPIC_API_KEY or OPENAI_API_KEY.",
         )
     
     leo_service = LeoAgentService(db)
@@ -252,10 +266,13 @@ Souviens-toi: Tu as accès aux données réelles de l'ERP. Utilise-les pour four
         
         # 7. Get conversation history
         previous_messages = await leo_service.get_conversation_messages(conversation.id)
-        api_messages = [
-            {"role": msg.role, "content": msg.content}
-            for msg in previous_messages
-        ]
+        # Convert messages to dict format immediately to avoid greenlet_spawn errors
+        api_messages = []
+        for msg in previous_messages:
+            api_messages.append({
+                "role": str(msg.role),
+                "content": str(msg.content)
+            })
         
         # 8. Call AI service
         provider = AIProvider(request.provider) if request.provider != "auto" else AIProvider.AUTO
