@@ -17,6 +17,7 @@ import { useToast } from '@/components/ui';
 import { logger } from '@/lib/logger';
 import { 
   getAvailableCollections, 
+  getCollectionsByModule,
   getWidgetsByCollection,
   moduleLabels,
   type WidgetCollection

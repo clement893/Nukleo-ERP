@@ -29,90 +29,144 @@ export const moduleLabels: Record<DashboardModule, string> = {
 
 /**
  * Collections de widgets disponibles
+ * Organisées par modules pour faciliter la navigation
  */
 const widgetCollections: WidgetCollection[] = [
+  // ========== MODULE COMMERCIAL ==========
   {
     id: 'commercial-opportunities',
     name: 'Opportunités Commerciales',
-    description: 'Widgets pour suivre et gérer les opportunités commerciales',
+    description: 'Suivez et gérez vos opportunités commerciales avec des vues listes, pipeline et actions',
     module: 'commercial',
     color: 'blue',
-    widgetTypes: ['opportunities-list', 'opportunities-pipeline', 'opportunities-needing-action'],
+    widgetTypes: [
+      'opportunities-list',
+      'opportunities-pipeline',
+      'opportunities-needing-action',
+    ],
   },
   {
     id: 'commercial-clients',
     name: 'Clients & Réseau',
-    description: 'Widgets pour suivre les clients et la croissance du réseau',
+    description: 'Analysez la croissance de votre réseau et les témoignages clients',
     module: 'commercial',
     color: 'purple',
-    widgetTypes: ['clients-count', 'clients-growth', 'testimonials-carousel'],
+    widgetTypes: [
+      'clients-count',
+      'clients-growth',
+      'testimonials-carousel',
+    ],
   },
   {
     id: 'commercial-quotes',
     name: 'Devis & Soumissions',
-    description: 'Widgets pour gérer les devis et soumissions',
+    description: 'Gérez vos devis et soumissions avec des widgets dédiés',
     module: 'commercial',
     color: 'indigo',
-    widgetTypes: ['quotes-list', 'submissions-list'],
+    widgetTypes: [
+      'quotes-list',
+      'submissions-list',
+    ],
   },
+  {
+    id: 'commercial-stats',
+    name: 'Statistiques Commerciales',
+    description: 'Vue d\'ensemble complète des performances commerciales',
+    module: 'commercial',
+    color: 'blue',
+    widgetTypes: [
+      'commercial-stats',
+    ],
+  },
+
+  // ========== MODULE PROJETS ==========
   {
     id: 'projects-overview',
     name: 'Vue d\'ensemble Projets',
-    description: 'Widgets pour suivre l\'état des projets',
+    description: 'Suivez l\'état et la progression de tous vos projets',
     module: 'projects',
     color: 'green',
-    widgetTypes: ['projects-active', 'projects-status'],
+    widgetTypes: [
+      'projects-active',
+      'projects-status',
+    ],
   },
   {
     id: 'projects-tasks',
     name: 'Tâches & Kanban',
-    description: 'Widgets pour gérer les tâches et le workflow',
+    description: 'Organisez et suivez vos tâches avec des vues kanban et listes',
     module: 'projects',
     color: 'teal',
-    widgetTypes: ['tasks-kanban', 'tasks-list'],
+    widgetTypes: [
+      'tasks-kanban',
+      'tasks-list',
+    ],
   },
+
+  // ========== MODULE FINANCES ==========
   {
     id: 'finances-overview',
     name: 'Vue d\'ensemble Finances',
-    description: 'Widgets pour suivre les revenus, dépenses et flux de trésorerie',
+    description: 'Analysez vos revenus, dépenses et trésorerie en temps réel',
     module: 'finances',
     color: 'emerald',
-    widgetTypes: ['revenue-chart', 'expenses-chart', 'cash-flow'],
+    widgetTypes: [
+      'revenue-chart',
+      'expenses-chart',
+      'cash-flow',
+    ],
   },
-  {
-    id: 'performance-kpis',
-    name: 'KPIs & Performance',
-    description: 'Widgets pour suivre les indicateurs de performance',
-    module: 'global',
-    color: 'orange',
-    widgetTypes: ['kpi-custom', 'goals-progress', 'growth-chart', 'commercial-stats'],
-  },
+
+  // ========== MODULE ÉQUIPE ==========
   {
     id: 'team-overview',
     name: 'Vue d\'ensemble Équipe',
-    description: 'Widgets pour suivre l\'équipe et la charge de travail',
+    description: 'Suivez votre équipe et la charge de travail de chacun',
     module: 'team',
     color: 'amber',
-    widgetTypes: ['employees-count', 'workload-chart'],
+    widgetTypes: [
+      'employees-count',
+      'workload-chart',
+    ],
   },
+
+  // ========== MODULE GLOBAL / PERFORMANCE ==========
+  {
+    id: 'performance-kpis',
+    name: 'KPIs & Performance',
+    description: 'Créez et suivez vos indicateurs de performance personnalisés',
+    module: 'global',
+    color: 'orange',
+    widgetTypes: [
+      'kpi-custom',
+      'goals-progress',
+      'growth-chart',
+    ],
+  },
+
+  // ========== MODULE SYSTÈME ==========
   {
     id: 'system-notifications',
     name: 'Notifications & Profil',
-    description: 'Widgets système pour les notifications et le profil utilisateur',
+    description: 'Restez informé avec les notifications et gérez votre profil',
     module: 'system',
     color: 'gray',
-    widgetTypes: ['notifications', 'user-profile'],
+    widgetTypes: [
+      'notifications',
+      'user-profile',
+    ],
   },
 ];
 
 /**
  * Obtenir les collections disponibles selon le module et les permissions
+ * Les collections sont triées par module pour une meilleure organisation
  */
 export function getAvailableCollections(
   module?: DashboardModule | 'all',
   hasModuleAccess?: (module: string) => boolean
 ): WidgetCollection[] {
-  return widgetCollections.filter((collection) => {
+  const filtered = widgetCollections.filter((collection) => {
     // Filtrer par module si spécifié
     if (module && module !== 'all' && collection.module !== module) {
       return false;
@@ -125,6 +179,52 @@ export function getAvailableCollections(
     
     return true;
   });
+
+  // Trier par module selon l'ordre défini
+  const moduleOrder: DashboardModule[] = [
+    'commercial',
+    'projects',
+    'finances',
+    'team',
+    'global',
+    'system',
+    'reseau',
+    'management',
+  ];
+
+  return filtered.sort((a, b) => {
+    const indexA = moduleOrder.indexOf(a.module);
+    const indexB = moduleOrder.indexOf(b.module);
+    // Si les deux modules sont dans l'ordre, trier par leur position
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB;
+    }
+    // Si un seul est dans l'ordre, le mettre en premier
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    // Sinon, trier alphabétiquement
+    return a.module.localeCompare(b.module);
+  });
+}
+
+/**
+ * Obtenir les collections groupées par module
+ */
+export function getCollectionsByModule(
+  module?: DashboardModule | 'all',
+  hasModuleAccess?: (module: string) => boolean
+): Record<DashboardModule, WidgetCollection[]> {
+  const collections = getAvailableCollections(module, hasModuleAccess);
+  const grouped: Partial<Record<DashboardModule, WidgetCollection[]>> = {};
+
+  collections.forEach((collection) => {
+    if (!grouped[collection.module]) {
+      grouped[collection.module] = [];
+    }
+    grouped[collection.module]!.push(collection);
+  });
+
+  return grouped as Record<DashboardModule, WidgetCollection[]>;
 }
 
 /**
