@@ -55,12 +55,15 @@ export function AutomationRulesList({
   const handleInitializeDefault = async () => {
     try {
       await automationAPI.initializeDefaultRule();
-      showToast({ message: 'Règle par défaut créée avec succès', type: 'success' });
+      showToast({ 
+        message: 'Automatisation Pipeline → Tâche activée avec succès ! Une tâche sera créée automatiquement lorsqu\'une opportunité passe dans le stage "Proposition à faire".', 
+        type: 'success' 
+      });
       // Refresh the list
       window.location.reload();
     } catch (error) {
       showToast({ 
-        message: 'Erreur lors de la création de la règle par défaut', 
+        message: 'Erreur lors de l\'activation de l\'automatisation', 
         type: 'error' 
       });
     }
@@ -126,14 +129,19 @@ export function AutomationRulesList({
                 {rules.length === 0 ? 'Aucune règle d\'automatisation' : 'Aucune règle ne correspond à votre recherche'}
               </p>
               {rules.length === 0 && (
-                <Button
-                  variant="outline"
-                  onClick={handleInitializeDefault}
-                  className="mt-4"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Créer la règle par défaut (Proposition à faire)
-                </Button>
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Activez l'automatisation pour créer automatiquement une tâche lorsqu'une opportunité passe dans le stage "Proposition à faire" du pipeline MAIN.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={handleInitializeDefault}
+                    className="mt-4"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Activer l'automatisation Pipeline → Tâche
+                  </Button>
+                </div>
               )}
             </div>
           </Card>
@@ -157,12 +165,31 @@ export function AutomationRulesList({
                     <div className="space-y-2 text-sm">
                       <div>
                         <span className="text-muted-foreground">Déclencheur:</span>
-                        <span className="ml-2 font-medium">{rule.trigger_event}</span>
+                        <span className="ml-2 font-medium">
+                          {rule.trigger_event === 'opportunity.stage_changed' 
+                            ? 'Changement de stage d\'opportunité' 
+                            : rule.trigger_event}
+                        </span>
                       </div>
+                      {rule.trigger_conditions && Object.keys(rule.trigger_conditions).length > 0 && (
+                        <div>
+                          <span className="text-muted-foreground">Conditions:</span>
+                          <span className="ml-2 font-medium">
+                            {Object.entries(rule.trigger_conditions).map(([key, value]) => 
+                              `${key}: ${value}`
+                            ).join(', ')}
+                          </span>
+                        </div>
+                      )}
                       <div>
                         <span className="text-muted-foreground">Actions:</span>
                         <span className="ml-2 font-medium">
-                          {rule.actions.map((a) => a.type).join(', ')}
+                          {rule.actions.map((a) => {
+                            if (a.type === 'task.create') {
+                              return 'Créer une tâche';
+                            }
+                            return a.type;
+                          }).join(', ')}
                         </span>
                       </div>
                       {rule.last_triggered_at && (

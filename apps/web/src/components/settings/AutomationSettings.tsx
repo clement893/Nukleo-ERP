@@ -20,7 +20,7 @@ import { getErrorMessage } from '@/lib/errors';
 import { Zap, Clock, Sparkles } from 'lucide-react';
 
 export default function AutomationSettings() {
-  const [activeTab, setActiveTab] = useState<'rules' | 'tasks' | 'templates'>('tasks');
+  const [activeTab, setActiveTab] = useState<'rules' | 'tasks' | 'templates'>('rules');
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
@@ -182,7 +182,7 @@ export default function AutomationSettings() {
           <div>
             <h2 className="text-2xl font-bold text-foreground">Automatisation</h2>
             <p className="text-sm text-muted-foreground">
-              Créez et gérez des automatisations pour automatiser vos workflows
+              Configurez des règles d'automatisation pour créer automatiquement des tâches à partir de votre pipeline commercial
             </p>
           </div>
         </div>

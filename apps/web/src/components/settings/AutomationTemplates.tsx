@@ -140,9 +140,9 @@ export function AutomationTemplates({ onApplyTemplate }: AutomationTemplatesProp
     <div className="space-y-4">
       <div className="text-center mb-6">
         <Sparkles className="w-12 h-12 text-primary-500 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Templates d'automatisation</h3>
+        <h3 className="text-lg font-semibold mb-2">Modèles d'automatisation</h3>
         <p className="text-muted-foreground">
-          Utilisez ces templates pour démarrer rapidement avec vos automatisations
+          Utilisez ces modèles pour démarrer rapidement avec vos automatisations
         </p>
       </div>
 
@@ -161,7 +161,7 @@ export function AutomationTemplates({ onApplyTemplate }: AutomationTemplatesProp
                   size="sm"
                   onClick={() => onApplyTemplate({ type: template.type, data: template.data })}
                 >
-                  Appliquer ce template
+                  Utiliser ce modèle
                 </Button>
               </div>
             </div>
