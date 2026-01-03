@@ -61,10 +61,11 @@ export default function TaskTimer({ taskId, onTimeTracked }: TaskTimerProps) {
       // Then update every second
       const interval = setInterval(updateElapsed, 1000);
       return () => clearInterval(interval);
-    } else {
-      // Reset when timer stops
-      setElapsedSeconds(0);
     }
+    
+    // Reset when timer stops
+    setElapsedSeconds(0);
+    return undefined;
   }, [timerStatus?.active, timerStatus?.task_id, timerStatus?.start_time, taskId]);
 
   const formatTime = (seconds: number): string => {
