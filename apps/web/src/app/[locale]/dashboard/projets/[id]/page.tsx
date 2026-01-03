@@ -10,6 +10,9 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Alert from '@/components/ui/Alert';
 import Loading from '@/components/ui/Loading';
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
 import { projectsAPI, type Project } from '@/lib/api/projects';
 import { handleApiError } from '@/lib/errors/api';
 import {
@@ -29,6 +32,7 @@ import {
   TrendingUp,
   TrendingDown,
   AlertCircle,
+  Plus,
 } from 'lucide-react';
 import TaskKanban from '@/components/projects/TaskKanban';
 import TaskTimeline from '@/components/projects/TaskTimeline';
@@ -67,6 +71,12 @@ function ProjectDetailContent() {
     totalRevenues: 0,
     loading: false,
   });
+  
+  // Links management
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [editingLinkType, setEditingLinkType] = useState<'proposal_url' | 'drive_url' | 'slack_url' | 'echeancier_url' | null>(null);
+  const [linkFormData, setLinkFormData] = useState({ url: '', label: '' });
+  const [isSavingLink, setIsSavingLink] = useState(false);
 
   useEffect(() => {
     loadProject();
@@ -170,6 +180,64 @@ function ProjectDetailContent() {
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la suppression du projet');
+    }
+  };
+
+  const handleOpenLinkModal = (linkType?: 'proposal_url' | 'drive_url' | 'slack_url' | 'echeancier_url') => {
+    if (linkType) {
+      setEditingLinkType(linkType);
+      const currentUrl = project?.[linkType] || '';
+      const labels: Record<string, string> = {
+        proposal_url: 'Proposal',
+        drive_url: 'Google Drive',
+        slack_url: 'Slack',
+        echeancier_url: 'Échéancier',
+      };
+      setLinkFormData({ url: currentUrl, label: labels[linkType] });
+    } else {
+      setEditingLinkType(null);
+      setLinkFormData({ url: '', label: '' });
+    }
+    setShowLinkModal(true);
+  };
+
+  const handleSaveLink = async () => {
+    if (!editingLinkType || !linkFormData.url.trim()) {
+      return;
+    }
+
+    try {
+      setIsSavingLink(true);
+      const updateData: any = {};
+      updateData[editingLinkType] = linkFormData.url.trim();
+      
+      const updatedProject = await projectsAPI.update(projectId, updateData);
+      setProject(updatedProject);
+      setShowLinkModal(false);
+      setEditingLinkType(null);
+      setLinkFormData({ url: '', label: '' });
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError(appError.message || 'Erreur lors de la sauvegarde du lien');
+    } finally {
+      setIsSavingLink(false);
+    }
+  };
+
+  const handleDeleteLink = async (linkType: 'proposal_url' | 'drive_url' | 'slack_url' | 'echeancier_url') => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce lien ?')) {
+      return;
+    }
+
+    try {
+      const updateData: any = {};
+      updateData[linkType] = null;
+      
+      const updatedProject = await projectsAPI.update(projectId, updateData);
+      setProject(updatedProject);
+    } catch (err) {
+      const appError = handleApiError(err);
+      setError(appError.message || 'Erreur lors de la suppression du lien');
     }
   };
 
@@ -857,92 +925,335 @@ function ProjectDetailContent() {
 
         {activeTab === 'links' && (
           <Card className="glass-card p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-              <LinkIcon className="w-5 h-5" />
-              Liens et documents
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {project.proposal_url && (
-                <a
-                  href={project.proposal_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Proposal</p>
-                    <p className="text-sm text-muted-foreground">Document de proposition</p>
-                  </div>
-                  <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                </a>
-              )}
-
-              {project.drive_url && (
-                <a
-                  href={project.drive_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-primary-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Google Drive</p>
-                    <p className="text-sm text-muted-foreground">Dossier partagé</p>
-                  </div>
-                  <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                </a>
-              )}
-
-              {project.slack_url && (
-                <a
-                  href={project.slack_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                    <LinkIcon className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Slack</p>
-                    <p className="text-sm text-muted-foreground">Canal de communication</p>
-                  </div>
-                  <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                </a>
-              )}
-
-              {project.echeancier_url && (
-                <a
-                  href={project.echeancier_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Échéancier</p>
-                    <p className="text-sm text-muted-foreground">Planning du projet</p>
-                  </div>
-                  <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                </a>
-              )}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <LinkIcon className="w-5 h-5" />
+                Liens et documents
+              </h3>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleOpenLinkModal()}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter un lien
+              </Button>
             </div>
-
-            {!project.proposal_url && !project.drive_url && !project.slack_url && !project.echeancier_url && (
-              <div className="text-center py-8 text-muted-foreground">
-                <LinkIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Aucun lien disponible</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Proposal Link */}
+              <div className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors">
+                {project.proposal_url ? (
+                  <>
+                    <a
+                      href={project.proposal_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 flex-1"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Proposal</p>
+                        <p className="text-sm text-muted-foreground">Document de proposition</p>
+                      </div>
+                      <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                    </a>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenLinkModal('proposal_url')}
+                        title="Modifier"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteLink('proposal_url')}
+                        className="text-red-600 hover:text-red-700"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-muted-foreground">Proposal</p>
+                      <p className="text-sm text-muted-foreground">Non défini</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenLinkModal('proposal_url')}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Drive Link */}
+              <div className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors">
+                {project.drive_url ? (
+                  <>
+                    <a
+                      href={project.drive_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 flex-1"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-primary-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Google Drive</p>
+                        <p className="text-sm text-muted-foreground">Dossier partagé</p>
+                      </div>
+                      <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                    </a>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenLinkModal('drive_url')}
+                        title="Modifier"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteLink('drive_url')}
+                        className="text-red-600 hover:text-red-700"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-muted-foreground">Google Drive</p>
+                      <p className="text-sm text-muted-foreground">Non défini</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenLinkModal('drive_url')}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Slack Link */}
+              <div className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors">
+                {project.slack_url ? (
+                  <>
+                    <a
+                      href={project.slack_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 flex-1"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                        <LinkIcon className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Slack</p>
+                        <p className="text-sm text-muted-foreground">Canal de communication</p>
+                      </div>
+                      <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                    </a>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenLinkModal('slack_url')}
+                        title="Modifier"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteLink('slack_url')}
+                        className="text-red-600 hover:text-red-700"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <LinkIcon className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-muted-foreground">Slack</p>
+                      <p className="text-sm text-muted-foreground">Non défini</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenLinkModal('slack_url')}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Echeancier Link */}
+              <div className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-primary hover:bg-accent transition-colors">
+                {project.echeancier_url ? (
+                  <>
+                    <a
+                      href={project.echeancier_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 flex-1"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">Échéancier</p>
+                        <p className="text-sm text-muted-foreground">Planning du projet</p>
+                      </div>
+                      <ExternalLink className="w-5 h-5 text-muted-foreground" />
+                    </a>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenLinkModal('echeancier_url')}
+                        title="Modifier"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteLink('echeancier_url')}
+                        className="text-red-600 hover:text-red-700"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-muted-foreground">Échéancier</p>
+                      <p className="text-sm text-muted-foreground">Non défini</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenLinkModal('echeancier_url')}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
           </Card>
         )}
+
+        {/* Link Modal */}
+        <Modal
+          isOpen={showLinkModal}
+          onClose={() => {
+            setShowLinkModal(false);
+            setEditingLinkType(null);
+            setLinkFormData({ url: '', label: '' });
+          }}
+          title={editingLinkType ? `Modifier ${linkFormData.label || 'le lien'}` : 'Ajouter un lien'}
+          size="md"
+        >
+          <div className="space-y-4">
+            <Select
+              label="Type de lien *"
+              value={editingLinkType || ''}
+              onChange={(e) => {
+                const linkType = e.target.value as 'proposal_url' | 'drive_url' | 'slack_url' | 'echeancier_url';
+                setEditingLinkType(linkType);
+                const currentUrl = project?.[linkType] || '';
+                const labels: Record<string, string> = {
+                  proposal_url: 'Proposal',
+                  drive_url: 'Google Drive',
+                  slack_url: 'Slack',
+                  echeancier_url: 'Échéancier',
+                };
+                setLinkFormData({ url: currentUrl, label: labels[linkType] });
+              }}
+              options={[
+                { label: 'Sélectionner un type', value: '' },
+                { label: 'Proposal', value: 'proposal_url' },
+                { label: 'Google Drive', value: 'drive_url' },
+                { label: 'Slack', value: 'slack_url' },
+                { label: 'Échéancier', value: 'echeancier_url' },
+              ]}
+              disabled={!!editingLinkType}
+            />
+
+            {editingLinkType && (
+              <Input
+                label="URL *"
+                type="url"
+                value={linkFormData.url}
+                onChange={(e) => setLinkFormData({ ...linkFormData, url: e.target.value })}
+                placeholder="https://..."
+                required
+              />
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowLinkModal(false);
+                  setEditingLinkType(null);
+                  setLinkFormData({ url: '', label: '' });
+                }}
+                disabled={isSavingLink}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSaveLink}
+                disabled={!editingLinkType || !linkFormData.url.trim() || isSavingLink}
+              >
+                {isSavingLink ? 'Enregistrement...' : editingLinkType && project?.[editingLinkType] ? 'Modifier' : 'Ajouter'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
 
         {activeTab === 'files' && (
           <Card className="glass-card p-6">
