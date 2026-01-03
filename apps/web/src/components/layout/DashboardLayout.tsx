@@ -19,6 +19,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
 import QuickActions from '@/components/ui/QuickActions';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { ProgressBar } from '@/components/navigation/ProgressBar';
 import { PageTransition } from '@/components/navigation/PageTransition';
 import { usePrefetchRoutes } from '@/hooks/usePrefetchRoutes';
@@ -127,6 +128,9 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
 
         {/* Quick Actions FAB */}
         <QuickActions />
+        
+        {/* Feedback/Report Button */}
+        <FeedbackButton />
 
         {/* Page Content */}
         <main 

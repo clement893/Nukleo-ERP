@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useRouter } from '@/i18n/routing';
 import { 
   Plus, 
   X, 
@@ -23,7 +24,20 @@ interface QuickAction {
 
 export default function QuickActions() {
   const router = useRouter();
+  const locale = useLocale();
   const [isOpen, setIsOpen] = useState(false);
+
+  // Helper function to build locale-aware paths
+  const buildPath = (path: string): string => {
+    // Remove leading slash if present
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    // If locale is 'en' (default), no prefix needed
+    if (locale === 'en') {
+      return `/${cleanPath}`;
+    }
+    // Otherwise, add locale prefix
+    return `/${locale}/${cleanPath}`;
+  };
 
   const actions: QuickAction[] = [
     {
@@ -32,7 +46,8 @@ export default function QuickActions() {
       icon: <FolderPlus className="w-5 h-5" />,
       color: 'from-blue-500 to-blue-600',
       onClick: () => {
-        router.push('/dashboard/projets/projets/new');
+        // Navigate to projects page - creation is done via modal on that page
+        router.push(buildPath('dashboard/projets/projets'));
         setIsOpen(false);
       },
     },
@@ -42,7 +57,8 @@ export default function QuickActions() {
       icon: <UserPlus className="w-5 h-5" />,
       color: 'from-purple-500 to-purple-600',
       onClick: () => {
-        router.push('/dashboard/projets/clients/new');
+        // Navigate to clients page - creation is done via modal on that page
+        router.push(buildPath('dashboard/projets/clients'));
         setIsOpen(false);
       },
     },
@@ -52,8 +68,7 @@ export default function QuickActions() {
       icon: <FileText className="w-5 h-5" />,
       color: 'from-green-500 to-green-600',
       onClick: () => {
-        // Navigate to tasks page - task creation can be done there
-        window.location.href = '/fr/dashboard/projets/taches';
+        router.push(buildPath('dashboard/projets/taches'));
         setIsOpen(false);
       },
     },
@@ -78,8 +93,16 @@ export default function QuickActions() {
       icon: <Bell className="w-5 h-5" />,
       color: 'from-red-500 to-red-600',
       onClick: () => {
-        router.push('/dashboard/notifications');
+        // Navigate to dashboard - notifications are shown in the header bell
+        router.push(buildPath('dashboard'));
         setIsOpen(false);
+        // Focus on notification bell if available
+        setTimeout(() => {
+          const bellButton = document.querySelector('[aria-label*="notification"], [aria-label*="Notification"]') as HTMLElement;
+          if (bellButton) {
+            bellButton.click();
+          }
+        }, 300);
       },
     },
     {
@@ -88,7 +111,8 @@ export default function QuickActions() {
       icon: <Calendar className="w-5 h-5" />,
       color: 'from-indigo-500 to-indigo-600',
       onClick: () => {
-        router.push('/dashboard/calendar');
+        // Navigate to agenda/calendar page
+        router.push(buildPath('dashboard/agenda/calendrier'));
         setIsOpen(false);
       },
     },
