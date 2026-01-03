@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.modules.leo.models.leo_documentation import LeoDocumentation, DocumentationCategory, DocumentationPriority
 from app.models.user import User
-from app.schemas.leo_documentation import (
+from app.modules.leo.schemas.leo_documentation import (
     LeoDocumentationCreate,
     LeoDocumentationUpdate,
     LeoDocumentation as LeoDocumentationSchema,
