@@ -372,18 +372,20 @@ export default function OperationsDashboardPage() {
                     const isUrgent = daysUntilDeadline !== null && daysUntilDeadline <= 7 && daysUntilDeadline >= 0;
                     
                     return (
-                      <div
+                      <Link
                         key={project.id}
-                        className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500/30 transition-all"
+                        href={`/${locale}/dashboard/projets/projets/${project.id}`}
+                        className="block p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500/30 transition-all relative cursor-pointer group"
                       >
-                        <div className="flex items-start justify-between mb-3">
+                        <div className="absolute top-3 right-3 p-1.5 rounded-md group-hover:bg-gray-100 dark:group-hover:bg-gray-800 transition-colors">
+                          <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary-500 transition-colors" />
+                        </div>
+                        <div className="flex items-start justify-between mb-3 pr-8">
                           <div className="flex-1">
                             <div className="flex items-start gap-2 mb-2">
-                              <Link href={`/${locale}/dashboard/projets/projets/${project.id}`}>
-                                <h4 className="font-semibold text-gray-900 dark:text-white hover:text-primary-500 transition-colors">
-                                  {project.name}
-                                </h4>
-                              </Link>
+                              <h4 className="font-semibold text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors">
+                                {project.name}
+                              </h4>
                               {isOverdue && (
                                 <Badge className="bg-danger-500/10 text-danger-500 border-danger-500/30 border text-xs">
                                   En retard
@@ -428,15 +430,7 @@ export default function OperationsDashboardPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <Link href={`/${locale}/dashboard/projets/projets/${project.id}`}>
-                            <Button variant="outline" size="sm" className="text-xs">
-                              Voir le projet
-                              <ArrowRight className="w-3 h-3 ml-1" />
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
+                      </Link>
                     );
                   })
                 )}
