@@ -8,11 +8,11 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui';
-import { Users, UserPlus, UserCheck, UserX } from 'lucide-react';
+import { Users, UserPlus, UserCheck } from 'lucide-react';
 import { useInfiniteEmployees } from '@/lib/query/employees';
 import type { ManagementWidgetProps } from '@/lib/management/types';
 
-export function EmployeesStatsWidget({ widgetId, config }: ManagementWidgetProps) {
+export function EmployeesStatsWidget({ widgetId: _widgetId, config: _config }: ManagementWidgetProps) {
   const router = useRouter();
   const { data: employeesData, isLoading } = useInfiniteEmployees(1000);
   

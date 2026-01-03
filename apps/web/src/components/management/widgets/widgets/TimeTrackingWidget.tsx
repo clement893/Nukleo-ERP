@@ -8,12 +8,12 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui';
-import { Clock, TrendingUp } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { timeEntriesAPI } from '@/lib/api/time-entries';
 import type { ManagementWidgetProps } from '@/lib/management/types';
 
-export function TimeTrackingWidget({ widgetId, config }: ManagementWidgetProps) {
+export function TimeTrackingWidget({ widgetId: _widgetId, config: _config }: ManagementWidgetProps) {
   const router = useRouter();
   
   const { data: timeEntriesData, isLoading } = useInfiniteQuery({

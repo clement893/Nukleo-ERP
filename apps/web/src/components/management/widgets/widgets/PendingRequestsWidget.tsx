@@ -13,7 +13,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { vacationRequestsAPI } from '@/lib/api/vacationRequests';
 import type { ManagementWidgetProps } from '@/lib/management/types';
 
-export function PendingRequestsWidget({ widgetId, config }: ManagementWidgetProps) {
+export function PendingRequestsWidget({ widgetId: _widgetId, config: _config }: ManagementWidgetProps) {
   const router = useRouter();
   
   const { data: vacationsData, isLoading } = useInfiniteQuery({

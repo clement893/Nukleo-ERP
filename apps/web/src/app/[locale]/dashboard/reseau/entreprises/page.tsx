@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { NukleoPageHeader } from '@/components/nukleo';
 import { 
@@ -23,11 +23,9 @@ import {
   Paperclip,
   Edit,
   ExternalLink,
-  Star,
-  X,
-  Tag
+  Star
 } from 'lucide-react';
-import { Badge, Button, Card, Loading, Input } from '@/components/ui';
+import { Badge, Button, Loading } from '@/components/ui';
 import { useInfiniteCompanies, useDeleteCompany, useCreateCompany, useCompany, companiesAPI } from '@/lib/query/companies';
 import { useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
@@ -60,9 +58,6 @@ export default function EntreprisesPage() {
   const [companyDetails, setCompanyDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [drawerTab, setDrawerTab] = useState<'info' | 'comments' | 'attachments' | 'edit'>('info');
-  
-  // Infinite scroll ref
-  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Debounce search query to avoid too many API calls
   useEffect(() => {

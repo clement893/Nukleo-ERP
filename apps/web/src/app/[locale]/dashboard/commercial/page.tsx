@@ -24,7 +24,7 @@ import { useInfiniteOpportunities, useCreateOpportunity } from '@/lib/query/oppo
 import { useInfiniteQuotes, useInfiniteSubmissions, useCreateQuote } from '@/lib/query/commercial';
 import { useCreateCompany, useInfiniteCompanies } from '@/lib/query/companies';
 import { useCreateReseauContact } from '@/lib/query/reseau-contacts';
-import { employeesAPI } from '@/lib/api';
+import { employeesAPI } from '@/lib/api/management';
 import OpportunityForm from '@/components/commercial/OpportunityForm';
 import QuoteForm from '@/components/commercial/QuoteForm';
 import ContactForm from '@/components/reseau/ContactForm';

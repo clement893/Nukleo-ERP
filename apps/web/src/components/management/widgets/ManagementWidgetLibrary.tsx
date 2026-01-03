@@ -10,7 +10,7 @@ import Modal from '@/components/ui/Modal';
 import { Button, Card } from '@/components/ui';
 import { useManagementDashboardStore } from '@/lib/management/store';
 import type { ManagementWidgetType, WidgetMetadata } from '@/lib/management/types';
-import { Users, Clock, Plane, AlertCircle, Calendar } from 'lucide-react';
+import { Users, Clock, AlertCircle, Calendar } from 'lucide-react';
 
 interface ManagementWidgetLibraryProps {
   isOpen: boolean;

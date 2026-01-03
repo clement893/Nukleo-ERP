@@ -848,7 +848,6 @@ export default function ProjetsPage() {
                 </thead>
                 <tbody>
                   {filteredAndSortedProjects.map((project: Project) => {
-                    const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.ACTIVE;
                     const progress = calculateProgress(project);
                     
                     return (

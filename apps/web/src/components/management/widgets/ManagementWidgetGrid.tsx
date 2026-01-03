@@ -26,7 +26,7 @@ export function ManagementWidgetGrid({ className = '' }: ManagementWidgetGridPro
     updateLayout,
   } = useManagementDashboardStore();
 
-  const [width, setWidth] = useState(1200);
+  const [width] = useState(1200);
 
   const currentConfig = useMemo(() => {
     return configs.find(c => c.id === activeConfig) || configs[0];
@@ -124,6 +124,7 @@ export function ManagementWidgetGrid({ className = '' }: ManagementWidgetGridPro
           rowHeight={100}
           isDraggable={isEditMode}
           isResizable={isEditMode}
+          // @ts-ignore - react-grid-layout types may not include isDraggable
           onLayoutChange={handleLayoutChange}
           margin={[16, 16]}
           containerPadding={[0, 0]}
