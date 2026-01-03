@@ -632,6 +632,10 @@ async def import_transactions(
         # Process valid rows and create transactions
         created_transactions = []
         errors = []
+        warnings = result.get('warnings', []).copy() if result.get('warnings') else []
+        
+        logger.info(f"Processing {len(result['data'])} valid rows from {result.get('total_rows', 0)} total rows")
+        logger.info(f"Import result: {result.get('valid_rows', 0)} valid, {result.get('invalid_rows', 0)} invalid, {len(warnings)} warnings")
         
         for idx, row_data in enumerate(result['data'], start=2):  # Start at 2 (header + 1-based)
             try:
@@ -685,7 +689,12 @@ async def import_transactions(
                     if category:
                         category_id = category.id
                     else:
+                        warning_msg = f"Catégorie '{category_name}' non trouvée pour la ligne {idx}, la transaction sera créée sans catégorie"
                         logger.warning(f"Category '{category_name}' not found for user {current_user.id}, transaction will be created without category")
+                        warnings.append({
+                            "row": idx,
+                            "message": warning_msg
+                        })
                 
                 # Parse dates
                 expected_payment_date = None
@@ -818,12 +827,26 @@ async def import_transactions(
         
         logger.info(f"User {current_user.id} imported {len(created_transactions)} transactions")
         
+        # Log warning if no transactions were created
+        if len(created_transactions) == 0:
+            logger.warning(
+                f"Import completed but no transactions were created. "
+                f"Total rows: {result.get('total_rows', 0)}, "
+                f"Valid rows: {result.get('valid_rows', 0)}, "
+                f"Invalid rows: {result.get('invalid_rows', 0)}, "
+                f"Errors: {len(errors)}, "
+                f"Warnings: {len(result.get('warnings', []))}"
+            )
+        
         return {
             "success": True,
             "created_count": len(created_transactions),
             "error_count": len(errors),
+            "total_rows": result.get('total_rows', 0),
+            "valid_rows": result.get('valid_rows', len(created_transactions)),
+            "invalid_rows": result.get('invalid_rows', len(errors)),
             "errors": errors,
-            "warnings": result.get('warnings', []),
+            "warnings": warnings,
             "transactions": [
                 TransactionResponse.model_validate(t) for t in created_transactions[:10]
             ]

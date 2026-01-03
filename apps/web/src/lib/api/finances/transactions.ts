@@ -208,9 +208,7 @@ export const transactionsAPI = {
       errors: Array<{ row: number; data: unknown; error: string }>;
       warnings?: Array<{ row: number; type: string; message: string }>;
       transactions?: Transaction[];
-    }>(`/v1/finances/transactions/import?dry_run=${dryRun}`, formData, {
-      // Remove Content-Type header - axios will set it automatically with boundary
-    });
+    }>(`/v1/finances/transactions/import?dry_run=${dryRun}`, formData);
     
     const data = extractApiData<{
       success: boolean;

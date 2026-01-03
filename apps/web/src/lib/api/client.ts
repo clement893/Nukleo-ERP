@@ -41,9 +41,16 @@ class ApiClient {
   }
 
   private setupInterceptors(): void {
-    // Request interceptor - Add authentication token
+    // Request interceptor - Add authentication token and handle FormData
     this.client.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
+        // Handle FormData - remove Content-Type to let axios set it with boundary
+        if (config.data instanceof FormData) {
+          if (config.headers) {
+            delete config.headers['Content-Type'];
+          }
+        }
+        
         // Add authentication token if available
         if (typeof window !== 'undefined' && config.headers) {
           const token = TokenStorage.getToken();

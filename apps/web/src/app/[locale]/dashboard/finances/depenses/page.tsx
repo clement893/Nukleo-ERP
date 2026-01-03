@@ -9,13 +9,15 @@ import {
   TrendingDown, FileText, Upload, Download, 
   Building2, Repeat, Receipt, Search,
   Plus, Edit, Eye, CheckCircle, XCircle, Clock,
-  Trash2, AlertCircle, CheckCircle2
+  Trash2, AlertCircle, CheckCircle2, AlertTriangle, Info
 } from 'lucide-react';
 import { Card, Button, Badge, Input, Tabs, TabList, Tab, TabPanels, TabPanel, Select, Textarea, useToast } from '@/components/ui';
 import Modal from '@/components/ui/Modal';
 import { logger } from '@/lib/logger';
 import { transactionsAPI, type Transaction, type TransactionCreate, type TransactionUpdate, type TransactionStatus } from '@/lib/api/finances/transactions';
 import { handleApiError } from '@/lib/errors/api';
+import { createLog } from '@/lib/monitoring/logs';
+import ImportLogsViewer from '@/components/finances/ImportLogsViewer';
 
 const EXPENSE_CATEGORIES = [
   'Fournitures',
@@ -95,6 +97,7 @@ export default function DepensesPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Transaction | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -119,6 +122,19 @@ export default function DepensesPage() {
     notes: null,
   });
 
+  // Invoice form state
+  const [invoiceFormData, setInvoiceFormData] = useState({
+    invoice_number: '',
+    supplier_name: '',
+    amount: '',
+    currency: 'CAD',
+    issue_date: new Date().toISOString().split('T')[0],
+    due_date: '',
+    category: '',
+    description: '',
+    status: 'pending' as TransactionStatus,
+  });
+
   useEffect(() => {
     loadData();
   }, [activeTab, statusFilter]);
@@ -133,11 +149,33 @@ export default function DepensesPage() {
           status: statusFilter !== 'all' ? statusFilter : undefined,
         });
         setExpenses(data);
+      } else if (activeTab === 'invoices') {
+        // Load invoices (expenses with invoice_number)
+        const data = await transactionsAPI.list({ 
+          type: 'expense',
+          limit: 1000,
+        });
+        const invoiceTransactions = data.filter(t => t.invoice_number);
+        const invoiceList: Invoice[] = invoiceTransactions.map(t => ({
+          id: t.id,
+          invoice_number: t.invoice_number || '',
+          supplier_id: t.supplier_id || 0,
+          supplier_name: t.supplier_name || 'Fournisseur inconnu',
+          amount: parseFloat(t.amount),
+          currency: t.currency,
+          issue_date: t.transaction_date,
+          due_date: t.expected_payment_date || t.transaction_date,
+          status: t.status === 'paid' ? 'paid' : 
+                  t.status === 'cancelled' ? 'overdue' :
+                  new Date(t.expected_payment_date || t.transaction_date) < new Date() ? 'overdue' : 'received',
+          category: t.category || 'Autre',
+          description: t.description,
+        }));
+        setInvoices(invoiceList);
       } else {
-        // TODO: Load suppliers, recurring expenses, invoices
+        // TODO: Load suppliers, recurring expenses
         setSuppliers([]);
         setRecurringExpenses([]);
-        setInvoices([]);
       }
     } catch (error) {
       logger.error('Error loading expenses data', error);
@@ -282,6 +320,65 @@ export default function DepensesPage() {
     });
   };
 
+  const resetInvoiceForm = () => {
+    setInvoiceFormData({
+      invoice_number: '',
+      supplier_name: '',
+      amount: '',
+      currency: 'CAD',
+      issue_date: new Date().toISOString().split('T')[0],
+      due_date: '',
+      category: '',
+      description: '',
+      status: 'pending',
+    });
+  };
+
+  const handleCreateInvoice = async () => {
+    try {
+      setIsSubmitting(true);
+      if (!invoiceFormData.invoice_number.trim() || !invoiceFormData.supplier_name.trim() || !invoiceFormData.amount) {
+        showToast({ 
+          message: 'Veuillez remplir tous les champs requis (numéro de facture, fournisseur, montant)', 
+          type: 'error' 
+        });
+        return;
+      }
+
+      const transactionData: TransactionCreate = {
+        type: 'expense',
+        description: invoiceFormData.description || `Facture ${invoiceFormData.invoice_number} - ${invoiceFormData.supplier_name}`,
+        amount: parseFloat(invoiceFormData.amount),
+        currency: invoiceFormData.currency,
+        category: invoiceFormData.category || null,
+        transaction_date: new Date(invoiceFormData.issue_date).toISOString(),
+        payment_date: invoiceFormData.status === 'paid' ? new Date().toISOString() : null,
+        expected_payment_date: invoiceFormData.due_date ? new Date(invoiceFormData.due_date).toISOString() : null,
+        status: invoiceFormData.status,
+        supplier_name: invoiceFormData.supplier_name,
+        invoice_number: invoiceFormData.invoice_number,
+        notes: null,
+      };
+
+      await transactionsAPI.create(transactionData);
+      await loadData();
+      setShowInvoiceModal(false);
+      resetInvoiceForm();
+      showToast({ 
+        message: 'Facture ajoutée avec succès', 
+        type: 'success' 
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ 
+        message: appError.message || 'Erreur lors de la création de la facture', 
+        type: 'error' 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDownloadTemplate = async () => {
     try {
       const blob = await transactionsAPI.downloadTemplate('zip');
@@ -319,24 +416,71 @@ export default function DepensesPage() {
 
     try {
       setUploading(true);
+      createLog('info', `Début de l'import du fichier: ${uploadFile.name}`, { filename: uploadFile.name, size: uploadFile.size }, 'import-transactions');
+      
       const result = await transactionsAPI.import(uploadFile, false);
       setImportResult(result);
       
+      // Logs d'import
+      createLog('info', `Import terminé: ${result.total_rows || 0} ligne(s) traitée(s)`, {
+        total_rows: result.total_rows,
+        valid_rows: result.valid_rows,
+        invalid_rows: result.invalid_rows,
+        created_count: result.created_count,
+        error_count: result.error_count
+      }, 'import-transactions');
+      
       if (result.success && result.created_count > 0) {
+        createLog('info', `${result.created_count} transaction(s) créée(s) avec succès`, {
+          created_count: result.created_count
+        }, 'import-transactions');
         await loadData();
         showToast({
           message: `${result.created_count} transaction(s) importée(s) avec succès`,
           type: 'success',
         });
-      } else if (result.error_count > 0) {
+      } else if (result.created_count === 0) {
+        createLog('warn', 'Aucune transaction créée lors de l\'import', {
+          total_rows: result.total_rows,
+          valid_rows: result.valid_rows,
+          invalid_rows: result.invalid_rows,
+          error_count: result.error_count,
+          warnings_count: result.warnings?.length || 0
+        }, 'import-transactions');
+      }
+      
+      if (result.error_count > 0) {
+        createLog('error', `${result.error_count} erreur(s) lors de l'import`, {
+          error_count: result.error_count,
+          errors: result.errors
+        }, 'import-transactions');
         showToast({
           message: `${result.error_count} erreur(s) lors de l'import`,
           type: 'error',
         });
       }
+      
+      if (result.warnings && result.warnings.length > 0) {
+        result.warnings.forEach((warning: any, idx: number) => {
+          const warningMsg = typeof warning === 'string' 
+            ? warning 
+            : warning.message || warning.warning || `Avertissement ligne ${warning.row || idx + 1}`;
+          createLog('warn', warningMsg, { warning, row: warning.row }, 'import-transactions');
+        });
+      }
+      
+      if (result.errors && result.errors.length > 0) {
+        result.errors.slice(0, 10).forEach((error: any) => {
+          createLog('error', `Ligne ${error.row}: ${error.error || error.message}`, { error, row: error.row }, 'import-transactions');
+        });
+        if (result.errors.length > 10) {
+          createLog('error', `... et ${result.errors.length - 10} autre(s) erreur(s)`, { total_errors: result.errors.length }, 'import-transactions');
+        }
+      }
     } catch (error) {
       logger.error('Error uploading file', error);
       const appError = handleApiError(error);
+      createLog('error', `Erreur lors de l'import: ${appError.message || 'Erreur inconnue'}`, { error: appError }, 'import-transactions');
       showToast({
         message: appError.message || 'Erreur lors de l\'import du fichier',
         type: 'error',
@@ -871,11 +1015,8 @@ export default function DepensesPage() {
                   <Button
                     variant="primary"
                     onClick={() => {
-                      // TODO: Open invoice modal
-                      showToast({
-                        message: 'Fonctionnalité à venir',
-                        type: 'info',
-                      });
+                      resetInvoiceForm();
+                      setShowInvoiceModal(true);
                     }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -891,11 +1032,8 @@ export default function DepensesPage() {
                       <Button
                         variant="primary"
                         onClick={() => {
-                          // TODO: Open invoice modal
-                          showToast({
-                            message: 'Fonctionnalité à venir',
-                            type: 'info',
-                          });
+                          resetInvoiceForm();
+                          setShowInvoiceModal(true);
                         }}
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -1201,6 +1339,119 @@ export default function DepensesPage() {
           </div>
         </Modal>
 
+        {/* Create Invoice Modal */}
+        <Modal
+          isOpen={showInvoiceModal}
+          onClose={() => {
+            setShowInvoiceModal(false);
+            resetInvoiceForm();
+          }}
+          title="Ajouter une facture reçue"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Numéro de facture *"
+              value={invoiceFormData.invoice_number}
+              onChange={(e) => setInvoiceFormData({ ...invoiceFormData, invoice_number: e.target.value })}
+              placeholder="Ex: FAC-2025-001"
+              required
+            />
+
+            <Input
+              label="Fournisseur *"
+              value={invoiceFormData.supplier_name}
+              onChange={(e) => setInvoiceFormData({ ...invoiceFormData, supplier_name: e.target.value })}
+              placeholder="Nom du fournisseur"
+              required
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Montant *"
+                type="number"
+                step="0.01"
+                min="0"
+                value={invoiceFormData.amount}
+                onChange={(e) => setInvoiceFormData({ ...invoiceFormData, amount: e.target.value })}
+                placeholder="0.00"
+                required
+              />
+              <Select
+                label="Devise"
+                value={invoiceFormData.currency}
+                onChange={(e) => setInvoiceFormData({ ...invoiceFormData, currency: e.target.value })}
+                options={[
+                  { label: 'CAD', value: 'CAD' },
+                  { label: 'USD', value: 'USD' },
+                  { label: 'EUR', value: 'EUR' },
+                ]}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Date d'émission *"
+                type="date"
+                value={invoiceFormData.issue_date}
+                onChange={(e) => setInvoiceFormData({ ...invoiceFormData, issue_date: e.target.value })}
+                required
+              />
+              <Input
+                label="Date d'échéance"
+                type="date"
+                value={invoiceFormData.due_date}
+                onChange={(e) => setInvoiceFormData({ ...invoiceFormData, due_date: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Catégorie"
+                value={invoiceFormData.category}
+                onChange={(e) => setInvoiceFormData({ ...invoiceFormData, category: e.target.value })}
+                options={[
+                  { label: 'Aucune', value: '' },
+                  ...EXPENSE_CATEGORIES.map(c => ({ label: c, value: c })),
+                ]}
+              />
+              <Select
+                label="Statut"
+                value={invoiceFormData.status}
+                onChange={(e) => setInvoiceFormData({ ...invoiceFormData, status: e.target.value as TransactionStatus })}
+                options={STATUS_OPTIONS.map(s => ({ label: s.label, value: s.value }))}
+              />
+            </div>
+
+            <Textarea
+              label="Description"
+              value={invoiceFormData.description}
+              onChange={(e) => setInvoiceFormData({ ...invoiceFormData, description: e.target.value })}
+              placeholder="Description de la facture (optionnel)"
+              rows={3}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowInvoiceModal(false);
+                  resetInvoiceForm();
+                }}
+                disabled={isSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleCreateInvoice}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Création...' : 'Ajouter la facture'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
         {/* Upload/Import Modal */}
         <Modal
           isOpen={showUploadModal}
@@ -1258,49 +1509,158 @@ export default function DepensesPage() {
             </div>
 
             {importResult && (
-              <div className={`p-4 rounded-lg border ${
-                importResult.success 
-                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
-                  : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-              }`}>
-                <div className="flex items-start gap-3">
-                  {importResult.success ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                  )}
-                  <div className="flex-1">
-                    <h3 className={`font-semibold mb-2 ${
-                      importResult.success 
-                        ? 'text-green-900 dark:text-green-100' 
-                        : 'text-red-900 dark:text-red-100'
-                    }`}>
-                      {importResult.success ? 'Import réussi' : 'Erreurs lors de l\'import'}
-                    </h3>
-                    <div className="text-sm space-y-1">
-                      <p className={importResult.success ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200'}>
+              <div className="space-y-3">
+                {/* Résumé principal */}
+                <div className={`p-4 rounded-lg border ${
+                  importResult.success 
+                    ? importResult.created_count > 0
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                      : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                    : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    {importResult.success ? (
+                      importResult.created_count > 0 ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                      ) : (
+                        <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                      )
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                    )}
+                    <div className="flex-1">
+                      <h3 className={`font-semibold mb-2 ${
+                        importResult.success 
+                          ? importResult.created_count > 0
+                            ? 'text-green-900 dark:text-green-100'
+                            : 'text-yellow-900 dark:text-yellow-100'
+                          : 'text-red-900 dark:text-red-100'
+                      }`}>
                         {importResult.success 
-                          ? `${importResult.created_count} transaction(s) créée(s)`
-                          : `${importResult.error_count} erreur(s) trouvée(s)`
+                          ? importResult.created_count > 0
+                            ? 'Import réussi'
+                            : 'Import terminé - Aucune transaction créée'
+                          : 'Erreurs lors de l\'import'
                         }
-                      </p>
-                      {importResult.errors && importResult.errors.length > 0 && (
-                        <div className="mt-2">
-                          <p className="font-semibold mb-1">Erreurs:</p>
-                          <ul className="list-disc list-inside space-y-1 max-h-40 overflow-y-auto">
-                            {importResult.errors.slice(0, 10).map((error: any, idx: number) => (
-                              <li key={idx} className="text-xs">
-                                Ligne {error.row}: {error.error}
-                              </li>
-                            ))}
-                          </ul>
+                      </h3>
+                      <div className="text-sm space-y-2">
+                        <div className="flex flex-wrap gap-4">
+                          {importResult.created_count !== undefined && (
+                            <p className={importResult.created_count > 0 ? 'text-green-800 dark:text-green-200' : 'text-yellow-800 dark:text-yellow-200'}>
+                              <span className="font-semibold">{importResult.created_count}</span> transaction(s) créée(s)
+                            </p>
+                          )}
+                          {importResult.error_count !== undefined && importResult.error_count > 0 && (
+                            <p className="text-red-800 dark:text-red-200">
+                              <span className="font-semibold">{importResult.error_count}</span> erreur(s)
+                            </p>
+                          )}
+                          {importResult.warnings && importResult.warnings.length > 0 && (
+                            <p className="text-yellow-800 dark:text-yellow-200">
+                              <span className="font-semibold">{importResult.warnings.length}</span> avertissement(s)
+                            </p>
+                          )}
+                          {importResult.total_rows !== undefined && (
+                            <p className="text-gray-700 dark:text-gray-300">
+                              <span className="font-semibold">{importResult.total_rows}</span> ligne(s) traitée(s)
+                            </p>
+                          )}
                         </div>
-                      )}
+                        {importResult.success && importResult.created_count === 0 && (
+                          <div className="bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded p-2">
+                            <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                              <Info className="w-4 h-4 inline mr-1" />
+                              Aucune transaction n'a été créée. Vérifiez que votre fichier contient des données valides et que les colonnes requises sont présentes.
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Warnings */}
+                {importResult.warnings && importResult.warnings.length > 0 && (
+                  <div className="p-4 rounded-lg border bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                          Avertissements ({importResult.warnings.length})
+                        </h4>
+                        <ul className="list-disc list-inside space-y-1 max-h-40 overflow-y-auto">
+                          {importResult.warnings.slice(0, 20).map((warning: any, idx: number) => (
+                            <li key={idx} className="text-xs text-yellow-800 dark:text-yellow-200">
+                              {typeof warning === 'string' 
+                                ? warning 
+                                : warning.row 
+                                  ? `Ligne ${warning.row}: ${warning.message || warning.warning || JSON.stringify(warning)}`
+                                  : warning.message || warning.warning || JSON.stringify(warning)
+                              }
+                            </li>
+                          ))}
+                          {importResult.warnings.length > 20 && (
+                            <li className="text-xs text-yellow-600 dark:text-yellow-400 italic">
+                              ... et {importResult.warnings.length - 20} autre(s) avertissement(s)
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Erreurs */}
+                {importResult.errors && importResult.errors.length > 0 && (
+                  <div className="p-4 rounded-lg border bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-red-900 dark:text-red-100 mb-2">
+                          Erreurs ({importResult.errors.length})
+                        </h4>
+                        <ul className="list-disc list-inside space-y-1 max-h-40 overflow-y-auto">
+                          {importResult.errors.slice(0, 20).map((error: any, idx: number) => (
+                            <li key={idx} className="text-xs text-red-800 dark:text-red-200">
+                              {error.row 
+                                ? `Ligne ${error.row}: ${error.error || error.message || JSON.stringify(error)}`
+                                : error.error || error.message || JSON.stringify(error)
+                              }
+                            </li>
+                          ))}
+                          {importResult.errors.length > 20 && (
+                            <li className="text-xs text-red-600 dark:text-red-400 italic">
+                              ... et {importResult.errors.length - 20} autre(s) erreur(s)
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+
+            {/* Logs d'import - Toujours visible */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-sm">Logs d'import en temps réel</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // Clear logs
+                    const { logStore } = require('@/lib/monitoring/logs');
+                    logStore.clearLogs();
+                  }}
+                >
+                  Effacer
+                </Button>
+              </div>
+              <div className="max-h-96 overflow-hidden border rounded-lg p-3 bg-gray-50 dark:bg-gray-900">
+                <ImportLogsViewer />
+              </div>
+            </div>
 
             <div className="flex justify-end gap-2 pt-4">
               <Button
