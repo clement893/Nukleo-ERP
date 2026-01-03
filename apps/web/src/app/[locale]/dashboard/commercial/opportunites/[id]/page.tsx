@@ -9,7 +9,6 @@ import { PageContainer } from '@/components/layout';
 import { Loading, Alert, Badge, Button, Card } from '@/components/ui';
 import { 
   ArrowLeft, 
-  Edit, 
   Calendar, 
   Users, 
   Tag,
@@ -66,12 +65,6 @@ export default function OpportunityDetailPage() {
     }
   };
 
-  const handleEdit = () => {
-    if (opportunity) {
-      const locale = params?.locale as string || 'fr';
-      router.push(`/${locale}/dashboard/commercial/opportunites/${opportunity.id}/edit`);
-    }
-  };
 
   const formatCurrency = (amount: number | null | undefined) => {
     if (!amount) return '-';
@@ -392,17 +385,6 @@ export default function OpportunityDetailPage() {
         </div>
       </div>
 
-      {/* Quick Action - Edit Button (Floating) */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={handleEdit}
-          className="w-14 h-14 bg-nukleo-gradient rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95 transition-all duration-300"
-          aria-label="Modifier l'opportunité"
-          title="Modifier l'opportunité"
-        >
-          <Edit className="w-6 h-6" aria-hidden="true" />
-        </button>
-      </div>
     </PageContainer>
   );
 }
