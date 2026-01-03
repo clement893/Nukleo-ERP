@@ -11,17 +11,15 @@ import {
   FileText, 
   Upload, 
   Link as LinkIcon, 
-  X, 
   ExternalLink, 
   Image as ImageIcon,
   File,
   Trash2,
-  Plus,
   Loader2
 } from 'lucide-react';
-import { Button, Input, Card, Alert } from '@/components/ui';
+import { Button, Input, Card } from '@/components/ui';
 import { useToast } from '@/components/ui';
-import { opportunitiesAPI, type Opportunity } from '@/lib/api/opportunities';
+import { type Opportunity } from '@/lib/api/opportunities';
 import { mediaAPI } from '@/lib/api/media';
 import { handleApiError } from '@/lib/errors/api';
 

@@ -10,7 +10,6 @@ import { Loading, Alert, Badge, Button, Card } from '@/components/ui';
 import { 
   ArrowLeft, 
   Edit, 
-  FileText, 
   Calendar, 
   Users, 
   Tag,
