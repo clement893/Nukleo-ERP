@@ -10,8 +10,6 @@ import { Loading, Alert, Badge, Button, Card } from '@/components/ui';
 import { 
   ArrowLeft, 
   Calendar, 
-  Users, 
-  Tag,
   DollarSign,
   TrendingUp,
   Target,
@@ -173,7 +171,7 @@ export default function OpportunityDetailPage() {
                 </div>
               )}
               {opportunity.status && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="default" className="text-xs">
                   {opportunity.status}
                 </Badge>
               )}

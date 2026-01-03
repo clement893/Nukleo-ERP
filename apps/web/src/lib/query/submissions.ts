@@ -145,7 +145,7 @@ export function useDeleteSubmission() {
       
       // Update infinite query cache to remove the deleted submission
       queryClient.setQueriesData(
-        { queryKey: submissionKeys.lists(), type: 'infinite' },
+        { queryKey: submissionKeys.lists() },
         (oldData: any) => {
           if (!oldData) return oldData;
           

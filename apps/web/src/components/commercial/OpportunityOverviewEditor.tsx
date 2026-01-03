@@ -11,12 +11,12 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useOpportunityEditor } from '@/hooks/useOpportunityEditor';
 import { Opportunity } from '@/lib/api/opportunities';
-import { pipelinesAPI, Pipeline } from '@/lib/api/pipelines';
-import { companiesAPI, Company } from '@/lib/api/companies';
-import { contactsAPI, Contact } from '@/lib/api/contacts';
+import { pipelinesAPI } from '@/lib/api/pipelines';
+import { companiesAPI } from '@/lib/api/companies';
+import { contactsAPI } from '@/lib/api/contacts';
 import { apiClient } from '@/lib/api/client';
 import { extractApiData } from '@/lib/api/utils';
-import { Card, Button, Input, Textarea, Select, DatePicker, Badge } from '@/components/ui';
+import { Card, Button, Input, Textarea, Select, DatePicker } from '@/components/ui';
 import { 
   Loader2, 
   Check, 
@@ -24,16 +24,10 @@ import {
   Save,
   DollarSign,
   TrendingUp,
-  Calendar,
-  Building2,
   Tag,
   User,
-  Users,
-  Globe,
   Link as LinkIcon,
-  MapPin,
-  FileText,
-  Clock
+  MapPin
 } from 'lucide-react';
 import MultiSelect from '@/components/ui/MultiSelect';
 
@@ -91,7 +85,6 @@ export function OpportunityOverviewEditor({
   const {
     opportunity,
     updateField,
-    updateFields,
     saveStatus,
     saveOpportunity,
     error,
@@ -305,7 +298,7 @@ export function OpportunityOverviewEditor({
                 onChange={(e) => handleAmountChange(e.target.value)}
                 placeholder="0,00 €"
                 fullWidth
-                icon={<DollarSign className="w-4 h-4" />}
+                leftIcon={<DollarSign className="w-4 h-4" />}
               />
               
               <Input
@@ -317,7 +310,7 @@ export function OpportunityOverviewEditor({
                 max={100}
                 placeholder="0-100"
                 fullWidth
-                icon={<TrendingUp className="w-4 h-4" />}
+                leftIcon={<TrendingUp className="w-4 h-4" />}
               />
             </div>
 
@@ -383,7 +376,7 @@ export function OpportunityOverviewEditor({
               onChange={(e) => updateField('region', e.target.value || null)}
               placeholder="Ex: Europe, Amérique du Nord..."
               fullWidth
-              icon={<MapPin className="w-4 h-4" />}
+              leftIcon={<MapPin className="w-4 h-4" />}
             />
           </div>
         </Card>
@@ -444,7 +437,7 @@ export function OpportunityOverviewEditor({
             onChange={(e) => updateField('service_offer_link', e.target.value || null)}
             placeholder="https://..."
             fullWidth
-            icon={<LinkIcon className="w-4 h-4" />}
+            leftIcon={<LinkIcon className="w-4 h-4" />}
           />
 
           <Input
@@ -453,7 +446,7 @@ export function OpportunityOverviewEditor({
             onChange={(e) => updateField('segment', e.target.value || null)}
             placeholder="Ex: B2B, B2C, Public..."
             fullWidth
-            icon={<Tag className="w-4 h-4" />}
+            leftIcon={<Tag className="w-4 h-4" />}
           />
         </div>
       </Card>
