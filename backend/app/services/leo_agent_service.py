@@ -37,6 +37,13 @@ class LeoAgentService:
         Returns:
             Dict with user context information
         """
+        # CRITICAL: Refresh user object to ensure all attributes are loaded in async context
+        # This prevents greenlet_spawn errors
+        try:
+            await self.db.refresh(user)
+        except Exception:
+            pass  # If refresh fails, continue with what we have
+        
         # CRITICAL: Extract all user attributes FIRST, before any async operations
         # This prevents greenlet_spawn errors by ensuring all attributes are accessed
         # while still in the async context where the user object was loaded
@@ -54,9 +61,14 @@ class LeoAgentService:
         # Access all attributes in a loop to ensure they're loaded before async context ends
         role_names = []
         for role in roles:
-            # Access slug attribute immediately while still in async context
-            slug_value = str(role.slug) if hasattr(role, 'slug') and role.slug is not None else ""
-            role_names.append(slug_value)
+            # Extract slug attribute immediately while still in async context
+            try:
+                slug_value = str(role.slug) if hasattr(role, 'slug') and role.slug is not None else ""
+            except Exception:
+                # If accessing slug fails, skip this role
+                slug_value = ""
+            if slug_value:
+                role_names.append(slug_value)
         
         # Get permissions
         permissions = await self.rbac_service.get_user_permissions(user_id)

@@ -43,8 +43,8 @@ async def get_conversations(
     """
     from app.dependencies import is_superadmin
     
-    # Determine which user_id to use
-    target_user_id = current_user.id
+    # CRITICAL: Extract user_id immediately to avoid greenlet_spawn errors
+    target_user_id = int(current_user.id) if current_user.id is not None else 0
     
     # If user_id is provided, check if current user is superadmin
     if user_id is not None:
@@ -87,8 +87,11 @@ async def get_conversation(
     
     leo_service = LeoAgentService(db)
     
+    # CRITICAL: Extract user_id immediately to avoid greenlet_spawn errors
+    user_id = int(current_user.id) if current_user.id is not None else 0
+    
     # Try to get conversation for current user first
-    conversation = await leo_service.get_conversation(conversation_id, current_user.id)
+    conversation = await leo_service.get_conversation(conversation_id, user_id)
     
     # If not found and user is superadmin, try to get conversation without user filter
     if not conversation:
@@ -126,8 +129,11 @@ async def get_conversation_messages(
     
     leo_service = LeoAgentService(db)
     
+    # CRITICAL: Extract user_id immediately to avoid greenlet_spawn errors
+    user_id = int(current_user.id) if current_user.id is not None else 0
+    
     # Verify conversation belongs to user
-    conversation = await leo_service.get_conversation(conversation_id, current_user.id)
+    conversation = await leo_service.get_conversation(conversation_id, user_id)
     
     # If not found and user is superadmin, try to get conversation without user filter
     if not conversation:
@@ -153,13 +159,40 @@ async def get_conversation_messages(
     # Ensure metadata is properly serialized as dict
     message_items = []
     for msg in messages:
+        # Extract all attributes immediately while in async context
+        msg_id = int(msg.id) if msg.id is not None else 0
+        msg_conversation_id = int(msg.conversation_id) if msg.conversation_id is not None else 0
+        msg_role = str(msg.role) if msg.role is not None else ""
+        msg_content = str(msg.content) if msg.content is not None else ""
+        msg_created_at = msg.created_at
+        
+        # Handle metadata - convert SQLAlchemy MetaData object to dict if needed
+        msg_metadata = {}
+        if msg.message_metadata is not None:
+            if isinstance(msg.message_metadata, dict):
+                msg_metadata = msg.message_metadata
+            else:
+                # Try to convert to dict if it's a SQLAlchemy object or other type
+                try:
+                    # If it has __dict__, use it
+                    if hasattr(msg.message_metadata, '__dict__'):
+                        msg_metadata = dict(msg.message_metadata.__dict__)
+                    # If it's iterable (like a dict), convert it
+                    elif hasattr(msg.message_metadata, 'items'):
+                        msg_metadata = dict(msg.message_metadata)
+                    # Otherwise, try to convert to string and parse if possible
+                    else:
+                        msg_metadata = {}
+                except Exception:
+                    msg_metadata = {}
+        
         msg_dict = {
-            "id": msg.id,
-            "conversation_id": msg.conversation_id,
-            "role": msg.role,
-            "content": msg.content,
-            "created_at": msg.created_at,
-            "metadata": msg.message_metadata if isinstance(msg.message_metadata, dict) else (msg.message_metadata or {}),
+            "id": msg_id,
+            "conversation_id": msg_conversation_id,
+            "role": msg_role,
+            "content": msg_content,
+            "created_at": msg_created_at,
+            "metadata": msg_metadata,
         }
         message_items.append(LeoMessage.model_validate(msg_dict))
     
@@ -187,8 +220,11 @@ async def update_conversation(
     
     leo_service = LeoAgentService(db)
     
+    # CRITICAL: Extract user_id immediately to avoid greenlet_spawn errors
+    user_id = int(current_user.id) if current_user.id is not None else 0
+    
     # Verify conversation belongs to user
-    conversation = await leo_service.get_conversation(conversation_id, current_user.id)
+    conversation = await leo_service.get_conversation(conversation_id, user_id)
     
     # If not found and user is superadmin, try to get conversation without user filter
     if not conversation:
@@ -231,8 +267,11 @@ async def delete_conversation(
     
     leo_service = LeoAgentService(db)
     
+    # CRITICAL: Extract user_id immediately to avoid greenlet_spawn errors
+    user_id = int(current_user.id) if current_user.id is not None else 0
+    
     # Try to delete conversation for current user
-    deleted = await leo_service.delete_conversation(conversation_id, current_user.id)
+    deleted = await leo_service.delete_conversation(conversation_id, user_id)
     
     # If not found and user is superadmin, try to delete without user filter
     if not deleted:
@@ -298,9 +337,12 @@ async def leo_query(
         else:
             conversation = await leo_service.create_conversation(user_id)
         
+        # CRITICAL: Extract conversation.id immediately after getting/creating conversation
+        conversation_id = int(conversation.id) if conversation.id is not None else 0
+        
         # 2. Save user message
         user_message = await leo_service.add_message(
-            conversation_id=conversation.id,
+            conversation_id=conversation_id,
             role="user",
             content=request.message,
         )
@@ -356,14 +398,17 @@ DOCUMENTATION:
 
 Souviens-toi: Tu as accès aux données réelles de l'ERP. Utilise-les pour fournir des réponses précises et actionnables."""
         
-        # 7. Get conversation history
-        previous_messages = await leo_service.get_conversation_messages(conversation.id)
+        # 7. Get conversation history (conversation_id already extracted above)
+        previous_messages = await leo_service.get_conversation_messages(conversation_id)
         # Convert messages to dict format immediately to avoid greenlet_spawn errors
         api_messages = []
         for msg in previous_messages:
+            # Extract all attributes immediately while in async context
+            msg_role = str(msg.role) if msg.role is not None else ""
+            msg_content = str(msg.content) if msg.content is not None else ""
             api_messages.append({
-                "role": str(msg.role),
-                "content": str(msg.content)
+                "role": msg_role,
+                "content": msg_content
             })
         
         # 8. Call AI service
@@ -381,7 +426,7 @@ Souviens-toi: Tu as accès aux données réelles de l'ERP. Utilise-les pour four
             
             # 9. Save assistant response
             assistant_message = await leo_service.add_message(
-                conversation_id=conversation.id,
+                conversation_id=conversation_id,
                 role="assistant",
                 content=response["content"],
                 metadata={
@@ -391,10 +436,13 @@ Souviens-toi: Tu as accès aux données réelles de l'ERP. Utilise-les pour four
                 },
             )
             
+            # CRITICAL: Extract assistant_message.id immediately
+            assistant_message_id = int(assistant_message.id) if assistant_message.id is not None else 0
+            
             return LeoQueryResponse(
                 content=response["content"],
-                conversation_id=conversation.id,
-                message_id=assistant_message.id,
+                conversation_id=conversation_id,
+                message_id=assistant_message_id,
                 provider=response.get("provider", "unknown"),
                 model=response.get("model"),
                 usage=response.get("usage"),
@@ -402,9 +450,9 @@ Souviens-toi: Tu as accès aux données réelles de l'ERP. Utilise-les pour four
             
         except Exception as e:
             logger.error(f"AI service error: {e}")
-            # Save error message
+            # Save error message (conversation_id already extracted above)
             error_message = await leo_service.add_message(
-                conversation_id=conversation.id,
+                conversation_id=conversation_id,
                 role="assistant",
                 content=f"Désolé, une erreur s'est produite lors de la génération de la réponse. Veuillez réessayer.",
                 metadata={"error": True, "error_message": str(e)},
