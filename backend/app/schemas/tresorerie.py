@@ -104,7 +104,7 @@ class TransactionCategoryResponse(TransactionCategoryBase):
 
 class TransactionBase(BaseModel):
     """Base transaction schema"""
-    bank_account_id: int = Field(..., description="Bank account ID")
+    bank_account_id: Optional[int] = Field(None, description="Bank account ID (not currently used by Transaction model)")
     type: str = Field(..., description="Transaction type: 'entry' or 'exit'")
     amount: Decimal = Field(..., gt=0, description="Transaction amount")
     date: datetime = Field(..., description="Transaction date")
