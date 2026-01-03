@@ -8,7 +8,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { NukleoPageHeader } from '@/components/nukleo';
 import { Button, Alert, Loading, Badge, Modal } from '@/components/ui';
 import DataTable, { type Column } from '@/components/ui/DataTable';
-import MotionDiv from '@/components/motion/MotionDiv';
 import Drawer from '@/components/ui/Drawer';
 import Tabs from '@/components/ui/Tabs';
 import Dropdown from '@/components/ui/Dropdown';
@@ -37,8 +36,6 @@ import {
   Eye,
   Copy,
   MoreVertical,
-  Download,
-  FileDown,
   CheckSquare as CheckSquareIcon,
   Square,
   Info,
@@ -48,8 +45,7 @@ import {
   Table,
   Star,
   TrendingUp,
-  CalendarDays,
-  X
+  CalendarDays
 } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 
@@ -226,8 +222,8 @@ function EvenementsContent() {
     }
   }, [deleteEventMutation, showToast]);
 
-  // Handle delete selected (mémorisé avec batch)
-  const handleDeleteSelected = useCallback(async () => {
+  // Handle delete selected (mémorisé avec batch) - gardé pour usage futur
+  const _handleDeleteSelected = useCallback(async () => {
     if (selectedEvents.size === 0) return;
     if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedEvents.size} événement(s) ?`)) return;
 
@@ -248,8 +244,8 @@ function EvenementsContent() {
     }
   }, [selectedEvents, deleteEventMutation, showToast]);
 
-  // Handle bulk type change (mémorisé avec batch)
-  const handleBulkTypeChange = useCallback(async (newType: string) => {
+  // Handle bulk type change (mémorisé avec batch) - gardé pour usage futur
+  const _handleBulkTypeChange = useCallback(async (newType: string) => {
     if (selectedEvents.size === 0) return;
 
     try {
@@ -300,8 +296,8 @@ function EvenementsContent() {
     }
   }, [createEventMutation, showToast]);
 
-  // Handle export (mémorisé)
-  const handleExport = useCallback(async (format: 'csv' | 'excel') => {
+  // Handle export (mémorisé) - gardé pour usage futur
+  const _handleExport = useCallback(async (format: 'csv' | 'excel') => {
     try {
       const headers = ['ID', 'Titre', 'Description', 'Date', 'Date de fin', 'Heure', 'Type', 'Lieu', 'Participants', 'Créé le'];
       const rows = sortedEvents.map(event => [
@@ -339,7 +335,7 @@ function EvenementsContent() {
     } catch (error) {
       showToast({ message: 'Erreur lors de l\'export', type: 'error' });
     }
-  }, [sortedEvents, showToast]);
+  }, [sortedEvents, showToast, eventTypeLabels]);
 
   // Toggle selection (mémorisé)
   const toggleEventSelection = useCallback((eventId: number) => {
@@ -354,13 +350,13 @@ function EvenementsContent() {
     });
   }, []);
 
-  const toggleSelectAll = useCallback(() => {
+  const _toggleSelectAll = useCallback(() => {
     if (selectedEvents.size === sortedEvents.length && sortedEvents.length > 0) {
       setSelectedEvents(new Set());
     } else {
       setSelectedEvents(new Set(sortedEvents.map(e => e.id)));
     }
-  }, [sortedEvents]);
+  }, [sortedEvents, selectedEvents]);
 
   // Handle view details (mémorisé)
   const handleViewDetails = useCallback((event: CalendarEvent) => {
@@ -392,7 +388,7 @@ function EvenementsContent() {
   }), []);
 
   // Get event type color
-  const getEventTypeColor = useCallback((type: string) => {
+  const getEventTypeColor = useCallback((type: string): { bg: string; text: string; border: string } => {
     const colors: Record<string, { bg: string; text: string; border: string }> = {
       meeting: { bg: 'bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400', border: 'border-primary-500/30' },
       appointment: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' },
@@ -806,7 +802,7 @@ function EvenementsContent() {
       {viewMode === 'gallery' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
           {sortedEvents.map((event) => {
-            const typeColors = getEventTypeColor(event.type);
+            const typeColors = getEventTypeColor(event.type) || { bg: 'bg-gray-500/10', text: 'text-gray-600 dark:text-gray-400', border: 'border-gray-500/30' };
             const eventDate = new Date(event.date);
             const isPast = eventDate < new Date();
             
@@ -941,7 +937,7 @@ function EvenementsContent() {
       {viewMode === 'list' && (
         <div className="space-y-2">
           {sortedEvents.map((event) => {
-            const typeColors = getEventTypeColor(event.type);
+            const typeColors = getEventTypeColor(event.type) || { bg: 'bg-gray-500/10', text: 'text-gray-600 dark:text-gray-400', border: 'border-gray-500/30' };
             const eventDate = new Date(event.date);
             const isPast = eventDate < new Date();
             
