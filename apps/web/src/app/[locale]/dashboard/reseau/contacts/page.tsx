@@ -86,6 +86,10 @@ export default function ContactsPage() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [drawerTab, setDrawerTab] = useState<'info' | 'comments' | 'attachments' | 'edit'>('info');
   
+  // Tag management state
+  const [tagDropdownOpen, setTagDropdownOpen] = useState<number | null>(null);
+  const [tagInputValue, setTagInputValue] = useState<{ [key: number]: string }>({});
+  
   // Infinite scroll ref
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -141,6 +145,23 @@ export default function ContactsPage() {
       }
     };
   }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
+
+  // Close tag dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagDropdownOpen !== null) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.tag-dropdown-container')) {
+          setTagDropdownOpen(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [tagDropdownOpen]);
 
   // Flatten contacts from pages
   const contacts = useMemo(() => {
@@ -373,6 +394,93 @@ export default function ContactsPage() {
       const appError = handleApiError(err);
       showToast({
         message: appError.message || 'Erreur lors de la modification du contact',
+        type: 'error',
+      });
+    }
+  };
+
+  // Handle tag removal
+  const handleRemoveTag = async (contactId: number, tagToRemove: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+
+    try {
+      const contact = contacts.find(c => c.id === contactId);
+      if (!contact) return;
+
+      const currentTags = contact.circle ? contact.circle.split(',').map((t: string) => t.trim()) : [];
+      const updatedTags = currentTags.filter(t => t.toLowerCase() !== tagToRemove.toLowerCase());
+      const newCircle = updatedTags.length > 0 ? updatedTags.join(', ') : null;
+
+      await updateContactMutation.mutateAsync({
+        id: contactId,
+        data: { circle: newCircle },
+      });
+
+      // Update local state optimistically
+      if (contactDetails?.id === contactId) {
+        setContactDetails({ ...contactDetails, circle: newCircle });
+      }
+
+      showToast({
+        message: `Tag "${tagToRemove}" retiré avec succès`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la modification du tag',
+        type: 'error',
+      });
+    }
+  };
+
+  // Handle tag addition
+  const handleAddTag = async (contactId: number, tagToAdd: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+
+    if (!tagToAdd || !tagToAdd.trim()) return;
+
+    try {
+      const contact = contacts.find(c => c.id === contactId);
+      if (!contact) return;
+
+      const currentTags = contact.circle ? contact.circle.split(',').map((t: string) => t.trim()) : [];
+      const tagLower = tagToAdd.trim().toLowerCase();
+      
+      // Check if tag already exists
+      if (currentTags.some(t => t.toLowerCase() === tagLower)) {
+        showToast({
+          message: `Le tag "${tagToAdd}" existe déjà`,
+          type: 'info',
+        });
+        return;
+      }
+
+      const updatedTags = [...currentTags, tagToAdd.trim()];
+      const newCircle = updatedTags.join(', ');
+
+      await updateContactMutation.mutateAsync({
+        id: contactId,
+        data: { circle: newCircle },
+      });
+
+      // Update local state optimistically
+      if (contactDetails?.id === contactId) {
+        setContactDetails({ ...contactDetails, circle: newCircle });
+      }
+
+      showToast({
+        message: `Tag "${tagToAdd}" ajouté avec succès`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de l\'ajout du tag',
         type: 'error',
       });
     }
@@ -851,21 +959,108 @@ export default function ContactsPage() {
                   </div>
 
                   {/* Tags */}
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {tags.slice(0, 3).map((tag: string, idx: number) => {
-                        const colors = getTagColors(tag);
-                        return (
-                          <span
-                            key={idx}
-                            className={`px-2 py-1 rounded-md text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
+                  <div className="flex flex-wrap gap-1 items-center" onClick={(e) => e.stopPropagation()}>
+                    {tags.map((tag: string, idx: number) => {
+                      const colors = getTagColors(tag);
+                      return (
+                        <span
+                          key={idx}
+                          className={`px-2 py-1 rounded-md text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border} flex items-center gap-1 group`}
+                        >
+                          {tag}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveTag(contact.id, tag, e);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5 -mr-1"
+                            aria-label={`Retirer le tag ${tag}`}
+                            title={`Retirer le tag ${tag}`}
                           >
-                            {tag}
-                          </span>
-                        );
-                      })}
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                    {/* Add tag button */}
+                    <div className="relative tag-dropdown-container">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTagDropdownOpen(tagDropdownOpen === contact.id ? null : contact.id);
+                          setTagInputValue({ ...tagInputValue, [contact.id]: '' });
+                        }}
+                        className="px-2 py-1 rounded-md text-xs font-medium border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary-500 hover:text-primary-600 transition-all flex items-center gap-1"
+                        aria-label="Ajouter un tag"
+                        title="Ajouter un tag"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <Tag className="w-3 h-3" />
+                      </button>
+                      {tagDropdownOpen === contact.id && (
+                        <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 min-w-[200px] tag-dropdown-container">
+                          <div className="flex gap-1 mb-2">
+                            <input
+                              type="text"
+                              value={tagInputValue[contact.id] || ''}
+                              onChange={(e) => setTagInputValue({ ...tagInputValue, [contact.id]: e.target.value })}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && tagInputValue[contact.id]?.trim()) {
+                                  e.preventDefault();
+                                  handleAddTag(contact.id, tagInputValue[contact.id] || '', e as any);
+                                  setTagInputValue({ ...tagInputValue, [contact.id]: '' });
+                                  setTagDropdownOpen(null);
+                                }
+                                if (e.key === 'Escape') {
+                                  setTagDropdownOpen(null);
+                                }
+                              }}
+                              placeholder="Nouveau tag..."
+                              className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                              autoFocus
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (tagInputValue[contact.id]?.trim()) {
+                                  handleAddTag(contact.id, tagInputValue[contact.id] || '', e);
+                                  setTagInputValue({ ...tagInputValue, [contact.id]: '' });
+                                  setTagDropdownOpen(null);
+                                }
+                              }}
+                              className="px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
+                              aria-label="Ajouter"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                          {/* Quick tag suggestions */}
+                          <div className="space-y-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Tags suggérés:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {uniqueTags
+                                .filter(tag => !tags.some(t => t.toLowerCase() === tag.toLowerCase()))
+                                .slice(0, 5)
+                                .map((tag) => (
+                                  <button
+                                    key={tag}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAddTag(contact.id, tag, e);
+                                      setTagDropdownOpen(null);
+                                    }}
+                                    className="px-2 py-0.5 text-xs rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                  >
+                                    {tag}
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   {/* Actions */}
                   <div className="grid grid-cols-4 gap-2" onClick={(e) => e.stopPropagation()}>
@@ -962,21 +1157,112 @@ export default function ContactsPage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-bold text-gray-900 dark:text-white truncate">
                         {contact.first_name} {contact.last_name}
                       </h3>
-                      {tags.slice(0, 2).map((tag: string, idx: number) => {
-                        const colors = getTagColors(tag);
-                        return (
-                          <span
-                            key={idx}
-                            className={`px-2 py-0.5 rounded-md text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
+                      <div className="flex flex-wrap gap-1 items-center" onClick={(e) => e.stopPropagation()}>
+                        {tags.map((tag: string, idx: number) => {
+                          const colors = getTagColors(tag);
+                          return (
+                            <span
+                              key={idx}
+                              className={`px-2 py-0.5 rounded-md text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border} flex items-center gap-1 group`}
+                            >
+                              {tag}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveTag(contact.id, tag, e);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/10 dark:hover:bg-white/10 rounded p-0.5 -mr-1"
+                                aria-label={`Retirer le tag ${tag}`}
+                                title={`Retirer le tag ${tag}`}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          );
+                        })}
+                        {/* Add tag button */}
+                        <div className="relative tag-dropdown-container">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTagDropdownOpen(tagDropdownOpen === contact.id ? null : contact.id);
+                              setTagInputValue({ ...tagInputValue, [contact.id]: '' });
+                            }}
+                            className="px-2 py-0.5 rounded-md text-xs font-medium border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary-500 hover:text-primary-600 transition-all flex items-center gap-1"
+                            aria-label="Ajouter un tag"
+                            title="Ajouter un tag"
                           >
-                            {tag}
-                          </span>
-                        );
-                      })}
+                            <Plus className="w-3 h-3" />
+                            <Tag className="w-3 h-3" />
+                          </button>
+                          {tagDropdownOpen === contact.id && (
+                            <div className="absolute top-full left-0 mt-1 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-2 min-w-[200px] tag-dropdown-container">
+                              <div className="flex gap-1 mb-2">
+                                <input
+                                  type="text"
+                                  value={tagInputValue[contact.id] || ''}
+                                  onChange={(e) => setTagInputValue({ ...tagInputValue, [contact.id]: e.target.value })}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && tagInputValue[contact.id]?.trim()) {
+                                      e.preventDefault();
+                                      handleAddTag(contact.id, tagInputValue[contact.id] || '', e as any);
+                                      setTagInputValue({ ...tagInputValue, [contact.id]: '' });
+                                      setTagDropdownOpen(null);
+                                    }
+                                    if (e.key === 'Escape') {
+                                      setTagDropdownOpen(null);
+                                    }
+                                  }}
+                                  placeholder="Nouveau tag..."
+                                  className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                                  autoFocus
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (tagInputValue[contact.id]?.trim()) {
+                                      handleAddTag(contact.id, tagInputValue[contact.id] || '', e);
+                                      setTagInputValue({ ...tagInputValue, [contact.id]: '' });
+                                      setTagDropdownOpen(null);
+                                    }
+                                  }}
+                                  className="px-2 py-1 bg-primary-500 text-white rounded hover:bg-primary-600 transition-colors"
+                                  aria-label="Ajouter"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </button>
+                              </div>
+                              {/* Quick tag suggestions */}
+                              <div className="space-y-1">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Tags suggérés:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {uniqueTags
+                                    .filter(tag => !tags.some(t => t.toLowerCase() === tag.toLowerCase()))
+                                    .slice(0, 5)
+                                    .map((tag) => (
+                                      <button
+                                        key={tag}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleAddTag(contact.id, tag, e);
+                                          setTagDropdownOpen(null);
+                                        }}
+                                        className="px-2 py-0.5 text-xs rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                      >
+                                        {tag}
+                                      </button>
+                                    ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <p className="text-sm text-muted-accessible">
                       {contact.position} • {contact.company_name}

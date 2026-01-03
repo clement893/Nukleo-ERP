@@ -222,13 +222,12 @@ export default function LeoPage() {
       // Return context with previous values for rollback
       return { previousConversationsData, previousConversationsWithLastMsg };
     },
-    onSuccess: (_, conversationId) => {
+    onSuccess: () => {
       // Invalidate to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: ['leo', 'conversations'] });
-      queryClient.invalidateQueries({ queryKey: ['leo', 'messages', conversationId] });
       showToast({ message: 'Conversation supprimée', type: 'success' });
     },
-    onError: (error: any, conversationId: number, context: any) => {
+    onError: (error: any, _conversationId: number, context: any) => {
       // Rollback on error
       if (context?.previousConversationsData) {
         queryClient.setQueryData(['leo', 'conversations', skip], context.previousConversationsData);

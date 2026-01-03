@@ -16,7 +16,7 @@ import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority }
 import { projectsAPI } from '@/lib/api';
 import { employeesAPI } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
-import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock, MoreVertical, Copy, X, CheckCircle2, Play, MessageSquare, Paperclip } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock, MoreVertical, Copy, X, CheckCircle2, Play, MessageSquare, Paperclip, LayoutGrid, List } from 'lucide-react';
 import TaskTimer from './TaskTimer';
 import { timeEntriesAPI } from '@/lib/api/time-entries';
 import ProjectAttachments from './ProjectAttachments';
@@ -71,6 +71,7 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
   const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string; email?: string }>>([]);
   const [activeTimer, setActiveTimer] = useState<{ taskId: number; elapsedSeconds: number } | null>(null);
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
@@ -570,14 +571,41 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
 
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <h2 className="text-2xl font-bold text-foreground">Tâches du projet</h2>
-        <Button onClick={handleCreateTask}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvelle tâche
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 border border-border rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'kanban'
+                  ? 'bg-primary-500 text-white'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              title="Vue Kanban"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-primary-500 text-white'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              title="Vue Liste"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+          <Button onClick={handleCreateTask}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle tâche
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
-        {STATUS_COLUMNS.map(({ status, label, color, bgColor }) => {
+      {viewMode === 'kanban' ? (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4 flex-1 min-h-0">
+          {STATUS_COLUMNS.map(({ status, label, color, bgColor }) => {
           const columnTasks = getTasksByStatus(status);
           return (
             <div
@@ -689,7 +717,90 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
             </div>
           );
         })}
-      </div>
+        </div>
+      ) : (
+        <Card className="glass-card rounded-xl border border-nukleo-lavender/20 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="p-3 text-left text-sm font-semibold text-foreground">Titre</th>
+                  <th className="p-3 text-left text-sm font-semibold text-foreground">Statut</th>
+                  <th className="p-3 text-left text-sm font-semibold text-foreground">Priorité</th>
+                  <th className="p-3 text-left text-sm font-semibold text-foreground">Assigné</th>
+                  <th className="p-3 text-left text-sm font-semibold text-foreground">Échéance</th>
+                  <th className="p-3 text-left text-sm font-semibold text-foreground">Heures</th>
+                  <th className="p-3 text-left text-sm font-semibold text-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasks.map((task) => (
+                  <tr
+                    key={task.id}
+                    className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                    onClick={() => handleOpenTaskDetails(task)}
+                  >
+                    <td className="p-3">
+                      <div>
+                        <div className="font-medium text-foreground">{task.title}</div>
+                        {task.description && (
+                          <div className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                            {task.description}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${STATUS_COLUMNS.find(s => s.status === task.status)?.bgColor} ${STATUS_COLUMNS.find(s => s.status === task.status)?.color}`}>
+                        {STATUS_COLUMNS.find(s => s.status === task.status)?.label || task.status}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${PRIORITY_COLORS[task.priority]}`}>
+                        {PRIORITY_LABELS[task.priority]}
+                      </span>
+                    </td>
+                    <td className="p-3 text-sm text-muted-foreground">
+                      {task.assignee_name || '-'}
+                    </td>
+                    <td className="p-3 text-sm text-muted-foreground">
+                      {task.due_date ? formatDate(task.due_date) : '-'}
+                    </td>
+                    <td className="p-3 text-sm text-muted-foreground">
+                      {task.estimated_hours ? `${task.estimated_hours}h` : '-'}
+                    </td>
+                    <td className="p-3">
+                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleEditTask(task)}
+                          className="p-1.5 hover:bg-accent rounded transition-colors"
+                          title="Modifier"
+                        >
+                          <Edit className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTask(task.id)}
+                          className="p-1.5 hover:bg-accent rounded transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {tasks.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                      Aucune tâche
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <Modal
         isOpen={showTaskModal}

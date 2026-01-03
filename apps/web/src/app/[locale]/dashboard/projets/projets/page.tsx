@@ -39,7 +39,7 @@ import type { Project, ProjectCreate, ProjectUpdate } from '@/lib/api/projects';
 import ProjectForm from '@/components/projets/ProjectForm';
 
 type ViewMode = 'grid' | 'list';
-type SortField = 'name' | 'status' | 'budget' | 'created_at' | 'deadline' | 'client_name' | 'etape';
+type SortField = 'name' | 'status' | 'equipe' | 'created_at' | 'deadline' | 'client_name' | 'etape';
 type SortDirection = 'asc' | 'desc';
 
 const statusConfig = {
@@ -174,9 +174,9 @@ export default function ProjetsPage() {
           aValue = a.status;
           bValue = b.status;
           break;
-        case 'budget':
-          aValue = a.budget || 0;
-          bValue = b.budget || 0;
+        case 'equipe':
+          aValue = a.equipe || '';
+          bValue = b.equipe || '';
           break;
         case 'created_at':
           aValue = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -831,11 +831,11 @@ export default function ProjetsPage() {
                     </th>
                     <th className="p-3 text-left">
                       <button
-                        onClick={() => handleSort('budget')}
+                        onClick={() => handleSort('etape')}
                         className="flex items-center gap-1 hover:text-primary-500"
                       >
-                        Budget
-                        {sortField === 'budget' ? (
+                        Équipe
+                        {sortField === 'etape' ? (
                           sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                         ) : (
                           <ArrowUpDown className="w-3 h-3 opacity-50" />
@@ -871,15 +871,44 @@ export default function ProjetsPage() {
                           {project.client_name || '-'}
                         </td>
                         <td className="p-3">
-                          <Badge className={`${statusInfo.color} border`}>
-                            {statusInfo.label}
-                          </Badge>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Select
+                              value={project.status}
+                              onChange={async (e) => {
+                                const newStatus = e.target.value as Project['status'];
+                                try {
+                                  await updateProjectMutation.mutateAsync({
+                                    id: project.id,
+                                    data: { status: newStatus } as ProjectUpdate,
+                                  });
+                                  showToast({
+                                    message: 'Statut mis à jour avec succès',
+                                    type: 'success',
+                                  });
+                                  refetch();
+                                } catch (error) {
+                                  const appError = handleApiError(error);
+                                  showToast({
+                                    message: appError.message || 'Erreur lors de la mise à jour du statut',
+                                    type: 'error',
+                                  });
+                                }
+                              }}
+                              className="text-xs min-w-[120px]"
+                              options={[
+                                { label: 'Actif', value: 'ACTIVE' },
+                                { label: 'Terminé', value: 'COMPLETED' },
+                                { label: 'Archivé', value: 'ARCHIVED' },
+                                { label: 'En pause', value: 'ON_HOLD' },
+                              ]}
+                            />
+                          </div>
                         </td>
                         <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
                           {project.etape || '-'}
                         </td>
-                        <td className="p-3 text-sm font-medium text-gray-900 dark:text-white">
-                          {project.budget ? formatCurrency(project.budget) : '-'}
+                        <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
+                          {project.equipe || '-'}
                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-2">

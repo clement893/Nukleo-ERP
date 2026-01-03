@@ -19,7 +19,7 @@ interface ContactFormProps {
   circles?: string[];
 }
 
-const CIRCLES_OPTIONS = [
+const CIRCLES_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'client', label: 'Client' },
   { value: 'prospect', label: 'Prospect' },
   { value: 'partenaire', label: 'Partenaire' },
@@ -27,7 +27,7 @@ const CIRCLES_OPTIONS = [
   { value: 'autre', label: 'Autre' },
 ];
 
-const LANGUAGE_OPTIONS = [
+const LANGUAGE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'fr', label: 'Français' },
   { value: 'en', label: 'English' },
   { value: 'es', label: 'Español' },
@@ -169,7 +169,9 @@ export default function ContactForm({
   };
 
   const circleOptions = circles.length > 0
-    ? circles.map(c => ({ value: c, label: c }))
+    ? circles
+        .filter(c => c && typeof c === 'string' && c.trim() !== '')
+        .map(c => ({ value: String(c).trim(), label: String(c).trim() }))
     : CIRCLES_OPTIONS;
 
   return (
@@ -260,7 +262,9 @@ export default function ContactForm({
             }}
             options={[
               { value: '', label: 'Aucune' },
-              ...companies.map(c => ({ value: c.id.toString(), label: c.name })),
+              ...companies
+                .filter(c => c && c.id != null && c.name)
+                .map(c => ({ value: String(c.id), label: String(c.name) })),
             ]}
             fullWidth
           />
@@ -303,7 +307,7 @@ export default function ContactForm({
         onChange={(e) => setFormData({ ...formData, circle: e.target.value || null })}
         options={[
           { value: '', label: 'Aucun' },
-          ...circleOptions,
+          ...circleOptions.filter(opt => opt && opt.value && opt.label),
         ]}
         fullWidth
       />
@@ -368,7 +372,7 @@ export default function ContactForm({
         onChange={(e) => setFormData({ ...formData, language: e.target.value || null })}
         options={[
           { value: '', label: 'Aucune' },
-          ...LANGUAGE_OPTIONS,
+          ...LANGUAGE_OPTIONS.filter(opt => opt && opt.value && opt.label),
         ]}
         fullWidth
       />
@@ -384,7 +388,9 @@ export default function ContactForm({
           })}
           options={[
             { value: '', label: 'Aucun' },
-            ...employees.map(e => ({ value: e.id.toString(), label: e.name })),
+            ...employees
+              .filter(e => e && e.id != null && e.name)
+              .map(e => ({ value: String(e.id), label: String(e.name) })),
           ]}
           fullWidth
         />

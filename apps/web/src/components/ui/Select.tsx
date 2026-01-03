@@ -176,11 +176,13 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               {placeholder}
             </option>
           )}
-          {options.map((option) => (
-            <option key={option.value} value={option.value} disabled={option.disabled}>
-              {option.label}
-            </option>
-          ))}
+          {options
+            .filter(option => option && option.value != null && option.label != null)
+            .map((option) => (
+              <option key={option.value} value={String(option.value)} disabled={option.disabled}>
+                {String(option.label)}
+              </option>
+            ))}
         </select>
         {error && (
           <Text

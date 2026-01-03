@@ -384,21 +384,6 @@ function TemoignagesContent() {
     };
   }, [testimonials]);
 
-  const getStatusColor = (status: 'published' | 'pending' | 'draft') => {
-    switch (status) {
-      case 'published': return 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400';
-      case 'pending': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'draft': return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
-    }
-  };
-
-  const getStatusLabel = (status: 'published' | 'pending' | 'draft') => {
-    switch (status) {
-      case 'published': return 'Publié';
-      case 'pending': return 'En attente';
-      case 'draft': return 'Brouillon';
-    }
-  };
 
 
   if (loading) {

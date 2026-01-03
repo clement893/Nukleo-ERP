@@ -24,17 +24,16 @@ import { useInfiniteOpportunities, useCreateOpportunity } from '@/lib/query/oppo
 import { useInfiniteQuotes, useInfiniteSubmissions, useCreateQuote } from '@/lib/query/commercial';
 import { useCreateCompany, useInfiniteCompanies } from '@/lib/query/companies';
 import { useCreateReseauContact } from '@/lib/query/reseau-contacts';
-import { companiesAPI } from '@/lib/api/companies';
 import { employeesAPI } from '@/lib/api';
 import OpportunityForm from '@/components/commercial/OpportunityForm';
 import QuoteForm from '@/components/commercial/QuoteForm';
 import ContactForm from '@/components/reseau/ContactForm';
 import CompanyForm from '@/components/commercial/CompanyForm';
 import { handleApiError } from '@/lib/errors/api';
-import { type OpportunityCreate } from '@/lib/api/opportunities';
-import { type QuoteCreate } from '@/lib/api/quotes';
-import { type CompanyCreate } from '@/lib/api/companies';
-import { type ContactCreate } from '@/lib/api/contacts';
+import { type OpportunityCreate, type OpportunityUpdate } from '@/lib/api/opportunities';
+import { type QuoteCreate, type QuoteUpdate } from '@/lib/api/quotes';
+import { type CompanyCreate, type CompanyUpdate } from '@/lib/api/companies';
+import { type ContactCreate, type ContactUpdate } from '@/lib/api/contacts';
 
 export default function CommercialPage() {
   const { showToast } = useToast();
@@ -66,7 +65,7 @@ export default function CommercialPage() {
       try {
         const data = companiesData?.pages.flat() || [];
         setCompanies(data.map(c => ({ id: c.id, name: c.name })));
-      } catch (err) {
+      } catch (err: unknown) {
         // Silent fail
       }
     };
@@ -77,11 +76,11 @@ export default function CommercialPage() {
     const loadEmployees = async () => {
       try {
         const data = await employeesAPI.list(0, 1000);
-        setEmployees(data.map(e => ({ 
+        setEmployees(data.map((e: { id: number; first_name?: string | null; last_name?: string | null; email?: string | null }) => ({ 
           id: e.id, 
           name: `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.email || 'Sans nom'
         })));
-      } catch (err) {
+      } catch (err: unknown) {
         // Silent fail
       }
     };
@@ -226,9 +225,30 @@ export default function CommercialPage() {
   };
 
   // Handlers for quick actions
-  const handleCreateOpportunity = async (data: OpportunityCreate) => {
+  const handleCreateOpportunity = async (data: OpportunityCreate | OpportunityUpdate) => {
     try {
-      await createOpportunityMutation.mutateAsync(data);
+      // Ensure required fields are present for creation
+      if (!data.name || !data.pipeline_id) {
+        showToast({
+          message: 'Le nom et le pipeline sont requis',
+          type: 'error',
+        });
+        return;
+      }
+      const createData: OpportunityCreate = {
+        name: data.name,
+        pipeline_id: String(data.pipeline_id),
+        description: data.description ?? null,
+        company_id: data.company_id ?? null,
+        stage_id: data.stage_id ? String(data.stage_id) : null,
+        amount: data.amount ?? null,
+        expected_close_date: data.expected_close_date ?? null,
+        probability: data.probability ?? null,
+        status: data.status ?? 'open',
+        assigned_to_id: data.assigned_to_id ?? null,
+        contact_ids: data.contact_ids ?? undefined,
+      };
+      await createOpportunityMutation.mutateAsync(createData);
       setShowCreateOpportunityModal(false);
       showToast({
         message: 'Opportunité créée avec succès',
@@ -243,9 +263,27 @@ export default function CommercialPage() {
     }
   };
 
-  const handleCreateQuote = async (data: QuoteCreate) => {
+  const handleCreateQuote = async (data: QuoteCreate | QuoteUpdate) => {
     try {
-      await createQuoteMutation.mutateAsync(data);
+      // Ensure required fields are present for creation
+      if (!data.title) {
+        showToast({
+          message: 'Le titre est requis',
+          type: 'error',
+        });
+        return;
+      }
+      const createData: QuoteCreate = {
+        title: data.title,
+        company_id: data.company_id ?? null,
+        project_id: data.project_id ?? null,
+        amount: data.amount ?? null,
+        currency: data.currency ?? 'CAD',
+        status: data.status ?? 'draft',
+        valid_until: data.valid_until ?? null,
+        notes: data.notes ?? null,
+      };
+      await createQuoteMutation.mutateAsync(createData);
       setShowCreateQuoteModal(false);
       showToast({
         message: 'Devis créé avec succès',
@@ -260,9 +298,25 @@ export default function CommercialPage() {
     }
   };
 
-  const handleCreateContact = async (data: ContactCreate) => {
+  const handleCreateContact = async (data: ContactCreate | ContactUpdate) => {
     try {
-      await createContactMutation.mutateAsync(data);
+      // Ensure required fields are present for creation
+      if (!data.first_name || !data.last_name) {
+        showToast({
+          message: 'Le prénom et le nom sont requis',
+          type: 'error',
+        });
+        return;
+      }
+      const createData: ContactCreate = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email ?? null,
+        phone: data.phone ?? null,
+        company_id: data.company_id ?? null,
+        position: data.position ?? null,
+      };
+      await createContactMutation.mutateAsync(createData);
       setShowCreateContactModal(false);
       showToast({
         message: 'Contact créé avec succès',
@@ -277,9 +331,27 @@ export default function CommercialPage() {
     }
   };
 
-  const handleCreateCompany = async (data: CompanyCreate) => {
+  const handleCreateCompany = async (data: CompanyCreate | CompanyUpdate) => {
     try {
-      await createCompanyMutation.mutateAsync(data);
+      // Ensure required fields are present for creation
+      if (!data.name) {
+        showToast({
+          message: 'Le nom est requis',
+          type: 'error',
+        });
+        return;
+      }
+      const createData: CompanyCreate = {
+        name: data.name,
+        website: data.website ?? null,
+        phone: data.phone ?? null,
+        email: data.email ?? null,
+        address: data.address ?? null,
+        city: data.city ?? null,
+        country: data.country ?? null,
+        parent_company_id: data.parent_company_id ?? null,
+      };
+      await createCompanyMutation.mutateAsync(createData);
       setShowCreateCompanyModal(false);
       showToast({
         message: 'Entreprise créée avec succès',
