@@ -35,6 +35,8 @@ export default function ProjectBudgetManager({ projectId }: ProjectBudgetManager
   const [summary, setSummary] = useState<ProjectBudgetSummary | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<ProjectBudgetItem | null>(null);
+  const [editingField, setEditingField] = useState<{ itemId: number; field: string } | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState<string>('');
   const [formData, setFormData] = useState<ProjectBudgetItemCreate>({
     category: 'main_doeuvre',
     description: '',
@@ -44,6 +46,7 @@ export default function ProjectBudgetManager({ projectId }: ProjectBudgetManager
     notes: '',
   });
   const [saving, setSaving] = useState(false);
+  const [savingInline, setSavingInline] = useState<number | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -167,6 +170,71 @@ export default function ProjectBudgetManager({ projectId }: ProjectBudgetManager
         message: 'Impossible de supprimer la ligne de budget',
         type: 'error'
       });
+    }
+  };
+
+  const handleStartInlineEdit = (item: ProjectBudgetItem, field: string) => {
+    setEditingField({ itemId: item.id, field });
+    if (field === 'amount') {
+      setInlineEditValue(item.amount.toString());
+    } else if (field === 'description') {
+      setInlineEditValue(item.description || '');
+    } else if (field === 'category') {
+      setInlineEditValue(item.category);
+    } else if (field === 'notes') {
+      setInlineEditValue(item.notes || '');
+    }
+  };
+
+  const handleCancelInlineEdit = () => {
+    setEditingField(null);
+    setInlineEditValue('');
+  };
+
+  const handleSaveInlineEdit = async (item: ProjectBudgetItem) => {
+    if (!editingField) return;
+
+    try {
+      setSavingInline(item.id);
+      const updateData: any = {};
+      
+      if (editingField.field === 'amount') {
+        const amount = parseFloat(inlineEditValue);
+        if (isNaN(amount) || amount <= 0) {
+          showToast({
+            title: 'Erreur',
+            message: 'Le montant doit être un nombre positif',
+            type: 'error'
+          });
+          return;
+        }
+        updateData.amount = amount;
+      } else if (editingField.field === 'description') {
+        updateData.description = inlineEditValue;
+      } else if (editingField.field === 'category') {
+        updateData.category = inlineEditValue as BudgetCategory;
+      } else if (editingField.field === 'notes') {
+        updateData.notes = inlineEditValue;
+      }
+
+      await projectBudgetItemsAPI.update(projectId, item.id, updateData);
+      showToast({
+        title: 'Succès',
+        message: 'Ligne de budget modifiée avec succès',
+        type: 'success'
+      });
+      setEditingField(null);
+      setInlineEditValue('');
+      await loadData();
+    } catch (error) {
+      logger.error('Error updating budget item inline', error);
+      showToast({
+        title: 'Erreur',
+        message: 'Impossible de modifier la ligne de budget',
+        type: 'error'
+      });
+    } finally {
+      setSavingInline(null);
     }
   };
 
@@ -311,6 +379,8 @@ export default function ProjectBudgetManager({ projectId }: ProjectBudgetManager
             {items.map((item) => {
               const categoryLabel = BUDGET_CATEGORIES.find(c => c.value === item.category)?.label || item.category;
               const colorClass = CATEGORY_COLORS[item.category] || CATEGORY_COLORS.autres;
+              const isEditing = editingField?.itemId === item.id;
+              const isSavingThis = savingInline === item.id;
               
               return (
                 <div
@@ -318,28 +388,144 @@ export default function ProjectBudgetManager({ projectId }: ProjectBudgetManager
                   className="glass-card p-lg rounded-lg border border-border hover:border-primary/30 transition-all"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Badge className={colorClass}>
-                          {categoryLabel}
-                        </Badge>
-                        <Text variant="body" className="font-bold text-foreground">
-                          {formatCurrency(item.amount)}
-                        </Text>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        {isEditing && editingField?.field === 'category' ? (
+                          <Select
+                            value={inlineEditValue}
+                            onChange={(e) => setInlineEditValue(e.target.value)}
+                            onBlur={() => handleSaveInlineEdit(item)}
+                            options={BUDGET_CATEGORIES.map(cat => ({ value: cat.value, label: cat.label }))}
+                            className="w-auto min-w-[150px]"
+                            autoFocus
+                          />
+                        ) : (
+                          <Badge 
+                            className={`${colorClass} cursor-pointer hover:opacity-80 transition-opacity`}
+                            onClick={() => handleStartInlineEdit(item, 'category')}
+                            title="Cliquer pour modifier la catégorie"
+                          >
+                            {categoryLabel}
+                          </Badge>
+                        )}
+                        
+                        {isEditing && editingField?.field === 'amount' ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={inlineEditValue}
+                              onChange={(e) => setInlineEditValue(e.target.value)}
+                              onBlur={() => handleSaveInlineEdit(item)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSaveInlineEdit(item);
+                                } else if (e.key === 'Escape') {
+                                  handleCancelInlineEdit();
+                                }
+                              }}
+                              className="w-32"
+                              autoFocus
+                            />
+                            {isSavingThis && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                          </div>
+                        ) : (
+                          <Text 
+                            variant="body" 
+                            className="font-bold text-foreground cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => handleStartInlineEdit(item, 'amount')}
+                            title="Cliquer pour modifier le montant"
+                          >
+                            {formatCurrency(item.amount)}
+                          </Text>
+                        )}
                       </div>
-                      {item.description && (
-                        <Text variant="body" className="text-foreground mb-2">
-                          {item.description}
-                        </Text>
+                      
+                      {isEditing && editingField?.field === 'description' ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={inlineEditValue}
+                            onChange={(e) => setInlineEditValue(e.target.value)}
+                            onBlur={() => handleSaveInlineEdit(item)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleSaveInlineEdit(item);
+                              } else if (e.key === 'Escape') {
+                                handleCancelInlineEdit();
+                              }
+                            }}
+                            placeholder="Description..."
+                            className="flex-1"
+                            autoFocus
+                          />
+                          {isSavingThis && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                        </div>
+                      ) : (
+                        item.description ? (
+                          <Text 
+                            variant="body" 
+                            className="text-foreground mb-2 cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => handleStartInlineEdit(item, 'description')}
+                            title="Cliquer pour modifier la description"
+                          >
+                            {item.description}
+                          </Text>
+                        ) : (
+                          <Text 
+                            variant="body" 
+                            className="text-muted-foreground mb-2 cursor-pointer hover:text-primary transition-colors italic"
+                            onClick={() => handleStartInlineEdit(item, 'description')}
+                            title="Cliquer pour ajouter une description"
+                          >
+                            Cliquer pour ajouter une description...
+                          </Text>
+                        )
                       )}
+                      
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         {item.quantity && item.unit_price && (
                           <span>
                             {item.quantity} × {formatCurrency(item.unit_price)}
                           </span>
                         )}
-                        {item.notes && (
-                          <span className="italic">{item.notes}</span>
+                        {isEditing && editingField?.field === 'notes' ? (
+                          <div className="flex items-center gap-2 flex-1">
+                            <Input
+                              value={inlineEditValue}
+                              onChange={(e) => setInlineEditValue(e.target.value)}
+                              onBlur={() => handleSaveInlineEdit(item)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSaveInlineEdit(item);
+                                } else if (e.key === 'Escape') {
+                                  handleCancelInlineEdit();
+                                }
+                              }}
+                              placeholder="Notes..."
+                              className="flex-1"
+                              autoFocus
+                            />
+                            {isSavingThis && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                          </div>
+                        ) : (
+                          item.notes ? (
+                            <span 
+                              className="italic cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleStartInlineEdit(item, 'notes')}
+                              title="Cliquer pour modifier les notes"
+                            >
+                              {item.notes}
+                            </span>
+                          ) : (
+                            <span 
+                              className="italic text-muted-foreground/50 cursor-pointer hover:text-primary transition-colors"
+                              onClick={() => handleStartInlineEdit(item, 'notes')}
+                              title="Cliquer pour ajouter des notes"
+                            >
+                              + Notes
+                            </span>
+                          )
                         )}
                       </div>
                     </div>
@@ -349,6 +535,7 @@ export default function ProjectBudgetManager({ projectId }: ProjectBudgetManager
                         size="sm"
                         onClick={() => handleOpenEditModal(item)}
                         className="text-primary hover:text-primary/80"
+                        title="Modifier tous les champs"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -357,6 +544,7 @@ export default function ProjectBudgetManager({ projectId }: ProjectBudgetManager
                         size="sm"
                         onClick={() => handleDelete(item.id)}
                         className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                        title="Supprimer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
