@@ -5,7 +5,7 @@ API endpoints for treasury management (cashflow, transactions, bank accounts)
 
 from fastapi import APIRouter, Depends, Query, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_, cast, String, case
+from sqlalchemy import select, func, and_, or_, cast, String, case, text
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -479,39 +479,199 @@ async def list_transactions(
 ):
     """List all transactions for the current user"""
     try:
-        query = select(Transaction).where(Transaction.user_id == current_user.id)
+        # Check which columns exist in the database
+        columns_result = await db.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'transactions'
+        """))
+        existing_columns = {row[0] for row in columns_result}
+        
+        # Determine which columns to select (only those that exist)
+        base_columns = ['id', 'user_id', 'type', 'description', 'amount', 'status', 'notes', 'created_at', 'updated_at']
+        optional_columns = {
+            'tax_amount': 'tax_amount',
+            'currency': 'currency',
+            'category_id': 'category_id',
+            'transaction_date': 'transaction_date',
+            'date': 'transaction_date',  # Fallback: use 'date' as 'transaction_date'
+            'expected_payment_date': 'expected_payment_date',
+            'payment_date': 'payment_date',
+            'client_id': 'client_id',
+            'client_name': 'client_name',
+            'supplier_id': 'supplier_id',
+            'supplier_name': 'supplier_name',
+            'invoice_number': 'invoice_number',
+            'is_recurring': 'is_recurring',
+            'recurring_id': 'recurring_id',
+            'transaction_metadata': 'transaction_metadata',
+        }
+        
+        # Build SELECT clause with only existing columns
+        select_parts = []
+        
+        # Add base columns (should always exist)
+        for col in base_columns:
+            if col in existing_columns:
+                select_parts.append(f"transactions.{col}")
+        
+        # Add optional columns
+        date_column_used = None
+        for db_col, response_field in optional_columns.items():
+            if db_col in existing_columns:
+                if db_col == 'date' and 'transaction_date' not in existing_columns:
+                    # Use 'date' column as 'transaction_date' if transaction_date doesn't exist
+                    select_parts.append(f"transactions.date AS transaction_date")
+                    date_column_used = 'date'
+                elif db_col == 'transaction_date':
+                    select_parts.append(f"transactions.transaction_date")
+                    date_column_used = 'transaction_date'
+                elif db_col != 'date':  # Skip 'date' if we already have transaction_date
+                    select_parts.append(f"transactions.{db_col}")
+        
+        # Ensure we have a date column
+        if not date_column_used:
+            if 'created_at' in existing_columns:
+                select_parts.append("transactions.created_at AS transaction_date")
+                date_column_used = 'created_at'
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="No date column found in transactions table"
+                )
+        
+        # Ensure currency exists (default to CAD if not in DB)
+        if 'currency' not in existing_columns:
+            select_parts.append("'CAD' AS currency")
+        
+        # Ensure tax_amount exists (default to 0 if not in DB)
+        if 'tax_amount' not in existing_columns:
+            select_parts.append("0 AS tax_amount")
+        
+        # Build WHERE clause with parameters
+        where_parts = ["transactions.user_id = :user_id"]
+        params = {"user_id": current_user.id}
         
         # Note: Transaction model doesn't have bank_account_id field
-        # Filtering by bank_account_id is not supported for Transaction model
         if bank_account_id:
             logger.warning(f"bank_account_id filter requested but Transaction model doesn't support it, using all transactions")
         
         if type:
-            query = query.where(Transaction.type == type)
+            # Map 'entry'/'exit' to TransactionType enum values
+            if type.lower() in ['entry', 'entree', 'entrée']:
+                type_value = 'revenue'
+            elif type.lower() in ['exit', 'sortie']:
+                type_value = 'expense'
+            else:
+                type_value = type.lower()
+            where_parts.append("transactions.type = :type")
+            params["type"] = type_value
         
-        if category_id:
-            query = query.where(Transaction.category_id == category_id)
+        if category_id and 'category_id' in existing_columns:
+            where_parts.append("transactions.category_id = :category_id")
+            params["category_id"] = category_id
         
         if transaction_status:
-            query = query.where(Transaction.status == transaction_status)
+            where_parts.append("transactions.status = :status")
+            params["status"] = transaction_status.value
         
+        # Date filters
         if date_from:
-            query = query.where(Transaction.transaction_date >= date_from)
-        
+            where_parts.append(f"transactions.{date_column_used} >= :date_from")
+            params["date_from"] = date_from
         if date_to:
-            query = query.where(Transaction.transaction_date <= date_to)
+            where_parts.append(f"transactions.{date_column_used} <= :date_to")
+            params["date_to"] = date_to
         
-        query = query.order_by(Transaction.transaction_date.desc()).offset(skip).limit(limit)
+        # Build ORDER BY
+        order_by_col = date_column_used if date_column_used in existing_columns else 'created_at'
         
-        result = await db.execute(query)
-        transactions = result.scalars().all()
+        # Construct full SQL query with parameterized values
+        sql_query = f"""
+            SELECT {', '.join(select_parts)}
+            FROM transactions
+            WHERE {' AND '.join(where_parts)}
+            ORDER BY transactions.{order_by_col} DESC
+            LIMIT :limit OFFSET :offset
+        """
+        params["limit"] = limit
+        params["offset"] = skip
         
-        return [TransactionResponse(**t.__dict__) for t in transactions]
+        # Execute raw SQL with parameters
+        result = await db.execute(text(sql_query), params)
+        rows = result.fetchall()
+        
+        # Get column names from the result
+        result_keys = result.keys()
+        
+        # Convert rows to TransactionResponse
+        transaction_responses = []
+        for row in rows:
+            try:
+                # Convert row to dict using column names
+                row_dict = {}
+                for idx, key in enumerate(result_keys):
+                    row_dict[key] = row[idx]
+                
+                # Map database columns to response fields
+                # Handle type conversion for enum fields
+                type_value = row_dict.get('type')
+                if isinstance(type_value, str):
+                    if type_value.lower() in ['revenue', 'entry', 'entree', 'entrée']:
+                        type_enum = TransactionTypeEnum.REVENUE
+                    elif type_value.lower() in ['expense', 'exit', 'sortie']:
+                        type_enum = TransactionTypeEnum.EXPENSE
+                    else:
+                        type_enum = TransactionTypeEnum.REVENUE  # Default
+                else:
+                    type_enum = type_value if hasattr(type_value, 'value') else TransactionTypeEnum.REVENUE
+                
+                status_value = row_dict.get('status')
+                if isinstance(status_value, str):
+                    status_enum = TransactionStatus(status_value)
+                else:
+                    status_enum = status_value if hasattr(status_value, 'value') else TransactionStatus.PENDING
+                
+                response_dict = {
+                    'id': row_dict.get('id'),
+                    'user_id': row_dict.get('user_id'),
+                    'type': type_enum,
+                    'description': row_dict.get('description'),
+                    'amount': Decimal(str(row_dict.get('amount', 0))),
+                    'tax_amount': Decimal(str(row_dict.get('tax_amount', 0))) if row_dict.get('tax_amount') is not None else Decimal(0),
+                    'currency': row_dict.get('currency', 'CAD'),
+                    'category_id': row_dict.get('category_id'),
+                    'transaction_date': row_dict.get('transaction_date') or row_dict.get('created_at') or datetime.now(),
+                    'expected_payment_date': row_dict.get('expected_payment_date'),
+                    'payment_date': row_dict.get('payment_date'),
+                    'status': status_enum,
+                    'client_id': row_dict.get('client_id'),
+                    'client_name': row_dict.get('client_name'),
+                    'supplier_id': row_dict.get('supplier_id'),
+                    'supplier_name': row_dict.get('supplier_name'),
+                    'invoice_number': row_dict.get('invoice_number'),
+                    'notes': row_dict.get('notes'),
+                    'is_recurring': row_dict.get('is_recurring', 'false'),
+                    'recurring_id': row_dict.get('recurring_id'),
+                    'transaction_metadata': row_dict.get('transaction_metadata'),
+                    'created_at': row_dict.get('created_at'),
+                    'updated_at': row_dict.get('updated_at'),
+                }
+                
+                # Create TransactionResponse
+                transaction_responses.append(TransactionResponse(**response_dict))
+            except Exception as validation_error:
+                logger.error(f"Error validating transaction row: {validation_error}", exc_info=True)
+                continue
+        
+        return transaction_responses
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error listing transactions: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error listing transactions"
+            detail=f"Error listing transactions: {str(e)}"
         )
 
 
