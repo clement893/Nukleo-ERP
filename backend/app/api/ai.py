@@ -141,10 +141,10 @@ async def chat_completion(
             
             # Add ERP context to system prompt if available
             if erp_context:
-                system_prompt += f"\n\n=== DONNÉES ERP DISPONIBLES ===\n{erp_context}\n=== FIN DES DONNÉES ===\n\nUtilise ces informations pour répondre précisément aux questions de l'utilisateur. Si l'utilisateur mentionne une personne, une entreprise, un projet ou une opportunité, utilise les données fournies ci-dessus pour répondre avec les informations réelles."
+                system_prompt += f"\n\n=== DONNÉES ERP DISPONIBLES ===\n{erp_context}\n=== FIN DES DONNÉES ===\n\nIMPORTANT: Tu as accès aux données réelles de l'ERP Nukleo ci-dessus. Utilise TOUJOURS ces informations pour répondre aux questions de l'utilisateur. Si l'utilisateur demande des informations sur une personne, une entreprise, un projet, une opportunité ou un employé, utilise UNIQUEMENT les données fournies ci-dessus. Ne donne jamais de réponses génériques ou d'informations fictives si des données réelles sont disponibles dans le contexte ERP."
             else:
                 # Even if no specific context, add instruction that Leo has access to ERP data
-                system_prompt += "\n\nTu as accès aux données de l'ERP Nukleo (contacts, entreprises, projets, opportunités). Si l'utilisateur mentionne une personne, une entreprise ou un projet, tu peux utiliser ces informations pour répondre."
+                system_prompt += "\n\nTu as accès aux données de l'ERP Nukleo (contacts, entreprises, projets, opportunités, employés). Si l'utilisateur mentionne une personne, une entreprise, un projet ou un employé, tu dois utiliser ces informations pour répondre. Si tu ne trouves pas les informations demandées dans les données ERP, dis-le clairement plutôt que d'inventer des réponses."
         except Exception as e:
             # If Leo settings fail, use defaults
             logger.debug(f"Could not load Leo settings, using defaults: {e}")

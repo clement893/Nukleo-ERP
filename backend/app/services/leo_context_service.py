@@ -20,6 +20,13 @@ except ImportError:
     OPPORTUNITIES_AVAILABLE = False
     logger.warning("Opportunite model not available")
 
+try:
+    from app.models.employee import Employee
+    EMPLOYEES_AVAILABLE = True
+except ImportError:
+    EMPLOYEES_AVAILABLE = False
+    logger.warning("Employee model not available")
+
 
 class LeoContextService:
     """Service for building ERP context for Leo"""
@@ -40,7 +47,7 @@ class LeoContextService:
         project_keywords = ["projet", "project", "mission"]
         invoice_keywords = ["facture", "invoice", "facturation", "facturé"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
-        employee_keywords = ["employé", "employee", "collègue", "équipe", "team"]
+        employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés"]
         
         # Check if query contains what looks like a person name (capitalized words)
         # This is a simple heuristic: if there are capitalized words that aren't at the start of sentence
@@ -55,14 +62,20 @@ class LeoContextService:
             elif len(capitalized_words) == 1 and capitalized_words[0].lower() not in ["le", "la", "les", "un", "une", "des", "de", "du", "et", "ou", "à", "dans", "sur", "pour", "avec", "sans", "par"]:
                 has_potential_name = True
         
+        # Check for "qui est" pattern (who is) - this strongly suggests a person query
+        has_qui_est = "qui est" in query_lower or "c'est qui" in query_lower or "c est qui" in query_lower
+        
+        # Check for employee queries (more specific)
+        is_employee_query = any(word in query_lower for word in employee_keywords)
+        
         return {
-            "contacts": any(word in query_lower for word in contact_keywords) or has_potential_name,
+            "contacts": any(word in query_lower for word in contact_keywords) or has_potential_name or has_qui_est,
             "companies": any(word in query_lower for word in company_keywords),
             "opportunities": any(word in query_lower for word in opportunity_keywords) if OPPORTUNITIES_AVAILABLE else False,
             "projects": any(word in query_lower for word in project_keywords),
             "invoices": any(word in query_lower for word in invoice_keywords),
             "events": any(word in query_lower for word in event_keywords),
-            "employees": any(word in query_lower for word in employee_keywords),
+            "employees": is_employee_query if EMPLOYEES_AVAILABLE else False,
         }
 
     def _extract_keywords(self, query: str) -> List[str]:
@@ -94,11 +107,37 @@ class LeoContextService:
         try:
             keywords = self._extract_keywords(query)
             
-            # Also extract potential names (capitalized words)
+            # Also extract potential names (capitalized words) - keep original case
             words = query.split()
-            potential_names = [w.strip(".,!?;:()[]{}") for w in words if w and w[0].isupper() and len(w) > 2]
+            potential_names = [w.strip(".,!?;:()[]{}") for w in words if w and w[0].isupper() and len(w.strip(".,!?;:()[]{}")) > 2]
+            
+            # Also check for names in lowercase (after stop word removal, names might be lowercase)
+            # If query has "qui est daly ann", after stop words we might have "daly ann" in lowercase
+            # So we also check for words that look like names (2+ consecutive words that aren't stop words)
+            query_lower = query.lower()
+            stop_words_set = {"le", "la", "les", "un", "une", "des", "de", "du", "et", "ou", "à", "dans", "sur", "pour", "avec", "sans", "par", "mon", "ma", "mes", "nos", "notre", "vos", "votre", "qui", "que", "quoi", "comment", "combien", "où", "quand", "pourquoi", "est", "sont", "a", "ont", "avoir", "être", "faire", "fait", "peux", "peut", "pouvez", "pouvons"}
+            remaining_words = [w.strip(".,!?;:()[]{}") for w in query_lower.split() 
+                             if w.strip(".,!?;:()[]{}") not in stop_words_set 
+                             and len(w.strip(".,!?;:()[]{}")) > 2]
+            
+            # If we have 2+ remaining words that aren't stop words, they might be a name
+            if len(remaining_words) >= 2:
+                # Try combining them as a full name (e.g., "daly ann" -> "Daly Ann")
+                combined_lower = " ".join(remaining_words[:2])
+                # Capitalize first letter of each word for search
+                combined_capitalized = " ".join([w.capitalize() for w in remaining_words[:2]])
+                keywords.append(combined_lower)
+                potential_names.append(combined_capitalized)
+            
             # Add potential names to keywords (keep original case for name matching)
             all_keywords = list(set(keywords + potential_names))
+            
+            # Also try combining consecutive capitalized words as full names
+            if len(potential_names) >= 2:
+                for i in range(len(potential_names) - 1):
+                    combined_name = f"{potential_names[i]} {potential_names[i+1]}"
+                    if combined_name not in all_keywords:
+                        all_keywords.append(combined_name)
             
             # Build query
             stmt = select(Contact).options(
@@ -127,6 +166,8 @@ class LeoContextService:
                             Contact.last_name.ilike(f"%{keyword}%"),
                             # Try combining first and last name (e.g., "Daly Ann" -> search for both)
                             func.concat(Contact.first_name, ' ', Contact.last_name).ilike(f"%{keyword}%"),
+                            # Also try reversed (last name first)
+                            func.concat(Contact.last_name, ' ', Contact.first_name).ilike(f"%{keyword}%"),
                         ])
                 stmt = stmt.where(or_(*conditions))
             else:
@@ -354,6 +395,84 @@ class LeoContextService:
             logger.error(f"Error getting relevant projects: {e}", exc_info=True)
             return []
 
+    async def get_relevant_employees(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant employees based on query"""
+        if not EMPLOYEES_AVAILABLE:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            keywords = self._extract_keywords(query)
+            
+            # Also extract potential names (capitalized words)
+            words = query.split()
+            potential_names = [w.strip(".,!?;:()[]{}") for w in words if w and w[0].isupper() and len(w) > 2]
+            all_keywords = list(set(keywords + potential_names))
+            
+            # Build query
+            stmt = select(Employee).options(
+                selectinload(Employee.team),
+                selectinload(Employee.user)
+            )
+            
+            # Filter by keywords if any
+            if all_keywords:
+                conditions = []
+                for keyword in all_keywords:
+                    keyword_lower = keyword.lower()
+                    # Search in various fields (case-insensitive)
+                    conditions.extend([
+                        Employee.first_name.ilike(f"%{keyword_lower}%"),
+                        Employee.last_name.ilike(f"%{keyword_lower}%"),
+                        Employee.email.ilike(f"%{keyword_lower}%"),
+                    ])
+                    # Also try with original case for names
+                    if keyword[0].isupper():
+                        conditions.extend([
+                            Employee.first_name.ilike(f"%{keyword}%"),
+                            Employee.last_name.ilike(f"%{keyword}%"),
+                            func.concat(Employee.first_name, ' ', Employee.last_name).ilike(f"%{keyword}%"),
+                            func.concat(Employee.last_name, ' ', Employee.first_name).ilike(f"%{keyword}%"),
+                        ])
+                stmt = stmt.where(or_(*conditions))
+            else:
+                # If query is about employees in general (e.g., "qui sont mes employés"), return all active employees
+                # No specific filter needed, will return up to limit
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            employees = result.scalars().all()
+            
+            # Format results
+            formatted = []
+            for employee in employees:
+                formatted.append({
+                    "id": employee.id,
+                    "nom_complet": f"{employee.first_name} {employee.last_name}",
+                    "email": employee.email,
+                    "telephone": employee.phone,
+                    "poste": None,  # Employee model doesn't have job_title in this version
+                    "equipe": employee.team.name if employee.team else None,
+                    "date_embauche": employee.hire_date.isoformat() if employee.hire_date else None,
+                    "numero_employe": employee.employee_number,
+                })
+            
+            logger.debug(f"Found {len(formatted)} employees for query: {query}")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant employees: {e}", exc_info=True)
+            return []
+
     async def get_relevant_data(
         self,
         user_id: int,
@@ -374,6 +493,9 @@ class LeoContextService:
         
         if data_types.get("projects"):
             result["projects"] = await self.get_relevant_projects(user_id, query)
+        
+        if data_types.get("employees"):
+            result["employees"] = await self.get_relevant_employees(user_id, query)
         
         return result
 
@@ -435,6 +557,21 @@ class LeoContextService:
                     parts.append(f"- Budget: {project['budget']}€")
                 if project.get("etape"):
                     parts.append(f"- Étape: {project['etape']}")
+                context_parts.append(" ".join(parts))
+            context_parts.append("")
+        
+        if data.get("employees"):
+            context_parts.append("=== EMPLOYÉS ===")
+            for employee in data["employees"][:10]:
+                parts = [f"- {employee['nom_complet']}"]
+                if employee.get("email"):
+                    parts.append(f"({employee['email']})")
+                if employee.get("poste"):
+                    parts.append(f"- {employee['poste']}")
+                if employee.get("equipe"):
+                    parts.append(f"dans l'équipe {employee['equipe']}")
+                if employee.get("numero_employe"):
+                    parts.append(f"- N°: {employee['numero_employe']}")
                 context_parts.append(" ".join(parts))
             context_parts.append("")
         
