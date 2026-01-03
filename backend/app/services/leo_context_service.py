@@ -716,6 +716,7 @@ class LeoContextService:
         structure_parts.append("")
         
         structure_parts.append("PAGES PRINCIPALES:")
+        structure_parts.append("Format URL: /fr/dashboard/[module] ou /[locale]/dashboard/[module]")
         pages_info = [
             ("Dashboard", "/dashboard", "Vue d'ensemble de l'ERP"),
             ("Contacts", "/dashboard/contacts", "Gestion des contacts"),
@@ -733,7 +734,7 @@ class LeoContextService:
             ("Paramètres Leo", "/settings/leo", "Configuration de l'assistant IA"),
         ]
         for name, path, desc in pages_info:
-            structure_parts.append(f"  - {name} ({path}): {desc}")
+            structure_parts.append(f"  - {name}: {path} - {desc}")
         structure_parts.append("")
         
         # Main database entities/tables

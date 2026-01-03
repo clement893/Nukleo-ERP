@@ -231,7 +231,61 @@ export default function LeoPage() {
                       : 'glass-card border border-nukleo-lavender/20 text-gray-900 dark:text-white'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+                  <div className="whitespace-pre-wrap break-words leading-relaxed">
+                    {message.content.split(/(\[([^\]]+)\]\(([^)]+)\))/g).map((part, idx) => {
+                      // Parse markdown links [text](url)
+                      if (idx % 4 === 0) {
+                        // Regular text
+                        return <span key={idx}>{part}</span>;
+                      } else if (idx % 4 === 1) {
+                        // Full match [text](url)
+                        const text = message.content.split(/(\[([^\]]+)\]\(([^)]+)\))/g)[idx + 1] || '';
+                        const url = message.content.split(/(\[([^\]]+)\]\(([^)]+)\))/g)[idx + 2] || '';
+                        return (
+                          <a
+                            key={idx}
+                            href={url}
+                            className="text-primary-500 hover:text-primary-600 underline font-medium"
+                            onClick={(e) => {
+                              // Handle internal links with Next.js router
+                              if (url.startsWith('/')) {
+                                e.preventDefault();
+                                window.location.href = url;
+                              }
+                            }}
+                          >
+                            {text}
+                          </a>
+                        );
+                      }
+                      return null;
+                    })}
+                    {/* Fallback: if no markdown links, render as plain text with URL detection */}
+                    {!message.content.includes('](') && (
+                      <span>
+                        {message.content.split(/(https?:\/\/[^\s]+|(?:\/[a-z]{2})?\/dashboard\/[^\s]+|\/settings\/[^\s]+)/gi).map((part, idx) => {
+                          if (part.match(/^(https?:\/\/|\/)/)) {
+                            return (
+                              <a
+                                key={idx}
+                                href={part}
+                                className="text-primary-500 hover:text-primary-600 underline font-medium"
+                                onClick={(e) => {
+                                  if (part.startsWith('/')) {
+                                    e.preventDefault();
+                                    window.location.href = part;
+                                  }
+                                }}
+                              >
+                                {part}
+                              </a>
+                            );
+                          }
+                          return <span key={idx}>{part}</span>;
+                        })}
+                      </span>
+                    )}
+                  </div>
                   {message.provider && message.role === 'assistant' && (
                     <p className="text-xs mt-2 opacity-70 capitalize">
                       via {message.provider}
