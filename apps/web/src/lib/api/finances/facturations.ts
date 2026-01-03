@@ -200,7 +200,7 @@ export const facturationsAPI = {
     const response = await apiClient.get(`/v1/finances/facturations/${invoiceId}/pdf`, {
       responseType: 'blob',
     });
-    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const blob = new Blob([response.data as BlobPart], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -262,7 +262,7 @@ export const facturationsAPI = {
       responseType: 'blob',
     });
     const format = options?.format || 'csv';
-    const blob = new Blob([response.data], {
+    const blob = new Blob([response.data as BlobPart], {
       type: format === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv',
     });
     const url = window.URL.createObjectURL(blob);
@@ -283,7 +283,7 @@ export const facturationsAPI = {
       params: { format },
       responseType: 'blob',
     });
-    const blob = new Blob([response.data], {
+    const blob = new Blob([response.data as BlobPart], {
       type: format === 'excel' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv',
     });
     const url = window.URL.createObjectURL(blob);
