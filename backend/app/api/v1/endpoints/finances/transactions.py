@@ -76,17 +76,33 @@ async def get_transactions(
     except ProgrammingError as e:
         # Check if error is about missing columns
         error_str = str(e).lower()
+        logger.error(f"Database programming error in list_transactions: {e}", exc_info=True)
+        
+        # Check for schema-related errors
         if ('currency' in error_str or 'transaction_date' in error_str or 'date' in error_str) and 'does not exist' in error_str:
             logger.error(f"Transaction table schema error. Migration 073 needs to be executed: {e}", exc_info=True)
             raise HTTPException(
                 status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database schema is out of date. Please run migration 073 to update the transactions table schema (add currency column and rename date to transaction_date)."
+                detail=f"Database schema is out of date. Please run migration 073 to update the transactions table schema (add currency column and rename date to transaction_date). Error: {str(e)}"
             )
-        # Re-raise other programming errors
-        logger.error(f"Database programming error: {e}", exc_info=True)
+        # Re-raise other programming errors with more details
+        logger.error(f"Database programming error (not schema-related): {e}", exc_info=True)
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error occurred"
+            detail=f"Database error occurred: {str(e)}"
+        )
+    except Exception as e:
+        # Catch all other errors to see what's happening
+        logger.error(f"Unexpected error in list_transactions: {e}", exc_info=True)
+        error_str = str(e).lower()
+        if ('currency' in error_str or 'transaction_date' in error_str or 'date' in error_str) and ('does not exist' in error_str or 'column' in error_str):
+            raise HTTPException(
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Database schema is out of date. Please run migration 073 to update the transactions table schema (add currency column and rename date to transaction_date). Error: {str(e)}"
+            )
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {str(e)}"
         )
     except Exception as e:
         logger.error(f"Error fetching transactions: {e}", exc_info=True)
