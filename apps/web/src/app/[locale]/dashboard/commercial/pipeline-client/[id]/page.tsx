@@ -30,7 +30,9 @@ import {
   ArrowDown,
   CheckSquare,
   Square,
-  Upload
+  Upload,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { Badge, Button, Loading, Alert, Card, Input, Select, Modal, Drawer, useToast, Chart } from '@/components/ui';
 import { pipelinesAPI, type Pipeline, type PipelineUpdate } from '@/lib/api/pipelines';

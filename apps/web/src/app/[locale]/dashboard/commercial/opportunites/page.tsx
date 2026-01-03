@@ -830,39 +830,62 @@ function OpportunitiesContent() {
                       </Badge>
                     )}
                   </div>
-                  <Dropdown
-                    trigger={
-                      <button 
-                        className="dropdown-trigger p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      </button>
-                    }
-                    items={[
-                      {
-                        label: 'Voir les détails',
-                        onClick: () => handleRowClick(opp),
-                        icon: <Eye className="w-4 h-4" />,
-                      },
-                      {
-                        label: 'Modifier',
-                        onClick: () => {
-                          setSelectedOpportunity(opp);
-                          setShowEditModal(true);
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(opp);
+                      }}
+                      title="Voir les détails"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedOpportunity(opp);
+                        setShowEditModal(true);
+                      }}
+                      title="Modifier"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <Dropdown
+                      trigger={
+                        <button 
+                          className="dropdown-trigger p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        </button>
+                      }
+                      items={[
+                        {
+                          label: 'Voir les détails',
+                          onClick: () => handleRowClick(opp),
+                          icon: <Eye className="w-4 h-4" />,
                         },
-                        icon: <Edit className="w-4 h-4" />,
-                      },
-                      { divider: true },
-                      {
-                        label: 'Supprimer',
-                        onClick: () => handleDelete(opp.id, opp.name),
-                        icon: <Trash2 className="w-4 h-4" />,
-                        variant: 'danger',
-                      },
-                    ]}
-                    position="bottom"
-                  />
+                        {
+                          label: 'Modifier',
+                          onClick: () => {
+                            setSelectedOpportunity(opp);
+                            setShowEditModal(true);
+                          },
+                          icon: <Edit className="w-4 h-4" />,
+                        },
+                        { divider: true },
+                        {
+                          label: 'Supprimer',
+                          onClick: () => handleDelete(opp.id, opp.name),
+                          icon: <Trash2 className="w-4 h-4" />,
+                          variant: 'danger',
+                        },
+                      ]}
+                      position="bottom"
+                    />
+                  </div>
                 </div>
 
                 {/* Value */}
@@ -895,30 +918,6 @@ function OpportunitiesContent() {
                   )}
                 </div>
 
-                {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRowClick(opp);
-                    }}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Voir
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedOpportunity(opp);
-                      setShowEditModal(true);
-                    }}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </div>
               </div>
             ))}
           </div>

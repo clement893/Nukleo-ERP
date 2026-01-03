@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -17,16 +17,76 @@ import {
   Clock,
   CheckCircle2
 } from 'lucide-react';
-import { Badge, Button, Card, Loading } from '@/components/ui';
+import { Badge, Button, Card, Loading, useToast } from '@/components/ui';
+import Modal from '@/components/ui/Modal';
 import Link from 'next/link';
-import { useInfiniteOpportunities } from '@/lib/query/opportunities';
-import { useInfiniteQuotes, useInfiniteSubmissions } from '@/lib/query/commercial';
+import { useInfiniteOpportunities, useCreateOpportunity } from '@/lib/query/opportunities';
+import { useInfiniteQuotes, useInfiniteSubmissions, useCreateQuote } from '@/lib/query/commercial';
+import { useCreateCompany, useInfiniteCompanies } from '@/lib/query/companies';
+import { useCreateReseauContact } from '@/lib/query/reseau-contacts';
+import { companiesAPI } from '@/lib/api/companies';
+import { employeesAPI } from '@/lib/api';
+import OpportunityForm from '@/components/commercial/OpportunityForm';
+import QuoteForm from '@/components/commercial/QuoteForm';
+import ContactForm from '@/components/reseau/ContactForm';
+import CompanyForm from '@/components/commercial/CompanyForm';
+import { handleApiError } from '@/lib/errors/api';
+import { type OpportunityCreate } from '@/lib/api/opportunities';
+import { type QuoteCreate } from '@/lib/api/quotes';
+import { type CompanyCreate } from '@/lib/api/companies';
+import { type ContactCreate } from '@/lib/api/contacts';
 
 export default function CommercialPage() {
+  const { showToast } = useToast();
+  
   // Fetch real data - increase limit to get all data for accurate stats
   const { data: opportunitiesData, isLoading: loadingOpps } = useInfiniteOpportunities(1000);
   const { data: quotesData, isLoading: loadingQuotes } = useInfiniteQuotes(1000);
   const { data: submissionsData, isLoading: loadingSubmissions } = useInfiniteSubmissions(1000);
+  
+  // Mutations
+  const createOpportunityMutation = useCreateOpportunity();
+  const createQuoteMutation = useCreateQuote();
+  const createCompanyMutation = useCreateCompany();
+  const createContactMutation = useCreateReseauContact();
+  
+  // Modal states
+  const [showCreateOpportunityModal, setShowCreateOpportunityModal] = useState(false);
+  const [showCreateQuoteModal, setShowCreateQuoteModal] = useState(false);
+  const [showCreateContactModal, setShowCreateContactModal] = useState(false);
+  const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
+  
+  // Load companies and employees for forms
+  const { data: companiesData } = useInfiniteCompanies(1000);
+  const [companies, setCompanies] = useState<Array<{ id: number; name: string }>>([]);
+  const [employees, setEmployees] = useState<Array<{ id: number; name: string }>>([]);
+  
+  useEffect(() => {
+    const loadCompanies = async () => {
+      try {
+        const data = companiesData?.pages.flat() || [];
+        setCompanies(data.map(c => ({ id: c.id, name: c.name })));
+      } catch (err) {
+        // Silent fail
+      }
+    };
+    loadCompanies();
+  }, [companiesData]);
+  
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        const data = await employeesAPI.list(0, 1000);
+        setEmployees(data.map(e => ({ 
+          id: e.id, 
+          name: `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.email || 'Sans nom'
+        })));
+      } catch (err) {
+        // Silent fail
+      }
+    };
+    loadEmployees();
+  }, []);
 
   // Flatten data
   const opportunities = useMemo(() => opportunitiesData?.pages.flat() || [], [opportunitiesData]);
@@ -58,9 +118,9 @@ export default function CommercialPage() {
     const hasDeadline = daysUntilDeadline !== null;
     const isDeadlineNear = hasDeadline && daysUntilDeadline <= 30 && daysUntilDeadline >= 0;
     const isDeadlineUrgent = hasDeadline && daysUntilDeadline <= 7 && daysUntilDeadline >= 0;
-    const isProposalStage = opp.status?.toLowerCase() === 'proposal' || 
-                           opp.stage_name?.toLowerCase().includes('proposition') ||
-                           opp.stage_name?.toLowerCase().includes('proposal');
+    // Check specifically for "05 - Soumission à faire" stage
+    const isSubmissionToDoStage = opp.stage_name?.includes('05 - Soumission à faire') || 
+                                   opp.stage_name?.includes('05 - Proposal to do');
     const hasHighProbability = opp.probability && opp.probability > 50;
 
     if (isDeadlineUrgent && !hasSubmission(opp)) {
@@ -69,7 +129,7 @@ export default function CommercialPage() {
     if (isDeadlineNear && !hasSubmission(opp)) {
       return { type: 'deadline', priority: 'medium', label: 'Deadline approchante - Soumission nécessaire' };
     }
-    if (isProposalStage && !hasSubmission(opp)) {
+    if (isSubmissionToDoStage && !hasSubmission(opp)) {
       return { type: 'submission', priority: 'high', label: 'Soumission nécessaire' };
     }
     if (hasHighProbability && !hasSubmission(opp)) {
@@ -78,7 +138,7 @@ export default function CommercialPage() {
     return { type: 'followup', priority: 'low', label: 'Suivi recommandé' };
   };
 
-  // Opportunities needing action
+  // Opportunities needing action - Only show opportunities in "05 - Soumission à faire" stage
   const opportunitiesNeedingAction = useMemo(() => {
     return opportunities
       .filter((opp: any) => {
@@ -86,17 +146,12 @@ export default function CommercialPage() {
         const status = opp.status?.toLowerCase() || '';
         if (['won', 'lost', 'cancelled'].includes(status)) return false;
 
-        const daysUntilDeadline = getDaysUntilDeadline(opp.expected_close_date);
-        const hasDeadline = daysUntilDeadline !== null;
-        const isDeadlineNear = hasDeadline && daysUntilDeadline <= 30 && daysUntilDeadline >= 0;
-        const isProposalStage = opp.status?.toLowerCase() === 'proposal' || 
-                               opp.stage_name?.toLowerCase().includes('proposition') ||
-                               opp.stage_name?.toLowerCase().includes('proposal');
-        const hasHighProbability = opp.probability && opp.probability > 50;
-        const noSubmission = !hasSubmission(opp);
-
-        // Include opportunities that need action
-        return (isProposalStage || isDeadlineNear || hasHighProbability) && noSubmission;
+        // Only include opportunities in "05 - Soumission à faire" stage
+        const isSubmissionToDoStage = opp.stage_name?.includes('05 - Soumission à faire') || 
+                                      opp.stage_name?.includes('05 - Proposal to do');
+        
+        // Must be in the correct stage and not have a submission yet
+        return isSubmissionToDoStage && !hasSubmission(opp);
       })
       .map((opp: any) => ({
         ...opp,
@@ -168,6 +223,75 @@ export default function CommercialPage() {
       currency: 'CAD',
       minimumFractionDigits: 0,
     }).format(value);
+  };
+
+  // Handlers for quick actions
+  const handleCreateOpportunity = async (data: OpportunityCreate) => {
+    try {
+      await createOpportunityMutation.mutateAsync(data);
+      setShowCreateOpportunityModal(false);
+      showToast({
+        message: 'Opportunité créée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleCreateQuote = async (data: QuoteCreate) => {
+    try {
+      await createQuoteMutation.mutateAsync(data);
+      setShowCreateQuoteModal(false);
+      showToast({
+        message: 'Devis créé avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleCreateContact = async (data: ContactCreate) => {
+    try {
+      await createContactMutation.mutateAsync(data);
+      setShowCreateContactModal(false);
+      showToast({
+        message: 'Contact créé avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleCreateCompany = async (data: CompanyCreate) => {
+    try {
+      await createCompanyMutation.mutateAsync(data);
+      setShowCreateCompanyModal(false);
+      showToast({
+        message: 'Entreprise créée avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création',
+        type: 'error',
+      });
+    }
   };
 
   if (loading) {
@@ -422,34 +546,101 @@ export default function CommercialPage() {
             <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions rapides</h3>
               <div className="flex flex-col gap-3">
-                <Link href="/dashboard/commercial/opportunites" className="block">
-                  <Button className="w-full justify-start hover-nukleo" variant="outline">
-                    <Target className="w-4 h-4 mr-2" />
-                    Nouvelle opportunité
-                  </Button>
-                </Link>
-                <Link href="/dashboard/commercial/soumissions" className="block">
-                  <Button className="w-full justify-start hover-nukleo" variant="outline">
-                    <FileText className="w-4 h-4 mr-2" />
-                    Nouveau devis
-                  </Button>
-                </Link>
-                <Link href="/dashboard/reseau/contacts" className="block">
-                  <Button className="w-full justify-start hover-nukleo" variant="outline">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Ajouter un contact
-                  </Button>
-                </Link>
-                <Link href="/dashboard/reseau/entreprises" className="block">
-                  <Button className="w-full justify-start hover-nukleo" variant="outline">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Ajouter une entreprise
-                  </Button>
-                </Link>
+                <Button 
+                  className="w-full justify-start hover-nukleo" 
+                  variant="outline"
+                  onClick={() => setShowCreateOpportunityModal(true)}
+                >
+                  <Target className="w-4 h-4 mr-2" />
+                  Nouvelle opportunité
+                </Button>
+                <Button 
+                  className="w-full justify-start hover-nukleo" 
+                  variant="outline"
+                  onClick={() => setShowCreateQuoteModal(true)}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Nouveau devis
+                </Button>
+                <Button 
+                  className="w-full justify-start hover-nukleo" 
+                  variant="outline"
+                  onClick={() => setShowCreateContactModal(true)}
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Ajouter un contact
+                </Button>
+                <Button 
+                  className="w-full justify-start hover-nukleo" 
+                  variant="outline"
+                  onClick={() => setShowCreateCompanyModal(true)}
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Ajouter une entreprise
+                </Button>
               </div>
             </Card>
           </div>
         </div>
+
+        {/* Create Opportunity Modal */}
+        <Modal
+          isOpen={showCreateOpportunityModal}
+          onClose={() => setShowCreateOpportunityModal(false)}
+          title="Nouvelle opportunité"
+          size="lg"
+        >
+          <OpportunityForm
+            onSubmit={handleCreateOpportunity}
+            onCancel={() => setShowCreateOpportunityModal(false)}
+            loading={createOpportunityMutation.isPending}
+          />
+        </Modal>
+
+        {/* Create Quote Modal */}
+        <Modal
+          isOpen={showCreateQuoteModal}
+          onClose={() => setShowCreateQuoteModal(false)}
+          title="Nouveau devis"
+          size="lg"
+        >
+          <QuoteForm
+            onSubmit={handleCreateQuote}
+            onCancel={() => setShowCreateQuoteModal(false)}
+            loading={createQuoteMutation.isPending}
+          />
+        </Modal>
+
+        {/* Create Contact Modal */}
+        <Modal
+          isOpen={showCreateContactModal}
+          onClose={() => setShowCreateContactModal(false)}
+          title="Ajouter un contact"
+          size="lg"
+        >
+          <ContactForm
+            onSubmit={handleCreateContact}
+            onCancel={() => setShowCreateContactModal(false)}
+            loading={createContactMutation.isPending}
+            companies={companies}
+            employees={employees}
+          />
+        </Modal>
+
+        {/* Create Company Modal */}
+        <Modal
+          isOpen={showCreateCompanyModal}
+          onClose={() => setShowCreateCompanyModal(false)}
+          title="Ajouter une entreprise"
+          size="lg"
+        >
+          <CompanyForm
+            onSubmit={handleCreateCompany}
+            onCancel={() => setShowCreateCompanyModal(false)}
+            loading={createCompanyMutation.isPending}
+            parentCompanies={companies}
+          />
+        </Modal>
       </MotionDiv>
     </PageContainer>
   );

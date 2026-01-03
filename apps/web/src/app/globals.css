@@ -559,6 +559,56 @@ button[style*="var(--color-primary"] {
   color: white !important;
 }
 
+/* Forcer texte blanc pour TOUS les éléments (boutons, onglets, etc.) avec background #523DC9 */
+button[class*="bg-[#523DC9]"],
+button.bg-\[#523DC9\],
+nav button[class*="bg-[#523DC9]"],
+nav button.bg-\[#523DC9\],
+[role="tab"][class*="bg-[#523DC9]"],
+[role="tab"].bg-\[#523DC9\] {
+  color: white !important;
+}
+
+/* Forcer texte blanc pour les éléments enfants dans les onglets avec background #523DC9 */
+button[class*="bg-[#523DC9]"] *,
+button.bg-\[#523DC9\] *,
+nav button[class*="bg-[#523DC9]"] *,
+nav button.bg-\[#523DC9\] *,
+[role="tab"][class*="bg-[#523DC9]"] *,
+[role="tab"].bg-\[#523DC9\] * {
+  color: white !important;
+}
+
+/* Forcer texte blanc pour les éléments avec background utilisant la variable primary-500 (#523DC9) */
+button[class*="bg-primary-500"],
+button[class*="bg-primary-600"],
+button[style*="background-color"][style*="#523DC9"],
+button[style*="background-color"][style*="var(--color-primary-500)"],
+*[class*="bg-primary-500"][class*="text-"]:not([class*="text-white"]):not([class*="text-primary-100"]):not([class*="text-primary-200"]):not([class*="text-primary-300"]),
+*[class*="bg-primary-600"][class*="text-"]:not([class*="text-white"]):not([class*="text-primary-100"]):not([class*="text-primary-200"]):not([class*="text-primary-300"]) {
+  color: white !important;
+}
+
+/* Forcer texte blanc pour les boutons avec bg-primary-500/600 même s'ils ont text-blue ou text-primary-600 */
+button[class*="bg-primary-500"][class*="text-blue"],
+button[class*="bg-primary-600"][class*="text-blue"],
+button[class*="bg-primary-500"][class*="text-primary-600"],
+button[class*="bg-primary-600"][class*="text-primary-600"],
+button[class*="bg-primary-500"][class*="text-primary-500"],
+button[class*="bg-primary-600"][class*="text-primary-500"],
+button[class*="bg-[#523DC9]"][class*="text-blue"],
+button[class*="bg-[#523DC9]"][class*="text-primary-600"],
+button[class*="bg-[#523DC9]"][class*="text-primary-500"] {
+  color: white !important;
+}
+
+/* Forcer texte blanc pour les éléments enfants dans les boutons avec bg-primary-500/600 */
+button[class*="bg-primary-500"] *,
+button[class*="bg-primary-600"] *,
+button[class*="bg-[#523DC9]"] * {
+  color: white !important;
+}
+
 .glass-button:hover {
   background: color-mix(in srgb, var(--color-primary-500) 90%, transparent);
   box-shadow: 
