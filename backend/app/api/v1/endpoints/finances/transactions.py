@@ -459,6 +459,8 @@ async def import_transactions(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Import transactions from CSV, Excel, or ZIP file"""
+    logger.info(f"Import request from user {current_user.id}, file: {file.filename}, dry_run: {dry_run}")
     """
     Import transactions (revenues and expenses) from CSV, Excel, or ZIP file
     
