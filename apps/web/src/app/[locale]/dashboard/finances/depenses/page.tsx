@@ -328,11 +328,8 @@ export default function DepensesPage() {
     category: '',
   });
 
-  useEffect(() => {
-    loadData();
-  }, [activeTab, statusFilter]);
-
-  const loadData = async () => {
+  // Load data function - memoized with useCallback
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       if (activeTab === 'expenses') {
