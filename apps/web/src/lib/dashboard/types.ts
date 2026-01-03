@@ -23,9 +23,13 @@ export type WidgetType =
   // Commercial
   | 'opportunities-list'
   | 'opportunities-pipeline'
+  | 'opportunities-needing-action'
   | 'clients-count'
   | 'clients-growth'
   | 'testimonials-carousel'
+  | 'quotes-list'
+  | 'submissions-list'
+  | 'commercial-stats'
   // Projects
   | 'projects-active'
   | 'projects-status'

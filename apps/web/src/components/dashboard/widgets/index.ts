@@ -28,3 +28,9 @@ export { EmployeeTasksWidget } from './EmployeeTasksWidget';
 export { EmployeeHoursWidget } from './EmployeeHoursWidget';
 export { EmployeeProjectsWidget } from './EmployeeProjectsWidget';
 export { EmployeeVacationsWidget } from './EmployeeVacationsWidget';
+
+// Widgets commerciaux supplémentaires
+export { QuotesWidget } from './QuotesWidget';
+export { SubmissionsWidget } from './SubmissionsWidget';
+export { OpportunitiesNeedingActionWidget } from './OpportunitiesNeedingActionWidget';
+export { CommercialStatsWidget } from './CommercialStatsWidget';

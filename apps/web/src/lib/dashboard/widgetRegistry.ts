@@ -17,6 +17,9 @@ import {
   CheckSquare,
   Briefcase,
   Puzzle,
+  FileText,
+  AlertCircle,
+  LayoutDashboard,
 } from 'lucide-react';
 
 import type { WidgetDefinition, WidgetType } from './types';
@@ -25,9 +28,13 @@ import type { WidgetDefinition, WidgetType } from './types';
 import { 
   OpportunitiesListWidget, 
   OpportunitiesPipelineWidget,
+  OpportunitiesNeedingActionWidget,
   ClientsCountWidget,
   ClientsGrowthWidget,
   TestimonialsCarouselWidget,
+  QuotesWidget,
+  SubmissionsWidget,
+  CommercialStatsWidget,
   ProjectsActiveWidget,
   ProjectsStatusWidget,
   TasksKanbanWidget,
@@ -113,6 +120,58 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     default_size: { w: 4, h: 2 },
     min_size: { w: 3, h: 2 },
     max_size: { w: 6, h: 3 },
+    configurable: true,
+  },
+  
+  'opportunities-needing-action': {
+    id: 'opportunities-needing-action',
+    name: 'Opportunités nécessitant une action',
+    description: 'Liste des opportunités nécessitant une soumission ou un suivi',
+    category: 'commercial',
+    icon: AlertCircle,
+    component: OpportunitiesNeedingActionWidget,
+    default_size: { w: 6, h: 3 },
+    min_size: { w: 4, h: 2 },
+    max_size: { w: 12, h: 4 },
+    configurable: true,
+  },
+  
+  'quotes-list': {
+    id: 'quotes-list',
+    name: 'Liste des Devis',
+    description: 'Affiche la liste des devis récents avec leurs statuts',
+    category: 'commercial',
+    icon: FileText,
+    component: QuotesWidget,
+    default_size: { w: 4, h: 2 },
+    min_size: { w: 3, h: 2 },
+    max_size: { w: 12, h: 4 },
+    configurable: true,
+  },
+  
+  'submissions-list': {
+    id: 'submissions-list',
+    name: 'Liste des Soumissions',
+    description: 'Affiche la liste des soumissions récentes avec leurs statuts',
+    category: 'commercial',
+    icon: Briefcase,
+    component: SubmissionsWidget,
+    default_size: { w: 4, h: 2 },
+    min_size: { w: 3, h: 2 },
+    max_size: { w: 12, h: 4 },
+    configurable: true,
+  },
+  
+  'commercial-stats': {
+    id: 'commercial-stats',
+    name: 'Statistiques Commerciales',
+    description: 'Vue d\'ensemble des statistiques commerciales (opportunités, devis, soumissions)',
+    category: 'commercial',
+    icon: LayoutDashboard,
+    component: CommercialStatsWidget,
+    default_size: { w: 6, h: 2 },
+    min_size: { w: 4, h: 2 },
+    max_size: { w: 12, h: 3 },
     configurable: true,
   },
   
