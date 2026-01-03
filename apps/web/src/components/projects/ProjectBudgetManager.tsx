@@ -238,10 +238,6 @@ export default function ProjectBudgetManager({ projectId }: ProjectBudgetManager
     }
   };
 
-  const calculateTotal = () => {
-    return items.reduce((sum, item) => sum + item.amount, 0);
-  };
-
   if (loading) {
     return (
       <Card className="glass-card p-xl">

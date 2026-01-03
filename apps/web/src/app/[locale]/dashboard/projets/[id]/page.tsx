@@ -35,7 +35,7 @@ import {
   Plus,
 } from 'lucide-react';
 import TaskKanban from '@/components/projects/TaskKanban';
-import TaskTimeline from '@/components/projects/TaskTimeline';
+import ProjectGanttChart from '@/components/projects/ProjectGanttChart';
 import ProjectAttachments from '@/components/projects/ProjectAttachments';
 import ProjectComments from '@/components/projects/ProjectComments';
 import ProjectGantt from '@/components/projects/ProjectGantt';
@@ -186,7 +186,7 @@ function ProjectDetailContent() {
   const handleOpenLinkModal = (linkType?: 'proposal_url' | 'drive_url' | 'slack_url' | 'echeancier_url') => {
     if (linkType) {
       setEditingLinkType(linkType);
-      const currentUrl = project?.[linkType] || '';
+      const currentUrl = (project?.[linkType] || '') as string;
       const labels: Record<string, string> = {
         proposal_url: 'Proposal',
         drive_url: 'Google Drive',
@@ -710,15 +710,13 @@ function ProjectDetailContent() {
         )}
 
         {activeTab === 'timeline' && (
-          <div className="space-y-6">
-            <Card className="glass-card p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Timeline du projet
-              </h3>
-              <TaskTimeline projectId={projectId} />
-            </Card>
-          </div>
+          <ProjectGanttChart
+            projectId={projectId}
+            projectName={project.name}
+            startDate={project.start_date || null}
+            endDate={project.end_date || null}
+            deadline={project.deadline || null}
+          />
         )}
 
         {activeTab === 'financial' && (
@@ -1202,7 +1200,7 @@ function ProjectDetailContent() {
               onChange={(e) => {
                 const linkType = e.target.value as 'proposal_url' | 'drive_url' | 'slack_url' | 'echeancier_url';
                 setEditingLinkType(linkType);
-                const currentUrl = project?.[linkType] || '';
+                const currentUrl = (project?.[linkType] || '') as string;
                 const labels: Record<string, string> = {
                   proposal_url: 'Proposal',
                   drive_url: 'Google Drive',
