@@ -59,25 +59,6 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
   const queryClient = useQueryClient();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   
-  // Handle custom widgets
-  if (widgetLayout.widget_type === 'custom') {
-    return (
-      <ErrorBoundary
-        fallback={(error) => (
-          <WidgetErrorFallback error={error || new Error('Unknown error')} widgetType="custom" />
-        )}
-      >
-        <div className="h-full w-full glass-card rounded-lg flex flex-col">
-          <CustomWidget
-            id={widgetLayout.id}
-            config={widgetLayout.config}
-            globalFilters={globalFilters}
-          />
-        </div>
-      </ErrorBoundary>
-    );
-  }
-
   const widgetDef = getWidget(widgetLayout.widget_type);
   
   if (!widgetDef) {
@@ -169,7 +150,7 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4 overflow-auto">
+      <div className="flex-1 overflow-auto">
         {WidgetComponent ? (
           <ErrorBoundary
             onError={(error, errorInfo) => {
@@ -193,7 +174,7 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
             />
           </ErrorBoundary>
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-full p-4">
             <div className="text-center">
               <Icon className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
               <p className="text-sm text-gray-500 dark:text-gray-400">

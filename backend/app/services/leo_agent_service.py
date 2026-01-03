@@ -37,22 +37,33 @@ class LeoAgentService:
         Returns:
             Dict with user context information
         """
+        # CRITICAL: Extract all user attributes FIRST, before any async operations
+        # This prevents greenlet_spawn errors by ensuring all attributes are accessed
+        # while still in the async context where the user object was loaded
+        user_id = int(user.id) if user.id is not None else 0
+        user_email = str(user.email) if user.email is not None else ""
+        user_first_name = str(user.first_name) if user.first_name is not None else ""
+        user_last_name = str(user.last_name) if user.last_name is not None else ""
+        user_name = f"{user_first_name} {user_last_name}".strip() or user_email
+        user_is_superadmin = bool(user.is_superadmin) if user.is_superadmin is not None else False
+        
+        # Now use the extracted user_id for all async operations
         # Get roles - convert to simple values to avoid greenlet_spawn errors
-        roles = await self.rbac_service.get_user_roles(user.id)
+        roles = await self.rbac_service.get_user_roles(user_id)
         # Convert roles to list of slugs immediately to avoid async context issues
         # Access all attributes in a loop to ensure they're loaded before async context ends
         role_names = []
         for role in roles:
             # Access slug attribute immediately while still in async context
-            slug_value = role.slug
-            role_names.append(str(slug_value))
+            slug_value = str(role.slug) if hasattr(role, 'slug') and role.slug is not None else ""
+            role_names.append(slug_value)
         
         # Get permissions
-        permissions = await self.rbac_service.get_user_permissions(user.id)
+        permissions = await self.rbac_service.get_user_permissions(user_id)
         
         # Get teams (using join to avoid lazy loading issues in async context)
         teams_query = select(Team.name).join(TeamMember, Team.id == TeamMember.team_id).where(
-            TeamMember.user_id == user.id
+            TeamMember.user_id == user_id
         ).where(Team.is_active == True).where(TeamMember.is_active == True)
         teams_result = await self.db.execute(teams_query)
         # Convert team names to strings immediately to avoid greenlet_spawn errors
@@ -61,39 +72,31 @@ class LeoAgentService:
         # Get statistics
         # Count projects
         projects_count_query = select(func.count()).select_from(Project).where(
-            Project.user_id == user.id
+            Project.user_id == user_id
         )
         projects_count_result = await self.db.execute(projects_count_query)
         projects_count = projects_count_result.scalar() or 0
         
         # Count invoices
         invoices_count_query = select(func.count()).select_from(Invoice).where(
-            Invoice.user_id == user.id
+            Invoice.user_id == user_id
         )
         invoices_count_result = await self.db.execute(invoices_count_query)
         invoices_count = invoices_count_result.scalar() or 0
         
         # Count assigned tasks
         tasks_count_query = select(func.count()).select_from(ProjectTask).where(
-            ProjectTask.assignee_id == user.id
+            ProjectTask.assignee_id == user_id
         )
         tasks_count_result = await self.db.execute(tasks_count_query)
         tasks_count = tasks_count_result.scalar() or 0
         
         # Count assigned contacts
         contacts_count_query = select(func.count()).select_from(Contact).where(
-            Contact.employee_id == user.id
+            Contact.employee_id == user_id
         )
         contacts_count_result = await self.db.execute(contacts_count_query)
         contacts_count = contacts_count_result.scalar() or 0
-        
-        # Access all user attributes immediately to avoid greenlet_spawn errors
-        user_id = user.id
-        user_email = str(user.email) if user.email else ""
-        user_first_name = str(user.first_name) if user.first_name else ""
-        user_last_name = str(user.last_name) if user.last_name else ""
-        user_name = f"{user_first_name} {user_last_name}".strip() or user_email
-        user_is_superadmin = bool(user.is_superadmin) if user.is_superadmin is not None else False
         
         return {
             "user_id": user_id,
@@ -122,13 +125,16 @@ class LeoAgentService:
         Returns:
             Dict with relevant data
         """
+        # CRITICAL: Extract user_id FIRST to avoid greenlet_spawn errors
+        user_id = int(user.id) if user.id is not None else 0
+        
         data = {}
         query_lower = query.lower()
         
         # Projects
         project_keywords = ['projet', 'project', 'mes projets', 'my projects', 'tâche', 'task']
         if any(word in query_lower for word in project_keywords):
-            projects_query = select(Project).where(Project.user_id == user.id).order_by(
+            projects_query = select(Project).where(Project.user_id == user_id).order_by(
                 desc(Project.created_at)
             )
             projects_result = await self.db.execute(projects_query)
@@ -150,7 +156,7 @@ class LeoAgentService:
         task_keywords = ['tâche', 'task', 'todo', 'à faire', 'en cours', 'bloqué']
         if any(word in query_lower for word in task_keywords):
             tasks_query = select(ProjectTask).where(
-                ProjectTask.assignee_id == user.id
+                ProjectTask.assignee_id == user_id
             ).order_by(desc(ProjectTask.created_at))
             tasks_result = await self.db.execute(tasks_query)
             tasks = tasks_result.scalars().all()
@@ -172,7 +178,7 @@ class LeoAgentService:
         # Invoices
         invoice_keywords = ['facture', 'invoice', 'paiement', 'payment', 'facturation', 'billing']
         if any(word in query_lower for word in invoice_keywords):
-            invoices_query = select(Invoice).where(Invoice.user_id == user.id).order_by(
+            invoices_query = select(Invoice).where(Invoice.user_id == user_id).order_by(
                 desc(Invoice.created_at)
             )
             invoices_result = await self.db.execute(invoices_query)
@@ -216,7 +222,7 @@ class LeoAgentService:
         contact_keywords = ['contact', 'personne', 'person', 'client', 'prospect']
         if any(word in query_lower for word in contact_keywords):
             contacts_query = select(Contact).where(
-                Contact.employee_id == user.id
+                Contact.employee_id == user_id
             ).order_by(desc(Contact.created_at))
             contacts_result = await self.db.execute(contacts_query)
             contacts = contacts_result.scalars().all()
