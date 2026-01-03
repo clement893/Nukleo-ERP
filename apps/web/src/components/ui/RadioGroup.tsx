@@ -29,7 +29,7 @@ export function RadioGroup({ children, className }: RadioGroupProps) {
   );
 }
 
-export function RadioGroupItem({ className }: RadioGroupItemProps) {
+export function RadioGroupItem(_props: RadioGroupItemProps) {
   // This is a placeholder - the actual Radio component will be used in the parent
   return null;
 }

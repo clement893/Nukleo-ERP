@@ -638,7 +638,7 @@ export default function ProjetsPage() {
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {filteredAndSortedProjects.map((project: Project) => {
-              const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.ACTIVE;
+              const statusInfo = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.active;
               const progress = calculateProgress(project);
               const budget = project.budget || 0;
               const deadlineAlert = getDeadlineAlert(project.deadline);
