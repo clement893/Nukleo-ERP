@@ -105,11 +105,11 @@ export default function EditableDataGrid<T extends Record<string, unknown>>({
           : String(value);
       case 'date':
         if (value instanceof Date) {
-          return value.toISOString().split('T')[0];
+          return value.toISOString().split('T')[0] || '';
         }
         if (typeof value === 'string') {
           if (value.includes('T')) {
-            return value.split('T')[0];
+            return value.split('T')[0] || value;
           }
           return value;
         }
@@ -268,10 +268,14 @@ export default function EditableDataGrid<T extends Record<string, unknown>>({
         // Delete multiple selected cells
         e.preventDefault();
         selectedCells.forEach(cellKey => {
-          const [rIdx, cIdx] = cellKey.split('-').map(Number);
-          const col = columns[cIdx];
-          if (col && col.editable) {
-            handleCellChange(rIdx, cIdx, col.type === 'number' || col.type === 'currency' ? 0 : '');
+          const parts = cellKey.split('-');
+          const rIdx = parts[0] ? Number(parts[0]) : undefined;
+          const cIdx = parts[1] ? Number(parts[1]) : undefined;
+          if (rIdx !== undefined && cIdx !== undefined) {
+            const col = columns[cIdx];
+            if (col && col.editable) {
+              handleCellChange(rIdx, cIdx, col.type === 'number' || col.type === 'currency' ? 0 : '');
+            }
           }
         });
       }
