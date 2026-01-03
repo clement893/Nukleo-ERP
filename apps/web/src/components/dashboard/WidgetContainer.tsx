@@ -11,7 +11,6 @@ import { useDashboardStore } from '@/lib/dashboard/store';
 import { getWidget } from '@/lib/dashboard/widgetRegistry';
 import type { WidgetLayout } from '@/lib/dashboard/types';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
-import { CustomWidget } from '@/components/dashboard/widgets/CustomWidget';
 
 interface WidgetContainerProps {
   widgetLayout: WidgetLayout;
@@ -150,7 +149,7 @@ export function WidgetContainer({ widgetLayout, isEditMode }: WidgetContainerPro
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 p-4 overflow-auto">
         {WidgetComponent ? (
           <ErrorBoundary
             onError={(error, errorInfo) => {
