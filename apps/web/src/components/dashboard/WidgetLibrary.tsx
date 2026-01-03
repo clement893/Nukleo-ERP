@@ -332,14 +332,14 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
               ) : (
                 <>
                   {/* Group collections by module */}
-                  {['commercial', 'projects', 'finances', 'team', 'global', 'system'].map((mod: DashboardModule) => {
+                  {(['commercial', 'projects', 'finances', 'team', 'global', 'system'] as DashboardModule[]).map((mod) => {
                     const moduleCollections = availableCollections.filter((c: WidgetCollection) => c.module === mod);
                     if (moduleCollections.length === 0) return null;
 
                     return (
                       <div key={mod} className="space-y-3">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                          {moduleLabels[mod as DashboardModule] || mod}
+                          {moduleLabels[mod] || mod}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {moduleCollections.map((collection: WidgetCollection) => {
