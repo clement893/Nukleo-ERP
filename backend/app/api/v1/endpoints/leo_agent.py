@@ -347,11 +347,11 @@ async def leo_query(
             content=request.message,
         )
         
-        # 3. Get user context (pass user object but it will extract attributes safely)
-        user_context = await leo_service.get_user_context(current_user)
+        # 3. Get user context (pass user_id directly to avoid greenlet_spawn errors)
+        user_context = await leo_service.get_user_context(user_id)
         
-        # 4. Get relevant data based on query (pass user object but it will extract user_id safely)
-        relevant_data = await leo_service.get_relevant_data(request.message, current_user)
+        # 4. Get relevant data based on query (pass user_id directly to avoid greenlet_spawn errors)
+        relevant_data = await leo_service.get_relevant_data(request.message, user_id)
         data_context = await leo_service.format_data_for_ai(relevant_data)
         
         # 5. Load active documentation

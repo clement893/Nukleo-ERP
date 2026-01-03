@@ -27,27 +27,31 @@ class LeoAgentService:
         self.db = db
         self.rbac_service = RBACService(db)
     
-    async def get_user_context(self, user: User) -> Dict:
+    async def get_user_context(self, user_id: int) -> Dict:
         """
         Get complete user context (roles, permissions, teams, statistics)
         
         Args:
-            user: User object
+            user_id: User ID
             
         Returns:
             Dict with user context information
         """
-        # CRITICAL: Refresh user object to ensure all attributes are loaded in async context
-        # This prevents greenlet_spawn errors
-        try:
-            await self.db.refresh(user)
-        except Exception:
-            pass  # If refresh fails, continue with what we have
+        # CRITICAL: Load user from database in current async context to avoid greenlet_spawn errors
+        # This ensures all attributes are accessible in the current async session
+        from app.models.user import User as UserModel
+        from sqlalchemy import select
+        user_result = await self.db.execute(
+            select(UserModel).where(UserModel.id == user_id)
+        )
+        user = user_result.scalar_one_or_none()
         
-        # CRITICAL: Extract all user attributes FIRST, before any async operations
+        if not user:
+            raise ValueError(f"User with id {user_id} not found")
+        
+        # CRITICAL: Extract all user attributes immediately after loading
         # This prevents greenlet_spawn errors by ensuring all attributes are accessed
-        # while still in the async context where the user object was loaded
-        user_id = int(user.id) if user.id is not None else 0
+        # while still in the async context where the user was loaded
         user_email = str(user.email) if user.email is not None else ""
         user_first_name = str(user.first_name) if user.first_name is not None else ""
         user_last_name = str(user.last_name) if user.last_name is not None else ""
@@ -126,19 +130,17 @@ class LeoAgentService:
             },
         }
     
-    async def get_relevant_data(self, query: str, user: User) -> Dict:
+    async def get_relevant_data(self, query: str, user_id: int) -> Dict:
         """
         Get relevant data based on the query
         
         Args:
             query: User query string
-            user: User object
+            user_id: User ID
             
         Returns:
             Dict with relevant data
         """
-        # CRITICAL: Extract user_id FIRST to avoid greenlet_spawn errors
-        user_id = int(user.id) if user.id is not None else 0
         
         data = {}
         query_lower = query.lower()
