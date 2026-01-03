@@ -305,9 +305,11 @@ async def create_transaction(
                     detail=f"Category {transaction_data.category_id} not found or does not belong to user"
                 )
         
+        # Use .value to get the string value ("expense" or "revenue") instead of enum name
+        type_value = transaction_data.type.value if isinstance(transaction_data.type, TransactionType) else str(transaction_data.type).lower()
         transaction = Transaction(
             user_id=current_user.id,
-            type=transaction_data.type,
+            type=type_value,
             description=transaction_data.description,
             amount=transaction_data.amount,
             tax_amount=transaction_data.tax_amount or 0,
@@ -934,9 +936,12 @@ async def import_transactions(
                     payment_date = payment_date.replace(tzinfo=timezone.utc)
                 
                 # Create transaction
+                # Use .value to get the string value ("expense" or "revenue") instead of enum name
+                # This ensures we send the enum value string, not the enum name
+                type_value = final_type.value if isinstance(final_type, TransactionType) else str(final_type).lower()
                 transaction = Transaction(
                     user_id=current_user.id,
-                    type=final_type,
+                    type=type_value,
                     description=description,
                     amount=amount,
                     tax_amount=tax_amount_decimal,
