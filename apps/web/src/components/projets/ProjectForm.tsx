@@ -110,7 +110,7 @@ export default function ProjectForm({
 
         <Select
           label="Statut"
-          value={formData.status || 'ACTIVE'}
+          value={formData.status || 'active'}
           onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
           options={STATUS_OPTIONS}
           disabled={loading || loadingData}
