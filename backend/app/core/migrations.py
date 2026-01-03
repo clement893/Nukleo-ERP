@@ -214,6 +214,61 @@ async def ensure_transaction_currency_column() -> None:
             else:
                 logger.debug("supplier_name column already exists")
             
+            # Check and add invoice_number column
+            if 'invoice_number' not in existing_columns:
+                logger.info("Adding missing invoice_number column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN invoice_number VARCHAR(100) NULL
+                """))
+                logger.info("Successfully added invoice_number column to transactions table")
+            else:
+                logger.debug("invoice_number column already exists")
+            
+            # Check and add notes column
+            if 'notes' not in existing_columns:
+                logger.info("Adding missing notes column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN notes TEXT NULL
+                """))
+                logger.info("Successfully added notes column to transactions table")
+            else:
+                logger.debug("notes column already exists")
+            
+            # Check and add is_recurring column
+            if 'is_recurring' not in existing_columns:
+                logger.info("Adding missing is_recurring column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN is_recurring VARCHAR(10) NOT NULL DEFAULT 'false'
+                """))
+                logger.info("Successfully added is_recurring column to transactions table")
+            else:
+                logger.debug("is_recurring column already exists")
+            
+            # Check and add recurring_id column
+            if 'recurring_id' not in existing_columns:
+                logger.info("Adding missing recurring_id column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN recurring_id INTEGER NULL
+                """))
+                logger.info("Successfully added recurring_id column to transactions table")
+            else:
+                logger.debug("recurring_id column already exists")
+            
+            # Check and add transaction_metadata column
+            if 'transaction_metadata' not in existing_columns:
+                logger.info("Adding missing transaction_metadata column to transactions table...")
+                await conn.execute(text("""
+                    ALTER TABLE transactions 
+                    ADD COLUMN transaction_metadata TEXT NULL
+                """))
+                logger.info("Successfully added transaction_metadata column to transactions table")
+            else:
+                logger.debug("transaction_metadata column already exists")
+            
             await conn.commit()
                 
     except Exception as e:

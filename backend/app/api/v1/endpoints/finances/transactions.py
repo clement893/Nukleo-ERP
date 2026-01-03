@@ -15,7 +15,7 @@ import zipfile
 import os
 from io import BytesIO
 
-from app.core.database import get_db
+from app.core.database import get_db, engine
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.transaction import Transaction, TransactionType, TransactionStatus
@@ -565,6 +565,36 @@ async def import_transactions(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Unsupported file format. Supported: CSV, Excel (.xlsx, .xls), or ZIP"
             )
+        
+        # Ensure invoice_number column exists before importing
+        async def ensure_invoice_number_column():
+            """Ensure invoice_number column exists in transactions table"""
+            try:
+                # Use a separate connection for DDL operations to avoid transaction conflicts
+                async with engine.begin() as conn:
+                    # Check if column exists
+                    result = await conn.execute(text("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'transactions' AND column_name = 'invoice_number'
+                    """))
+                    column_exists = result.fetchone() is not None
+                    
+                    if not column_exists:
+                        logger.info("Adding missing invoice_number column to transactions table...")
+                        await conn.execute(text("""
+                            ALTER TABLE transactions 
+                            ADD COLUMN invoice_number VARCHAR(100) NULL
+                        """))
+                        logger.info("Successfully added invoice_number column to transactions table")
+                    else:
+                        logger.debug("invoice_number column already exists")
+            except Exception as e:
+                logger.warning(f"Error ensuring invoice_number column: {e}", exc_info=True)
+                # Don't fail the import if column check fails - try to continue
+        
+        # Ensure column exists before processing
+        await ensure_invoice_number_column()
         
         # Helper function to get field value (case-insensitive, handles accents)
         def normalize_key(key: str) -> str:
