@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { LogEntry } from '@/lib/monitoring/types';
 import { logStore } from '@/lib/monitoring/logs';
 import { Badge } from '@/components/ui';
-import { CheckCircle2, XCircle, AlertCircle, Info } from 'lucide-react';
+import { XCircle, AlertCircle, Info } from 'lucide-react';
 
 export default function ImportLogsViewer() {
   const [logs, setLogs] = useState<LogEntry[]>([]);

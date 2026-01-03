@@ -98,6 +98,8 @@ export default function DepensesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [showRecurringModal, setShowRecurringModal] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Transaction | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -133,6 +135,26 @@ export default function DepensesPage() {
     category: '',
     description: '',
     status: 'pending' as TransactionStatus,
+  });
+
+  // Supplier form state
+  const [supplierFormData, setSupplierFormData] = useState({
+    name: '',
+    contact_email: '',
+    contact_phone: '',
+    address: '',
+  });
+
+  // Recurring expense form state
+  const [recurringFormData, setRecurringFormData] = useState({
+    description: '',
+    amount: '',
+    currency: 'CAD',
+    frequency: 'monthly' as 'daily' | 'weekly' | 'monthly' | 'yearly',
+    start_date: new Date().toISOString().split('T')[0],
+    end_date: '',
+    supplier_name: '',
+    category: '',
   });
 
   useEffect(() => {
@@ -172,10 +194,95 @@ export default function DepensesPage() {
           description: t.description,
         }));
         setInvoices(invoiceList);
-      } else {
-        // TODO: Load suppliers, recurring expenses
-        setSuppliers([]);
-        setRecurringExpenses([]);
+      } else if (activeTab === 'suppliers') {
+        // Load suppliers (aggregate from transactions)
+        const data = await transactionsAPI.list({ 
+          type: 'expense',
+          limit: 1000,
+        });
+        const supplierMap = new Map<string, Supplier>();
+        data.forEach(t => {
+          if (t.supplier_name) {
+            const name = t.supplier_name;
+            if (!supplierMap.has(name)) {
+              // Parse metadata if available
+              let metadata: any = {};
+              if (t.transaction_metadata) {
+                try {
+                  metadata = typeof t.transaction_metadata === 'string' 
+                    ? JSON.parse(t.transaction_metadata) 
+                    : t.transaction_metadata;
+                } catch (e) {
+                  // Ignore parse errors
+                }
+              }
+              supplierMap.set(name, {
+                id: supplierMap.size + 1,
+                name: name,
+                contact_email: metadata.contact_email || undefined,
+                contact_phone: metadata.contact_phone || undefined,
+                address: metadata.address || undefined,
+                total_expenses: 0,
+                expense_count: 0,
+              });
+            }
+            const supplier = supplierMap.get(name)!;
+            supplier.total_expenses += parseFloat(t.amount);
+            supplier.expense_count += 1;
+          }
+        });
+        setSuppliers(Array.from(supplierMap.values()));
+      } else if (activeTab === 'recurring') {
+        // Load recurring expenses (transactions with is_recurring='true')
+        const data = await transactionsAPI.list({ 
+          type: 'expense',
+          limit: 1000,
+        });
+        const recurringTransactions = data.filter(t => t.is_recurring === 'true');
+        const recurringList: RecurringExpense[] = recurringTransactions.map(t => {
+          let metadata: any = {};
+          if (t.transaction_metadata) {
+            try {
+              metadata = typeof t.transaction_metadata === 'string' 
+                ? JSON.parse(t.transaction_metadata) 
+                : t.transaction_metadata;
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+          const frequency = metadata.frequency || 'monthly';
+          const startDate = new Date(t.transaction_date);
+          const endDate = metadata.end_date ? new Date(metadata.end_date) : undefined;
+          // Calculate next occurrence
+          let nextOccurrence = new Date(startDate);
+          const now = new Date();
+          while (nextOccurrence < now) {
+            if (frequency === 'daily') {
+              nextOccurrence.setDate(nextOccurrence.getDate() + 1);
+            } else if (frequency === 'weekly') {
+              nextOccurrence.setDate(nextOccurrence.getDate() + 7);
+            } else if (frequency === 'monthly') {
+              nextOccurrence.setMonth(nextOccurrence.getMonth() + 1);
+            } else if (frequency === 'yearly') {
+              nextOccurrence.setFullYear(nextOccurrence.getFullYear() + 1);
+            }
+          }
+          return {
+            id: t.id,
+            description: t.description,
+            amount: parseFloat(t.amount),
+            currency: t.currency,
+            frequency: frequency as 'daily' | 'weekly' | 'monthly' | 'yearly',
+            start_date: t.transaction_date,
+            end_date: endDate?.toISOString().split('T')[0],
+            supplier_id: t.supplier_id || undefined,
+            supplier_name: t.supplier_name || undefined,
+            category: t.category || 'Autre',
+            is_active: !endDate || endDate > now,
+            next_occurrence: nextOccurrence.toISOString().split('T')[0] as string,
+          };
+        });
+        setRecurringExpenses(recurringList);
       }
     } catch (error) {
       logger.error('Error loading expenses data', error);
@@ -204,7 +311,7 @@ export default function DepensesPage() {
         ...formData,
         amount: typeof formData.amount === 'string' ? parseFloat(formData.amount) : formData.amount,
         transaction_date: new Date(formData.transaction_date).toISOString(),
-        payment_date: formData.payment_date ? new Date(formData.payment_date).toISOString() : null,
+        payment_date: formData.payment_date ? new Date(formData.payment_date as string).toISOString() : null,
       };
 
       await transactionsAPI.create(transactionData);
@@ -237,7 +344,7 @@ export default function DepensesPage() {
         currency: formData.currency,
         category: formData.category,
         transaction_date: new Date(formData.transaction_date).toISOString(),
-        payment_date: formData.payment_date ? new Date(formData.payment_date).toISOString() : null,
+        payment_date: formData.payment_date ? new Date(formData.payment_date as string).toISOString() : null,
         status: formData.status,
         supplier_id: formData.supplier_id,
         supplier_name: formData.supplier_name,
@@ -334,6 +441,28 @@ export default function DepensesPage() {
     });
   };
 
+  const resetSupplierForm = () => {
+    setSupplierFormData({
+      name: '',
+      contact_email: '',
+      contact_phone: '',
+      address: '',
+    });
+  };
+
+  const resetRecurringForm = () => {
+    setRecurringFormData({
+      description: '',
+      amount: '',
+      currency: 'CAD',
+      frequency: 'monthly',
+      start_date: new Date().toISOString().split('T')[0],
+      end_date: '',
+      supplier_name: '',
+      category: '',
+    });
+  };
+
   const handleCreateInvoice = async () => {
     try {
       setIsSubmitting(true);
@@ -351,9 +480,9 @@ export default function DepensesPage() {
         amount: parseFloat(invoiceFormData.amount),
         currency: invoiceFormData.currency,
         category: invoiceFormData.category || null,
-        transaction_date: new Date(invoiceFormData.issue_date).toISOString(),
+        transaction_date: new Date(invoiceFormData.issue_date as string).toISOString(),
         payment_date: invoiceFormData.status === 'paid' ? new Date().toISOString() : null,
-        expected_payment_date: invoiceFormData.due_date ? new Date(invoiceFormData.due_date).toISOString() : null,
+        expected_payment_date: invoiceFormData.due_date ? new Date(invoiceFormData.due_date as string).toISOString() : null,
         status: invoiceFormData.status,
         supplier_name: invoiceFormData.supplier_name,
         invoice_number: invoiceFormData.invoice_number,
@@ -372,6 +501,105 @@ export default function DepensesPage() {
       const appError = handleApiError(err);
       showToast({ 
         message: appError.message || 'Erreur lors de la création de la facture', 
+        type: 'error' 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateSupplier = async () => {
+    try {
+      setIsSubmitting(true);
+      if (!supplierFormData.name.trim()) {
+        showToast({ 
+          message: 'Veuillez remplir le nom du fournisseur', 
+          type: 'error' 
+        });
+        return;
+      }
+
+      // Create a transaction with metadata to store supplier info
+      const metadata = {
+        contact_email: supplierFormData.contact_email || undefined,
+        contact_phone: supplierFormData.contact_phone || undefined,
+        address: supplierFormData.address || undefined,
+        is_supplier_record: true, // Flag to identify supplier records
+      };
+
+      const transactionData: TransactionCreate = {
+        type: 'expense',
+        description: `Fournisseur: ${supplierFormData.name}`,
+        amount: 0, // No amount for supplier record
+        currency: 'CAD',
+        category: null,
+        transaction_date: new Date().toISOString(),
+        status: 'paid',
+        supplier_name: supplierFormData.name,
+        notes: 'Enregistrement de fournisseur',
+        transaction_metadata: JSON.stringify(metadata),
+      };
+
+      await transactionsAPI.create(transactionData);
+      await loadData();
+      setShowSupplierModal(false);
+      resetSupplierForm();
+      showToast({ 
+        message: 'Fournisseur ajouté avec succès', 
+        type: 'success' 
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ 
+        message: appError.message || 'Erreur lors de la création du fournisseur', 
+        type: 'error' 
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateRecurring = async () => {
+    try {
+      setIsSubmitting(true);
+      if (!recurringFormData.description.trim() || !recurringFormData.amount) {
+        showToast({ 
+          message: 'Veuillez remplir tous les champs requis (description, montant)', 
+          type: 'error' 
+        });
+        return;
+      }
+
+      const metadata = {
+        frequency: recurringFormData.frequency,
+        end_date: recurringFormData.end_date || undefined,
+      };
+
+      const transactionData: TransactionCreate = {
+        type: 'expense',
+        description: recurringFormData.description,
+        amount: parseFloat(recurringFormData.amount),
+        currency: recurringFormData.currency,
+        category: recurringFormData.category || null,
+        transaction_date: new Date(recurringFormData.start_date as string).toISOString(),
+        status: 'pending',
+        supplier_name: recurringFormData.supplier_name || null,
+        is_recurring: 'true',
+        transaction_metadata: JSON.stringify(metadata),
+      };
+
+      await transactionsAPI.create(transactionData);
+      await loadData();
+      setShowRecurringModal(false);
+      resetRecurringForm();
+      showToast({ 
+        message: 'Dépense récurrente ajoutée avec succès', 
+        type: 'success' 
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({ 
+        message: appError.message || 'Erreur lors de la création de la dépense récurrente', 
         type: 'error' 
       });
     } finally {
@@ -422,10 +650,11 @@ export default function DepensesPage() {
       setImportResult(result);
       
       // Logs d'import
-      createLog('info', `Import terminé: ${result.total_rows || 0} ligne(s) traitée(s)`, {
-        total_rows: result.total_rows,
-        valid_rows: result.valid_rows,
-        invalid_rows: result.invalid_rows,
+      const totalRows = result.created_count + result.error_count;
+      createLog('info', `Import terminé: ${totalRows} ligne(s) traitée(s)`, {
+        total_rows: totalRows,
+        valid_rows: result.created_count,
+        invalid_rows: result.error_count,
         created_count: result.created_count,
         error_count: result.error_count
       }, 'import-transactions');
@@ -440,10 +669,11 @@ export default function DepensesPage() {
           type: 'success',
         });
       } else if (result.created_count === 0) {
+        const totalRows = result.created_count + result.error_count;
         createLog('warn', 'Aucune transaction créée lors de l\'import', {
-          total_rows: result.total_rows,
-          valid_rows: result.valid_rows,
-          invalid_rows: result.invalid_rows,
+          total_rows: totalRows,
+          valid_rows: result.created_count,
+          invalid_rows: result.error_count,
           error_count: result.error_count,
           warnings_count: result.warnings?.length || 0
         }, 'import-transactions');
@@ -825,11 +1055,8 @@ export default function DepensesPage() {
                   <Button
                     variant="primary"
                     onClick={() => {
-                      // TODO: Open supplier modal
-                      showToast({
-                        message: 'Fonctionnalité à venir',
-                        type: 'info',
-                      });
+                      resetSupplierForm();
+                      setShowSupplierModal(true);
                     }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -838,18 +1065,19 @@ export default function DepensesPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {suppliers.length === 0 ? (
+                  {loading && activeTab === 'suppliers' ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+                    </div>
+                  ) : suppliers.length === 0 ? (
                     <div className="text-center py-12">
                       <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                       <p className="text-gray-600 dark:text-gray-400 mb-4">Aucun fournisseur</p>
                       <Button
                         variant="primary"
                         onClick={() => {
-                          // TODO: Open supplier modal
-                          showToast({
-                            message: 'Fonctionnalité à venir',
-                            type: 'info',
-                          });
+                          resetSupplierForm();
+                          setShowSupplierModal(true);
                         }}
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -915,11 +1143,8 @@ export default function DepensesPage() {
                   <Button
                     variant="primary"
                     onClick={() => {
-                      // TODO: Open recurring expense modal
-                      showToast({
-                        message: 'Fonctionnalité à venir',
-                        type: 'info',
-                      });
+                      resetRecurringForm();
+                      setShowRecurringModal(true);
                     }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -928,18 +1153,19 @@ export default function DepensesPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {recurringExpenses.length === 0 ? (
+                  {loading && activeTab === 'recurring' ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+                    </div>
+                  ) : recurringExpenses.length === 0 ? (
                     <div className="text-center py-12">
                       <Repeat className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                       <p className="text-gray-600 dark:text-gray-400 mb-4">Aucune dépense récurrente</p>
                       <Button
                         variant="primary"
                         onClick={() => {
-                          // TODO: Open recurring expense modal
-                          showToast({
-                            message: 'Fonctionnalité à venir',
-                            type: 'info',
-                          });
+                          resetRecurringForm();
+                          setShowRecurringModal(true);
                         }}
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -1025,7 +1251,11 @@ export default function DepensesPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {invoices.length === 0 ? (
+                  {loading && activeTab === 'invoices' ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+                    </div>
+                  ) : invoices.length === 0 ? (
                     <div className="text-center py-12">
                       <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                       <p className="text-gray-600 dark:text-gray-400 mb-4">Aucune facture</p>
@@ -1339,6 +1569,179 @@ export default function DepensesPage() {
           </div>
         </Modal>
 
+        {/* Create Supplier Modal */}
+        <Modal
+          isOpen={showSupplierModal}
+          onClose={() => {
+            setShowSupplierModal(false);
+            resetSupplierForm();
+          }}
+          title="Ajouter un fournisseur"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Nom du fournisseur *"
+              value={supplierFormData.name}
+              onChange={(e) => setSupplierFormData({ ...supplierFormData, name: e.target.value })}
+              placeholder="Nom du fournisseur"
+              required
+            />
+
+            <Input
+              label="Email"
+              type="email"
+              value={supplierFormData.contact_email}
+              onChange={(e) => setSupplierFormData({ ...supplierFormData, contact_email: e.target.value })}
+              placeholder="email@exemple.com"
+            />
+
+            <Input
+              label="Téléphone"
+              value={supplierFormData.contact_phone}
+              onChange={(e) => setSupplierFormData({ ...supplierFormData, contact_phone: e.target.value })}
+              placeholder="+1 (555) 123-4567"
+            />
+
+            <Textarea
+              label="Adresse"
+              value={supplierFormData.address}
+              onChange={(e) => setSupplierFormData({ ...supplierFormData, address: e.target.value })}
+              placeholder="Adresse complète du fournisseur"
+              rows={3}
+            />
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSupplierModal(false);
+                  resetSupplierForm();
+                }}
+                disabled={isSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleCreateSupplier}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Création...' : 'Ajouter le fournisseur'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Create Recurring Expense Modal */}
+        <Modal
+          isOpen={showRecurringModal}
+          onClose={() => {
+            setShowRecurringModal(false);
+            resetRecurringForm();
+          }}
+          title="Ajouter une dépense récurrente"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Description *"
+              value={recurringFormData.description}
+              onChange={(e) => setRecurringFormData({ ...recurringFormData, description: e.target.value })}
+              placeholder="Ex: Abonnement mensuel"
+              required
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Montant *"
+                type="number"
+                step="0.01"
+                min="0"
+                value={recurringFormData.amount}
+                onChange={(e) => setRecurringFormData({ ...recurringFormData, amount: e.target.value })}
+                placeholder="0.00"
+                required
+              />
+              <Select
+                label="Devise"
+                value={recurringFormData.currency}
+                onChange={(e) => setRecurringFormData({ ...recurringFormData, currency: e.target.value })}
+                options={[
+                  { label: 'CAD', value: 'CAD' },
+                  { label: 'USD', value: 'USD' },
+                  { label: 'EUR', value: 'EUR' },
+                ]}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Fréquence *"
+                value={recurringFormData.frequency}
+                onChange={(e) => setRecurringFormData({ ...recurringFormData, frequency: e.target.value as 'daily' | 'weekly' | 'monthly' | 'yearly' })}
+                options={[
+                  { label: 'Quotidienne', value: 'daily' },
+                  { label: 'Hebdomadaire', value: 'weekly' },
+                  { label: 'Mensuelle', value: 'monthly' },
+                  { label: 'Annuelle', value: 'yearly' },
+                ]}
+              />
+              <Input
+                label="Date de début *"
+                type="date"
+                value={recurringFormData.start_date}
+                onChange={(e) => setRecurringFormData({ ...recurringFormData, start_date: e.target.value })}
+                required
+              />
+            </div>
+
+            <Input
+              label="Date de fin (optionnel)"
+              type="date"
+              value={recurringFormData.end_date}
+              onChange={(e) => setRecurringFormData({ ...recurringFormData, end_date: e.target.value })}
+              placeholder="Laissez vide pour récurrente indéfiniment"
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Catégorie"
+                value={recurringFormData.category}
+                onChange={(e) => setRecurringFormData({ ...recurringFormData, category: e.target.value })}
+                options={[
+                  { label: 'Aucune', value: '' },
+                  ...EXPENSE_CATEGORIES.map(c => ({ label: c, value: c })),
+                ]}
+              />
+              <Input
+                label="Fournisseur"
+                value={recurringFormData.supplier_name}
+                onChange={(e) => setRecurringFormData({ ...recurringFormData, supplier_name: e.target.value })}
+                placeholder="Nom du fournisseur (optionnel)"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowRecurringModal(false);
+                  resetRecurringForm();
+                }}
+                disabled={isSubmitting}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleCreateRecurring}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Création...' : 'Ajouter la dépense récurrente'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
         {/* Create Invoice Modal */}
         <Modal
           isOpen={showInvoiceModal}
@@ -1560,9 +1963,9 @@ export default function DepensesPage() {
                               <span className="font-semibold">{importResult.warnings.length}</span> avertissement(s)
                             </p>
                           )}
-                          {importResult.total_rows !== undefined && (
+                          {importResult.created_count !== undefined && importResult.error_count !== undefined && (
                             <p className="text-gray-700 dark:text-gray-300">
-                              <span className="font-semibold">{importResult.total_rows}</span> ligne(s) traitée(s)
+                              <span className="font-semibold">{importResult.created_count + importResult.error_count}</span> ligne(s) traitée(s)
                             </p>
                           )}
                         </div>
