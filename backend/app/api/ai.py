@@ -141,9 +141,20 @@ async def chat_completion(
             
             # Add ERP context to system prompt if available - SIMPLIFIED FORMAT
             if erp_context:
-                system_prompt += f"\n\n=== DONNÉES ERP ===\n{erp_context}\n=== FIN DONNÉES ===\n\nRÈGLES:\n- Utilise UNIQUEMENT les données ci-dessus pour répondre\n- Si tu vois 'RÉSUMÉ: CONTACTS: 200', réponds 'Vous avez 200 contacts'\n- Si tu vois 'CLIENTS: 64', réponds 'Vous avez 64 clients'\n- Si tu vois des détails (noms, emails, etc.), utilise-les pour répondre\n- Ne dis JAMAIS 'je n'ai pas accès' - tu as toujours accès aux données ci-dessus\n- Si le contexte est vide, dis 'J'ai cherché mais je n'ai rien trouvé'\n- LIENS: TOUJOURS utilise le format markdown [texte](url) pour les liens. Exemple: [Voir les opportunités](/fr/dashboard/opportunites) ou [Accéder aux contacts](/fr/dashboard/contacts). Ne donne JAMAIS juste le chemin sans format markdown.
+                system_prompt += f"""\n\n=== DONNÉES ERP ===
+{erp_context}
+=== FIN DONNÉES ===
+
+RÈGLES:
+- Utilise UNIQUEMENT les données ci-dessus pour répondre
+- Si tu vois 'RÉSUMÉ: CONTACTS: 200', réponds 'Vous avez 200 contacts'
+- Si tu vois 'CLIENTS: 64', réponds 'Vous avez 64 clients'
+- Si tu vois des détails (noms, emails, etc.), utilise-les pour répondre
+- Ne dis JAMAIS 'je n'ai pas accès' - tu as toujours accès aux données ci-dessus
+- Si le contexte est vide, dis 'J'ai cherché mais je n'ai rien trouvé'
+- LIENS: TOUJOURS utilise le format markdown [texte](url) pour les liens. Exemple: [Voir les opportunités](/fr/dashboard/opportunites) ou [Accéder aux contacts](/fr/dashboard/contacts). Ne donne JAMAIS juste le chemin sans format markdown.
 - CALCULS: Si on te demande un total (argent, montant), CALCULE-le à partir des données fournies. Exemple: si tu vois "Montant total: 250000€" dans le contexte, utilise ce nombre.
-- LISTING: Si on te demande de "nommer", "lister", "donner" des éléments, utilise les données détaillées fournies dans le contexte. Ne dis JAMAIS "je n'ai pas accès" si des données sont présentes."
+- LISTING: Si on te demande de "nommer", "lister", "donner" des éléments, utilise les données détaillées fournies dans le contexte. Ne dis JAMAIS "je n'ai pas accès" si des données sont présentes."""
             else:
                 # Even if no specific context, add instruction that Leo has access to ERP data
                 system_prompt += "\n\n⚠️ IMPORTANT: Tu as accès aux données de l'ERP Nukleo (contacts, entreprises, projets, opportunités, employés). J'ai cherché dans la base de données pour cette requête mais n'ai trouvé aucune donnée correspondante. Dis clairement à l'utilisateur: 'J'ai cherché dans vos données ERP mais je n'ai pas trouvé d'informations correspondantes.' Ne dis JAMAIS que tu n'as pas accès aux données."
