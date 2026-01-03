@@ -21,6 +21,7 @@ import { ChevronDown, Search, X, LogOut, ChevronLeft, ChevronRight } from 'lucid
 import { useEmployeePortalPermissions } from '@/hooks/useEmployeePortalPermissions';
 import { EMPLOYEE_PORTAL_MODULES, getEmployeePortalModules } from '@/lib/constants/employee-portal-modules';
 import * as Icons from 'lucide-react';
+import { employeesAPI, type Employee } from '@/lib/api/employees';
 import {
   CheckSquare,
   FolderKanban,
@@ -134,8 +135,29 @@ export default function EmployeePortalSidebar({
   const [searchQuery, setSearchQuery] = useState('');
   const [openModules, setOpenModules] = useState<Set<string>>(new Set());
   const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [loadingEmployee, setLoadingEmployee] = useState(true);
 
   const { hasModuleAccess, loading: permissionsLoading } = useEmployeePortalPermissions({ employeeId });
+
+  // Load employee data
+  useEffect(() => {
+    const loadEmployee = async () => {
+      try {
+        setLoadingEmployee(true);
+        const empData = await employeesAPI.get(employeeId);
+        setEmployee(empData);
+      } catch (error) {
+        console.error('Error loading employee data', error);
+      } finally {
+        setLoadingEmployee(false);
+      }
+    };
+    
+    if (employeeId) {
+      loadEmployee();
+    }
+  }, [employeeId]);
 
   // Use controlled or internal state
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
@@ -423,7 +445,7 @@ export default function EmployeePortalSidebar({
                     Mon Portail Employé
                   </span>
                   <span className="text-xs text-muted-foreground font-medium">
-                    {user?.email?.split('@')[0] || 'Employé'}
+                    {loadingEmployee ? 'Chargement...' : employee ? `${employee.first_name} ${employee.last_name}`.trim() : 'Employé'}
                   </span>
                 </div>
               </Link>
@@ -511,14 +533,14 @@ export default function EmployeePortalSidebar({
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-background/50 backdrop-blur-sm border border-border/50">
               <div className="w-9 h-9 rounded-full bg-nukleo-gradient flex items-center justify-center flex-shrink-0 shadow-md">
                 <span className="text-white text-sm font-bold">
-                  {user?.email?.[0]?.toUpperCase() || 'U'}
+                  {loadingEmployee ? 'U' : employee ? (employee.first_name?.[0]?.toUpperCase() || employee.last_name?.[0]?.toUpperCase() || 'U') : (user?.email?.[0]?.toUpperCase() || 'U')}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">
-                  {user?.email?.split('@')[0] || 'User'}
+                  {loadingEmployee ? 'Chargement...' : employee ? `${employee.first_name} ${employee.last_name}`.trim() : (user?.email?.split('@')[0] || 'User')}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                <p className="text-xs text-muted-foreground truncate">{employee?.email || user?.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
