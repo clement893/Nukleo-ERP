@@ -10,12 +10,17 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
+import { useRouter } from 'next/navigation';
 import { PageHeader, PageContainer } from '@/components/layout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import LeoSettings from '@/components/settings/LeoSettings';
+import { Button } from '@/components/ui';
+import { ArrowLeft } from 'lucide-react';
 
 export default function LeoSettingsPage() {
+  const router = useRouter();
+
   return (
     <ProtectedRoute>
       <PageContainer>
@@ -27,6 +32,16 @@ export default function LeoSettingsPage() {
             { label: 'Paramètres', href: '/settings' },
             { label: 'Leo' },
           ]}
+          actions={
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard/leo')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour au chat
+            </Button>
+          }
         />
 
         <div className="mt-8">

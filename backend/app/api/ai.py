@@ -70,6 +70,7 @@ async def chat_completion(
         
         try:
             from app.services.leo_settings_service import LeoSettingsService
+            from app.services.leo_context_service import LeoContextService
             
             leo_service = LeoSettingsService(db)
             leo_settings = await leo_service.get_leo_settings(current_user.id)
@@ -93,6 +94,43 @@ async def chat_completion(
             # Use Leo model preference if not provided in request
             if model is None:
                 model = leo_settings.get("model_preference")
+            
+            # Get ERP context if enabled
+            erp_context = ""
+            if leo_settings.get("enable_erp_context", True):
+                try:
+                    context_service = LeoContextService(db)
+                    
+                    # Get last user message
+                    last_user_message = None
+                    for msg in reversed(request.messages):
+                        if msg.role == "user":
+                            last_user_message = msg.content
+                            break
+                    
+                    if last_user_message:
+                        # Analyze query to determine relevant data types
+                        data_types = context_service.analyze_query(last_user_message)
+                        
+                        # Get relevant data
+                        relevant_data = await context_service.get_relevant_data(
+                            current_user.id,
+                            data_types,
+                            last_user_message
+                        )
+                        
+                        # Build context string
+                        erp_context = await context_service.build_context_string(
+                            relevant_data,
+                            last_user_message
+                        )
+                except Exception as e:
+                    logger.warning(f"Could not load ERP context: {e}")
+                    erp_context = ""
+            
+            # Add ERP context to system prompt if available
+            if erp_context:
+                system_prompt += f"\n\n=== DONNÉES ERP DISPONIBLES ===\n{erp_context}\n=== FIN DES DONNÉES ===\n\nUtilise ces informations pour répondre précisément aux questions de l'utilisateur."
         except Exception as e:
             # If Leo settings fail, use defaults
             from app.core.logging import logger

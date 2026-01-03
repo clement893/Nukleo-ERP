@@ -11,6 +11,7 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Slider from '@/components/ui/Slider';
+import Switch from '@/components/ui/Switch';
 
 export interface LeoAdvancedSettingsProps {
   settings: LeoSettings;
@@ -149,6 +150,47 @@ export default function LeoAdvancedSettings({
             </p>
           </div>
         )}
+
+        {/* ERP Context */}
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <label htmlFor="enable_erp_context" className="text-sm font-medium text-gray-900 dark:text-white block">
+                Accès aux données ERP
+              </label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permettre à Leo d'accéder aux données de l'ERP (contacts, entreprises, projets, etc.)
+              </p>
+            </div>
+            <Switch
+              id="enable_erp_context"
+              checked={settings.enable_erp_context ?? true}
+              onCheckedChange={(checked) => onChange({ enable_erp_context: checked })}
+            />
+          </div>
+          
+          {settings.enable_erp_context && (
+            <div className="mt-4">
+              <label htmlFor="max_context_items" className="text-sm font-medium text-gray-900 dark:text-white block mb-2">
+                Nombre max d'éléments par type
+              </label>
+              <Input
+                id="max_context_items"
+                type="number"
+                min={1}
+                max={50}
+                value={settings.max_context_items || 20}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onChange({ max_context_items: parseInt(e.target.value) || 20 })
+                }
+                className="mt-2"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Nombre maximum d'éléments à inclure par type de données dans le contexte (1-50)
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );

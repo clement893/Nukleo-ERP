@@ -27,6 +27,8 @@ class LeoSettingsService:
         "provider_preference": "auto",
         "model_preference": None,
         "enable_context_memory": False,
+        "enable_erp_context": True,  # Enable ERP data access
+        "max_context_items": 20,  # Max items per data type
     }
 
     # Tone descriptions
@@ -163,6 +165,16 @@ class LeoSettingsService:
         
         # Validate enable_context_memory
         validated["enable_context_memory"] = bool(settings.get("enable_context_memory", False))
+        
+        # Validate enable_erp_context
+        validated["enable_erp_context"] = bool(settings.get("enable_erp_context", True))
+        
+        # Validate max_context_items
+        if "max_context_items" in settings:
+            max_items = int(settings["max_context_items"])
+            validated["max_context_items"] = max(1, min(50, max_items))  # Between 1 and 50
+        else:
+            validated["max_context_items"] = self.DEFAULT_SETTINGS["max_context_items"]
         
         return validated
 

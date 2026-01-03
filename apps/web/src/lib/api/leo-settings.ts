@@ -19,6 +19,8 @@ export interface LeoSettings {
   provider_preference: 'auto' | 'openai' | 'anthropic';
   model_preference: string | null;
   enable_context_memory: boolean;
+  enable_erp_context?: boolean;
+  max_context_items?: number;
 }
 
 export interface LeoSettingsUpdate {
@@ -31,6 +33,8 @@ export interface LeoSettingsUpdate {
   provider_preference?: LeoSettings['provider_preference'];
   model_preference?: string | null;
   enable_context_memory?: boolean;
+  enable_erp_context?: boolean;
+  max_context_items?: number;
 }
 
 export interface SystemPromptResponse {
