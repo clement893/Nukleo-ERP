@@ -89,9 +89,14 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
     return registry;
   }, [module, hasModuleAccess]);
 
-  // Collections disponibles
+  // Collections disponibles (triées par module)
   const availableCollections = useMemo(() => {
     return getAvailableCollections(module, hasModuleAccess);
+  }, [module, hasModuleAccess]);
+
+  // Collections groupées par module pour l'affichage
+  const collectionsByModule = useMemo(() => {
+    return getCollectionsByModule(module, hasModuleAccess);
   }, [module, hasModuleAccess]);
 
   const categories = useMemo(() => {
@@ -332,18 +337,17 @@ export function WidgetLibrary({ isOpen, onClose, module = 'all', hasModuleAccess
                 </div>
               ) : (
                 <>
-                  {/* Group collections by module */}
-                  {(['commercial', 'projects', 'finances', 'team', 'global', 'system'] as DashboardModule[]).map((mod) => {
-                    const moduleCollections = availableCollections.filter((c: WidgetCollection) => c.module === mod);
+                  {/* Group collections by module - Utiliser les collections déjà groupées */}
+                  {Object.entries(collectionsByModule).map(([mod, moduleCollections]) => {
                     if (moduleCollections.length === 0) return null;
 
                     return (
                       <div key={mod} className="space-y-3">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                          {moduleLabels[mod] || mod}
+                          {moduleLabels[mod as DashboardModule] || mod}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {moduleCollections.map((collection: WidgetCollection) => {
+                          {moduleCollections.map((collection) => {
                             const widgets = getWidgetsByCollection(collection.id);
                             const widgetCount = Object.keys(widgets).length;
 
