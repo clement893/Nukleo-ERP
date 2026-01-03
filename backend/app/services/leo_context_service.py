@@ -117,8 +117,15 @@ class LeoContextService:
         is_employee_query = any(word in query_lower for word in employee_keywords)
         
         # Check for general queries about contacts/companies/employees
-        is_general_contact_query = any(phrase in query_lower for phrase in ["connais-tu", "connais tu", "connaissez-vous", "connaissez vous", "nos contacts", "mes contacts", "qui sont nos", "qui sont mes"])
-        is_general_company_query = any(phrase in query_lower for phrase in ["combien de client", "combien de clients", "nos clients", "mes clients", "avons nous", "avons-nous"])
+        is_general_contact_query = any(phrase in query_lower for phrase in [
+            "connais-tu", "connais tu", "connaissez-vous", "connaissez vous", 
+            "nos contacts", "mes contacts", "qui sont nos", "qui sont mes",
+            "combien j'ai de contact", "combien j'ai de contacts", "combien de contact", "combien de contacts"
+        ])
+        is_general_company_query = any(phrase in query_lower for phrase in [
+            "combien de client", "combien de clients", "combien j'ai de client", "combien j'ai de clients",
+            "nos clients", "mes clients", "avons nous", "avons-nous", "combien avons nous"
+        ])
         
         # Check availability lazily
         opp_available = _get_opportunite_model() is not None if OPPORTUNITIES_AVAILABLE is None else OPPORTUNITIES_AVAILABLE
@@ -255,7 +262,8 @@ class LeoContextService:
                 stmt = stmt.where(or_(*conditions))
             elif is_general_query:
                 # For general queries, return all contacts (no filter, just limit)
-                limit = min(limit * 3, 100)  # Increase limit for general queries
+                limit = min(limit * 10, 500)  # Much higher limit for general queries
+                logger.info(f"General contact query detected - returning all contacts (limit: {limit})")
             else:
                 # If no keywords but query contains capitalized words, still search
                 # This handles cases like "Daly Ann" where stop words might filter everything
