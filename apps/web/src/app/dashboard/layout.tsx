@@ -50,7 +50,7 @@ function DashboardLayoutContent({
     },
     {
       label: 'Projets',
-      href: '/dashboard/projects',
+      href: '/fr/dashboard/projets/projets',
       icon: <FolderKanban className="w-5 h-5" />,
     },
     {
@@ -81,7 +81,7 @@ function DashboardLayoutContent({
         <div className="px-4 py-3 flex items-center justify-between">
               <h1 className="text-xl font-bold text-foreground">
             {pathname === '/dashboard' && 'Dashboard'}
-            {pathname === '/dashboard/projects' && 'Projets'}
+            {(pathname === '/dashboard/projects' || pathname.includes('/dashboard/projets')) && 'Projets'}
             {pathname === '/dashboard/become-superadmin' && 'Super Admin'}
           </h1>
           <div className="flex items-center gap-2">
@@ -152,7 +152,7 @@ function DashboardLayoutContent({
             <div className="px-6 py-4 flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground">
                 {pathname === '/dashboard' && 'Dashboard'}
-                {pathname === '/dashboard/projects' && 'Projets'}
+                {(pathname === '/dashboard/projects' || pathname.includes('/dashboard/projets')) && 'Projets'}
                 {pathname === '/dashboard/become-superadmin' && 'Super Admin'}
               </h1>
               <div className="flex items-center gap-3">

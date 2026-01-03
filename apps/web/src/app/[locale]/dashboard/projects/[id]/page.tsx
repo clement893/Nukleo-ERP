@@ -139,7 +139,7 @@ function ProjectDetailContent() {
     try {
       await projectsAPI.delete(projectId);
       const locale = (params.locale as string) || 'fr';
-      router.push(`/${locale}/dashboard/projects`);
+      router.push(`/${locale}/dashboard/projets/projets`);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la suppression du projet');
@@ -269,7 +269,7 @@ function ProjectDetailContent() {
         </Alert>
         <Button onClick={() => {
           const locale = (params.locale as string) || 'fr';
-          router.push(`/${locale}/dashboard/projects`);
+          router.push(`/${locale}/dashboard/projets/projets`);
         }}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Retour aux projets
