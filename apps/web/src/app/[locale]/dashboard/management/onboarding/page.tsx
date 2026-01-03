@@ -85,7 +85,7 @@ const getStatusFromProgress = (progress: number, isCompleted: boolean): Onboardi
 export default function OnboardingPage() {
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('in_progress');
   const [teamFilter, setTeamFilter] = useState<number | 'all'>('all');
   const [showNewProcessModal, setShowNewProcessModal] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
