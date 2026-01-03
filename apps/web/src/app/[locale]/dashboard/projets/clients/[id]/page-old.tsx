@@ -155,7 +155,7 @@ export default function ClientDetailPage() {
               id: p.id,
               name: p.name,
               description: p.description || null,
-              status: statusUpper,
+              status: statusLower,
               client_id: client.id,
               user_id: 0, // Required by Project type but not provided by API
               responsable_id: null,
