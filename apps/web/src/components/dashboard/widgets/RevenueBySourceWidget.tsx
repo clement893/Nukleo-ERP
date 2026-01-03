@@ -9,7 +9,6 @@ import { DollarSign, TrendingUp } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
-import { fetchDashboardRevenue } from '@/lib/api/dashboard-revenue';
 import { facturationsAPI } from '@/lib/api/finances/facturations';
 import { useEffect, useState } from 'react';
 import {
@@ -21,9 +20,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  PieChart,
-  Pie,
-  Legend,
 } from 'recharts';
 
 interface SourceData {

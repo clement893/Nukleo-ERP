@@ -91,15 +91,6 @@ export function InvoicesStatusWidget({ }: WidgetProps) {
           'cancelled': 'Annulée',
         };
 
-        const statusColors: Record<string, string> = {
-          'draft': '#6b7280', // gray
-          'sent': '#3b82f6', // blue
-          'paid': '#10b981', // green
-          'partial': '#f59e0b', // amber
-          'overdue': '#ef4444', // red
-          'cancelled': '#6b7280', // gray
-        };
-
         // Convert to array with percentages
         const data: StatusData[] = Object.entries(grouped)
           .map(([status, stats]) => ({

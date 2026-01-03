@@ -12,7 +12,6 @@ import EmptyState from '@/components/ui/EmptyState';
 import { opportunitiesAPI } from '@/lib/api/opportunities';
 import { useEffect, useState } from 'react';
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,

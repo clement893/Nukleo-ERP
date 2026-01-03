@@ -5,7 +5,7 @@
  * Répartition des créances par délai (0-30j, 31-60j, 61-90j, 90j+)
  */
 
-import { Clock, AlertTriangle, DollarSign } from 'lucide-react';
+import { Clock, AlertTriangle } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -99,8 +99,11 @@ export function AgingReceivablesWidget({ }: WidgetProps) {
             bucket = '90+';
           }
           
-          buckets[bucket].amount += amountDue;
-          buckets[bucket].count++;
+          const bucketData = buckets[bucket];
+          if (bucketData) {
+            bucketData.amount += amountDue;
+            bucketData.count++;
+          }
         });
         
         setTotalAmount(total);
@@ -112,19 +115,12 @@ export function AgingReceivablesWidget({ }: WidgetProps) {
           '90+': '90+ jours',
         };
         
-        const colors: Record<string, string> = {
-          '0-30': '#10b981', // green
-          '31-60': '#f59e0b', // amber
-          '61-90': '#f97316', // orange
-          '90+': '#ef4444', // red
-        };
-        
         const data: AgingData[] = Object.entries(buckets)
           .map(([bucket, stats]) => ({
             bucket,
             amount: stats.amount,
             count: stats.count,
-            label: labels[bucket],
+            label: labels[bucket] || bucket,
           }))
           .filter(item => item.amount > 0); // Only show buckets with amounts
 

@@ -5,18 +5,15 @@
  * Répartition des clients par type
  */
 
-import { Building2, Users } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import { clientsAPI } from '@/lib/api/clients';
 import { useEffect, useState } from 'react';
 import {
-  PieChart,
-  Pie,
   Cell,
   ResponsiveContainer,
-  Legend,
   Tooltip,
   BarChart,
   Bar,

@@ -5,7 +5,7 @@
  * Score de santé basé sur plusieurs critères (budget, délais, progression)
  */
 
-import { Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';

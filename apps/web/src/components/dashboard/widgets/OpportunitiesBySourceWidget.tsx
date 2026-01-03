@@ -5,18 +5,15 @@
  * Répartition des opportunités par segment/source
  */
 
-import { Filter, TrendingUp } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
 import { opportunitiesAPI } from '@/lib/api/opportunities';
 import { useEffect, useState } from 'react';
 import {
-  PieChart,
-  Pie,
   Cell,
   ResponsiveContainer,
-  Legend,
   Tooltip,
   BarChart,
   Bar,

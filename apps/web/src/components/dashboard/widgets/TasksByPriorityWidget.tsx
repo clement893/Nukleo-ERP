@@ -5,7 +5,7 @@
  * Répartition des tâches par niveau de priorité
  */
 
-import { AlertCircle, Target } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -74,13 +74,6 @@ export function TasksByPriorityWidget({ }: WidgetProps) {
           'high': 'Haute',
           'medium': 'Moyenne',
           'low': 'Basse',
-        };
-
-        const priorityColors: Record<string, string> = {
-          'urgent': '#ef4444', // red
-          'high': '#f59e0b', // amber
-          'medium': '#3b82f6', // blue
-          'low': '#6b7280', // gray
         };
 
         // Convert to array with percentages

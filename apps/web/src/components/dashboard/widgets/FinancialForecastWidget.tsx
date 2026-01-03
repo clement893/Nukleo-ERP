@@ -15,7 +15,6 @@ import { useEffect, useState } from 'react';
 import {
   AreaChart,
   Area,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -115,7 +114,6 @@ export function FinancialForecastWidget({ config }: WidgetProps) {
         
         // Generate forecast (last 3 historical + 6 forecast)
         const data: ForecastDataPoint[] = [];
-        const now = new Date();
         
         // Historical (last 3 months)
         allMonths.slice(-3).forEach(month => {

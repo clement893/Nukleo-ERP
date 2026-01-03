@@ -12,8 +12,6 @@ import EmptyState from '@/components/ui/EmptyState';
 import { opportunitiesAPI } from '@/lib/api/opportunities';
 import { useEffect, useState } from 'react';
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -134,7 +132,7 @@ export function OpportunitiesTimelineWidget({ }: WidgetProps) {
 
   const lastMonth = timelineData[timelineData.length - 1];
   const previousMonth = timelineData.length > 1 ? timelineData[timelineData.length - 2] : null;
-  const growth = previousMonth && previousMonth.count > 0
+  const growth = previousMonth && lastMonth && previousMonth.count > 0
     ? ((lastMonth.count - previousMonth.count) / previousMonth.count) * 100
     : 0;
 

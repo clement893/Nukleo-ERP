@@ -71,12 +71,6 @@ export function ProjectsByStatusBarWidget({ }: WidgetProps) {
           'archived': 'Archivés',
         };
 
-        const statusColors: Record<string, string> = {
-          'active': '#10b981', // green
-          'completed': '#3b82f6', // blue
-          'archived': '#6b7280', // gray
-        };
-
         // Convert to array
         const data: StatusData[] = Object.entries(grouped)
           .map(([status, count]) => ({
