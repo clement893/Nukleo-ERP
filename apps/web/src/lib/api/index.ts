@@ -157,15 +157,4 @@ export * from './theme';
 // Re-export analytics module API (unified)
 export { analyticsModuleAPI, analyticsAPI, insightsAPI, reportsAPI } from './analytics-unified';
 
-// Re-export Leo module API (unified)
-export { leoAPI, leoAgentAPI, leoDocumentationAPI } from './leo';
-export type {
-  LeoConversation as LeoConversationType,
-  LeoMessage as LeoMessageType,
-  LeoQueryRequest as LeoQueryRequestType,
-  LeoQueryResponse as LeoQueryResponseType,
-  LeoDocumentation as LeoDocumentationType,
-  DocumentationCategory as LeoDocumentationCategoryType,
-  DocumentationPriority as LeoDocumentationPriorityType,
-} from './leo';
 

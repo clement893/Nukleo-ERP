@@ -2,23 +2,8 @@
  * Leo Module API
  * Unified API client for Leo AI assistant operations
  * 
- * This module provides a unified interface for all Leo operations:
- * - Conversations
- * - Messages
- * - Queries
- * - Documentation
+ * This module provides a unified interface for Leo documentation operations
  */
-
-// Import Leo Agent API
-import {
-  leoAgentAPI,
-  type LeoConversation,
-  type LeoMessage,
-  type LeoConversationListResponse,
-  type LeoMessageListResponse,
-  type LeoQueryRequest,
-  type LeoQueryResponse,
-} from './leo-agent';
 
 // Import Leo Documentation API
 import {
@@ -33,12 +18,6 @@ import {
 
 // Re-export types
 export type {
-  LeoConversation,
-  LeoMessage,
-  LeoConversationListResponse,
-  LeoMessageListResponse,
-  LeoQueryRequest,
-  LeoQueryResponse,
   LeoDocumentation,
   LeoDocumentationCreate,
   LeoDocumentationUpdate,
@@ -48,13 +27,9 @@ export type {
 };
 
 // Re-export APIs
-export { leoAgentAPI, leoDocumentationAPI };
+export { leoDocumentationAPI };
 
-/**
- * Unified Leo API
- * Provides access to all Leo operations through a single interface
- */
+// Unified Leo API object (for backward compatibility)
 export const leoAPI = {
-  agent: leoAgentAPI,
   documentation: leoDocumentationAPI,
 };
