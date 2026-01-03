@@ -341,6 +341,7 @@ export default function DepensesPage() {
           limit: 1000,
           status: statusFilter !== 'all' ? statusFilter : undefined,
         });
+        logger.info(`Loaded ${data.length} expenses from API (filter: status=${statusFilter})`);
         setExpenses(data);
       } else if (activeTab === 'invoices') {
         // Load invoices (expenses with invoice_number)
@@ -834,6 +835,12 @@ export default function DepensesPage() {
         createLog('info', `${result.created_count} transaction(s) créée(s) avec succès`, {
           created_count: result.created_count
         }, 'import-transactions');
+        // Force a complete refresh by resetting filters and reloading
+        setStatusFilter('all');
+        setCategoryFilter('all');
+        setSearchQuery('');
+        // Wait a bit to ensure backend has committed the transactions
+        await new Promise(resolve => setTimeout(resolve, 500));
         await loadData();
         showToast({
           message: `${result.created_count} transaction(s) importée(s) avec succès`,
@@ -1141,6 +1148,14 @@ export default function DepensesPage() {
                         <p className="text-gray-600 dark:text-gray-400 mb-4">
                           {expenses.length === 0 ? 'Aucune dépense trouvée' : 'Aucune dépense ne correspond à votre recherche'}
                         </p>
+                        {expenses.length === 0 && importResult && importResult.created_count > 0 && (
+                          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4 max-w-md mx-auto">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                              <AlertCircle className="w-4 h-4 inline mr-2" />
+                              {importResult.created_count} dépense(s) importée(s) mais non visible. Vérifiez les filtres ou rafraîchissez la page.
+                            </p>
+                          </div>
+                        )}
                         <Button
                           variant="primary"
                           onClick={() => {

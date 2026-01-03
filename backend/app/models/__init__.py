@@ -41,6 +41,7 @@ from app.models.calendar_event import CalendarEvent
 from app.models.project import Project, ProjectStatus
 from app.models.project_task import ProjectTask, TaskStatus, TaskPriority
 from app.models.project_employee import ProjectEmployee
+from app.models.project_budget_item import ProjectBudgetItem, BudgetCategory
 from app.models.time_entry import TimeEntry
 from app.models.contact import Contact
 from app.models.company import Company
@@ -154,6 +155,8 @@ __all__ = [
     "TaskStatus",
     "TaskPriority",
     "ProjectEmployee",
+    "ProjectBudgetItem",
+    "BudgetCategory",
     "TimeEntry",
     "Pipeline",
     "PipelineStage",

@@ -126,8 +126,12 @@ async def get_transactions(
         params = {"user_id": current_user.id}
         
         if type:
+            # Use string comparison to ensure compatibility with native_enum=False
+            # The type column is stored as a string, so we compare with the string value
+            type_value = type.value if hasattr(type, 'value') else str(type)
             where_parts.append("transactions.type = :type")
-            params["type"] = type.value
+            params["type"] = type_value
+            logger.debug(f"Filtering transactions by type: {type_value}")
         if status:
             where_parts.append("transactions.status = :status")
             params["status"] = status.value
@@ -185,8 +189,10 @@ async def get_transactions(
         params["offset"] = skip
         
         # Execute raw SQL with parameters
+        logger.debug(f"Executing query: {sql_query[:200]}... with params: {params}")
         result = await db.execute(text(sql_query), params)
         rows = result.fetchall()
+        logger.debug(f"Found {len(rows)} transactions for user {current_user.id} with filters: type={type.value if type else None}, status={status.value if status else None}")
         
         # Get column names from the result
         result_keys = result.keys()
@@ -1126,6 +1132,7 @@ async def import_transactions(
                 
                 db.add(transaction)
                 created_transactions.append(transaction)
+                logger.debug(f"Added transaction to batch: type='{type_value_final}', description='{description[:50]}...', amount={amount}, user_id={current_user.id}")
                 
             except Exception as e:
                 errors.append({
@@ -1142,7 +1149,10 @@ async def import_transactions(
         for transaction in created_transactions:
             await db.refresh(transaction)
         
-        logger.info(f"User {current_user.id} imported {len(created_transactions)} transactions")
+        # Log summary of created transactions by type
+        expense_count = sum(1 for t in created_transactions if t.type == TransactionType.EXPENSE or str(t.type).lower() == 'expense')
+        revenue_count = sum(1 for t in created_transactions if t.type == TransactionType.REVENUE or str(t.type).lower() == 'revenue')
+        logger.info(f"User {current_user.id} imported {len(created_transactions)} transactions: {expense_count} expenses, {revenue_count} revenues")
         
         # Log warning if no transactions were created
         if len(created_transactions) == 0:

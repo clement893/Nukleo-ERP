@@ -332,3 +332,87 @@ export const projectsAPI = {
     await apiClient.delete(`/v1/projects/${projectId}/employees/${employeeId}`);
   },
 };
+
+export type BudgetCategory = 'main_doeuvre' | 'materiel' | 'services' | 'frais_generaux' | 'autres';
+
+export interface ProjectBudgetItem {
+  id: number;
+  project_id: number;
+  category: BudgetCategory;
+  description: string | null;
+  amount: number;
+  quantity: number | null;
+  unit_price: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectBudgetItemCreate {
+  category: BudgetCategory;
+  description?: string | null;
+  amount: number;
+  quantity?: number | null;
+  unit_price?: number | null;
+  notes?: string | null;
+}
+
+export interface ProjectBudgetItemUpdate extends Partial<ProjectBudgetItemCreate> {}
+
+export interface ProjectBudgetSummary {
+  total_budget: number;
+  items_count: number;
+  by_category: Record<string, number>;
+}
+
+/**
+ * Project Budget Items API client
+ */
+export const projectBudgetItemsAPI = {
+  /**
+   * Get all budget items for a project
+   */
+  list: async (projectId: number): Promise<ProjectBudgetItem[]> => {
+    const response = await apiClient.get<ProjectBudgetItem[]>(`/v1/projects/${projectId}/budget-items`);
+    return extractApiData<ProjectBudgetItem[]>(response) || [];
+  },
+
+  /**
+   * Get budget summary for a project
+   */
+  getSummary: async (projectId: number): Promise<ProjectBudgetSummary> => {
+    const response = await apiClient.get<ProjectBudgetSummary>(`/v1/projects/${projectId}/budget-items/summary`);
+    return extractApiData<ProjectBudgetSummary>(response) || { total_budget: 0, items_count: 0, by_category: {} };
+  },
+
+  /**
+   * Create a new budget item
+   */
+  create: async (projectId: number, item: ProjectBudgetItemCreate): Promise<ProjectBudgetItem> => {
+    const response = await apiClient.post<ProjectBudgetItem>(`/v1/projects/${projectId}/budget-items`, item);
+    const data = extractApiData<ProjectBudgetItem>(response);
+    if (!data) {
+      throw new Error('Failed to create budget item: no data returned');
+    }
+    return data;
+  },
+
+  /**
+   * Update a budget item
+   */
+  update: async (projectId: number, itemId: number, item: ProjectBudgetItemUpdate): Promise<ProjectBudgetItem> => {
+    const response = await apiClient.put<ProjectBudgetItem>(`/v1/projects/${projectId}/budget-items/${itemId}`, item);
+    const data = extractApiData<ProjectBudgetItem>(response);
+    if (!data) {
+      throw new Error('Failed to update budget item: no data returned');
+    }
+    return data;
+  },
+
+  /**
+   * Delete a budget item
+   */
+  delete: async (projectId: number, itemId: number): Promise<void> => {
+    await apiClient.delete(`/v1/projects/${projectId}/budget-items/${itemId}`);
+  },
+};

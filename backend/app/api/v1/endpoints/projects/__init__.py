@@ -30,6 +30,7 @@ from app.models.notification import NotificationType
 from . import import_export
 from . import clients as projects_clients
 from . import employees as project_employees
+from . import budget_items as project_budget_items
 
 router = APIRouter()
 
@@ -46,6 +47,9 @@ router.include_router(import_export.router, tags=["projects-import-export"])
 
 # Include project employees routes
 router.include_router(project_employees.router, tags=["project-employees"])
+
+# Include project budget items routes
+router.include_router(project_budget_items.router, tags=["project-budget-items"])
 
 
 async def _check_project_columns_exist(db: AsyncSession, column_names: List[str]) -> dict[str, bool]:

@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import TaskKanban from '@/components/projects/TaskKanban';
 import ProjectGantt from '@/components/projects/ProjectGantt';
+import ProjectBudgetManager from '@/components/projects/ProjectBudgetManager';
 import { teamsAPI } from '@/lib/api/teams';
 import { extractApiData } from '@/lib/api/utils';
 import type { TeamListResponse } from '@/lib/api/teams';
@@ -703,33 +704,11 @@ function ProjectDetailContent() {
 
         {activeTab === 'financial' && (
           <div className="space-y-6" role="tabpanel" id="financial-panel">
-            {/* Financial KPI Cards */}
+            {/* Budget Manager Component */}
+            <ProjectBudgetManager projectId={projectId} />
+            
+            {/* Legacy Budget and Hourly Rate Display (if needed) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Budget Card */}
-              <div className="glass-card p-xl rounded-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="glass-badge p-3 rounded-lg bg-green-500/10">
-                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" aria-hidden="true" />
-                  </div>
-                </div>
-                <Text variant="small" className="text-muted-foreground mb-1">
-                  Budget total
-                </Text>
-                <p className="text-3xl font-black text-foreground mb-2">
-                  {formatCurrency((project as Project & { budget?: number | null }).budget ?? null)}
-                </p>
-                <div className="w-full bg-muted rounded-full h-2 mt-4">
-                  <div 
-                    className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" 
-                    style={{ width: '100%' }}
-                    role="progressbar"
-                    aria-valuenow={100}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                  />
-                </div>
-              </div>
-
               {/* Taux Horaire Card */}
               <div className="glass-card p-xl rounded-xl">
                 <div className="flex items-center justify-between mb-4">
@@ -747,22 +726,27 @@ function ProjectDetailContent() {
                   Facturation horaire
                 </Text>
               </div>
-            </div>
 
-            {/* Empty State */}
-            {!((project as Project & { budget?: number | null }).budget) && !((project as Project & { taux_horaire?: number | null }).taux_horaire) && (
-              <div className="glass-card p-3xl rounded-xl text-center">
-                <div className="glass-badge p-4 rounded-full bg-muted w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <DollarSign className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
+              {/* Legacy Budget Card (for backward compatibility) */}
+              {(project as Project & { budget?: number | null }).budget && (
+                <div className="glass-card p-xl rounded-xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="glass-badge p-3 rounded-lg bg-amber-500/10">
+                      <DollarSign className="w-6 h-6 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                    </div>
+                  </div>
+                  <Text variant="small" className="text-muted-foreground mb-1">
+                    Budget global (hérité)
+                  </Text>
+                  <p className="text-3xl font-black text-foreground mb-2">
+                    {formatCurrency((project as Project & { budget?: number | null }).budget ?? null)}
+                  </p>
+                  <Text variant="caption" className="text-muted-foreground mt-4">
+                    Ce budget peut être remplacé par les lignes détaillées ci-dessus
+                  </Text>
                 </div>
-                <Heading level={3} className="mb-2">
-                  Aucune information financière
-                </Heading>
-                <Text variant="body" className="text-muted-foreground">
-                  Les données financières n'ont pas encore été renseignées pour ce projet.
-                </Text>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
