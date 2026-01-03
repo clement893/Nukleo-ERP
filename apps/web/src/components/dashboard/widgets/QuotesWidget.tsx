@@ -58,15 +58,16 @@ export function QuotesWidget({ config, globalFilters }: WidgetProps) {
   }
 
   const getStatusBadge = (status: string) => {
+    const defaultStatus = { color: 'bg-gray-500', icon: FileText, label: 'Brouillon' };
     const statusMap: Record<string, { color: string; icon: any; label: string }> = {
-      draft: { color: 'bg-gray-500', icon: FileText, label: 'Brouillon' },
+      draft: defaultStatus,
       sent: { color: 'bg-blue-500', icon: Clock, label: 'Envoyé' },
       pending: { color: 'bg-yellow-500', icon: Clock, label: 'En attente' },
       accepted: { color: 'bg-green-500', icon: CheckCircle2, label: 'Accepté' },
       rejected: { color: 'bg-red-500', icon: XCircle, label: 'Refusé' },
     };
     
-    const statusInfo = statusMap[status] ?? statusMap.draft;
+    const statusInfo = statusMap[status] ?? defaultStatus;
     const Icon = statusInfo.icon;
     
     return (

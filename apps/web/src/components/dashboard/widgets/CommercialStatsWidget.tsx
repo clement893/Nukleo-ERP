@@ -10,7 +10,7 @@ import type { WidgetProps } from '@/lib/dashboard/types';
 import { useMemo } from 'react';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 
-export function CommercialStatsWidget({ config }: WidgetProps) {
+export function CommercialStatsWidget(_props: WidgetProps) {
   const { data: opportunitiesData, isLoading: loadingOpps } = useInfiniteOpportunities(1000);
   const { data: quotesData, isLoading: loadingQuotes } = useInfiniteQuotes(1000);
   const { data: submissionsData, isLoading: loadingSubs } = useInfiniteSubmissions(1000);

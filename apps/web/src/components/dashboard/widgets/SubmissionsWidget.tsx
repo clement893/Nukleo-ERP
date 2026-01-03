@@ -58,8 +58,9 @@ export function SubmissionsWidget({ config, globalFilters }: WidgetProps) {
   }
 
   const getStatusBadge = (status: string) => {
+    const defaultStatus = { color: 'bg-gray-500', icon: Clock, label: 'Brouillon' };
     const statusMap: Record<string, { color: string; icon: any; label: string }> = {
-      draft: { color: 'bg-gray-500', icon: Clock, label: 'Brouillon' },
+      draft: defaultStatus,
       submitted: { color: 'bg-blue-500', icon: Clock, label: 'Soumis' },
       under_review: { color: 'bg-yellow-500', icon: Clock, label: 'En révision' },
       won: { color: 'bg-green-500', icon: CheckCircle2, label: 'Gagné' },
@@ -68,7 +69,7 @@ export function SubmissionsWidget({ config, globalFilters }: WidgetProps) {
       rejected: { color: 'bg-red-500', icon: XCircle, label: 'Refusé' },
     };
     
-    const statusInfo = statusMap[status] ?? statusMap.draft;
+    const statusInfo = statusMap[status] ?? defaultStatus;
     const Icon = statusInfo.icon;
     
     return (
