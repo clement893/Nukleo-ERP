@@ -42,24 +42,26 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading, proj
   });
   const [clientSearchTerm, setClientSearchTerm] = useState('');
 
-  // Fetch contacts for client selection
+  // Fetch contacts for client selection (only clients, not all contacts)
   const { data: contacts = [], isLoading: loadingContacts } = useQuery({
-    queryKey: ['contacts', 'for-invoice'],
+    queryKey: ['contacts', 'for-invoice', 'clients'],
     queryFn: () => contactsAPI.list(0, 1000, true), // Skip photo URLs for performance
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  // Convert contacts to autocomplete options
-  const clientOptions: AutocompleteOption[] = contacts.map((contact: Contact) => {
-    const fullName = `${contact.first_name} ${contact.last_name}`.trim();
-    const displayName = contact.company_name 
-      ? `${fullName} (${contact.company_name})`
-      : fullName;
-    return {
-      value: contact.id.toString(),
-      label: displayName,
-    };
-  });
+  // Filter to only clients (circle='client') and convert to autocomplete options
+  const clientOptions: AutocompleteOption[] = contacts
+    .filter((contact: Contact) => contact.circle === 'client')
+    .map((contact: Contact) => {
+      const fullName = `${contact.first_name} ${contact.last_name}`.trim();
+      const displayName = contact.company_name 
+        ? `${fullName} (${contact.company_name})`
+        : fullName;
+      return {
+        value: contact.id.toString(),
+        label: displayName,
+      };
+    });
 
   useEffect(() => {
     if (invoice) {
@@ -209,7 +211,8 @@ export default function InvoiceForm({ invoice, onSubmit, onCancel, loading, proj
                 });
               }}
               onSelect={(option) => {
-                const selectedContact = contacts.find((c: Contact) => c.id.toString() === option.value);
+                // Find contact from all contacts (not just filtered clients)
+                const selectedContact = contacts.find((c: Contact) => c.id.toString() === option.value && c.circle === 'client');
                 if (selectedContact) {
                   const fullName = `${selectedContact.first_name} ${selectedContact.last_name}`.trim();
                   const addressParts = [
