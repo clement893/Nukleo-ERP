@@ -6,7 +6,8 @@ import { Company } from '@/lib/api/companies';
 import { companiesAPI } from '@/lib/api/companies';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui';
-import { ChevronLeft, ChevronRight, Check, FileText, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, FileText, Save, Sparkles } from 'lucide-react';
+import { clsx } from 'clsx';
 import SubmissionCoverPage from './submission/CoverPage';
 import SubmissionContext from './submission/Context';
 import SubmissionIntroduction from './submission/Introduction';
@@ -14,7 +15,7 @@ import SubmissionMandate from './submission/Mandate';
 import SubmissionProcess from './submission/Process';
 import SubmissionBudget from './submission/Budget';
 import SubmissionTeam from './submission/Team';
-import { LeoAssistant } from './LeoAssistant';
+import { LeoWizardPanel } from './LeoWizardPanel';
 
 export interface SubmissionWizardData {
   // Cover Page
@@ -96,6 +97,13 @@ export default function SubmissionWizard({
   const [currentStep, setCurrentStep] = useState(0);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+  // Par défaut, Leo est ouvert sur desktop, fermé sur mobile
+  const [showLeo, setShowLeo] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024; // lg breakpoint
+    }
+    return true;
+  });
   
   const [formData, setFormData] = useState<SubmissionWizardData>(initialData || {
     coverTitle: '',
@@ -215,14 +223,6 @@ export default function SubmissionWizard({
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
-  // Get current step context for Leo
-  const getStepContext = () => {
-    const stepNames = ['Page couverture', 'Contexte', 'Introduction', 'Mandat', 'Processus', 'Budget', 'Équipe'];
-    const currentStepName = stepNames[currentStep] || '';
-    const companyName = companies.find(c => c.id === formData.companyId)?.name || formData.coverClient || '';
-    return `Étape actuelle : ${currentStepName}${companyName ? ` - Client : ${companyName}` : ''}${formData.coverTitle ? ` - Titre : ${formData.coverTitle}` : ''}`;
-  };
-  
   // Handle text generation from Leo
   const handleTextGenerated = (text: string) => {
     const stepNames = ['cover', 'context', 'introduction', 'mandate', 'process', 'budget', 'team'];
@@ -488,7 +488,7 @@ export default function SubmissionWizard({
       <div className={`flex items-center justify-between border-b border-border pb-4 flex-shrink-0 ${
         isPageMode ? 'mb-6' : ''
       } overflow-x-auto`}>
-        <div className="flex items-center w-full min-w-max">
+        <div className="flex items-center w-full min-w-max flex-1">
           {STEPS.map((step, index) => {
             const StepIcon = step.icon;
             const isActive = index === currentStep;
@@ -534,33 +534,62 @@ export default function SubmissionWizard({
             );
           })}
         </div>
+        
+        {/* Bouton Leo dans la barre de progression */}
+        {isPageMode && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowLeo(!showLeo)}
+            className="ml-4 flex-shrink-0 hidden sm:flex items-center gap-2"
+            aria-label={showLeo ? 'Masquer l\'assistant Leo' : 'Afficher l\'assistant Leo'}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden md:inline">Assistant Leo</span>
+          </Button>
+        )}
       </div>
 
       {/* Main Content Area - Layout différent selon le mode */}
       {isPageMode ? (
         <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-6">
           {/* Step Content - Zone principale */}
-          <div className="flex-1 min-h-0 flex flex-col">
+          <div className={clsx(
+            'flex-1 min-h-0 flex flex-col transition-all duration-300',
+            showLeo && 'lg:mr-6'
+          )}>
             <div className="flex-1 overflow-y-auto pr-0 lg:pr-4">
               {renderStep()}
             </div>
           </div>
 
-          {/* Leo Assistant - Sidebar droite en mode page (caché sur mobile, visible sur desktop) */}
-          <div className="hidden lg:block w-80 flex-shrink-0 border-l border-border pl-6">
-            <div className="sticky top-6">
-              <LeoAssistant
-                context={getStepContext()}
-                onTextGenerated={handleTextGenerated}
-              />
+          {/* Leo Panel - Desktop Sidebar */}
+          {showLeo && (
+            <div className="hidden lg:block w-80 flex-shrink-0 border-l border-border pl-6">
+              <div className="sticky top-6 h-[calc(100vh-200px)]">
+                <LeoWizardPanel
+                  isOpen={showLeo}
+                  onToggle={() => setShowLeo(!showLeo)}
+                  currentStep={currentStep}
+                  formData={formData}
+                  companies={companies}
+                  onTextGenerated={handleTextGenerated}
+                  mode="sidebar"
+                />
+              </div>
             </div>
-          </div>
-          
-          {/* Leo Assistant - Version mobile (en bas, collapsible) */}
-          <div className="lg:hidden flex-shrink-0 border-t border-border pt-4">
-            <LeoAssistant
-              context={getStepContext()}
+          )}
+
+          {/* Leo Panel - Mobile/Tablet */}
+          <div className="lg:hidden">
+            <LeoWizardPanel
+              isOpen={showLeo}
+              onToggle={() => setShowLeo(!showLeo)}
+              currentStep={currentStep}
+              formData={formData}
+              companies={companies}
               onTextGenerated={handleTextGenerated}
+              mode={showLeo ? 'panel' : 'floating'}
             />
           </div>
         </div>
@@ -571,13 +600,20 @@ export default function SubmissionWizard({
             {renderStep()}
           </div>
 
-          {/* Leo Assistant */}
-          <div className="flex-shrink-0">
-            <LeoAssistant
-              context={getStepContext()}
-              onTextGenerated={handleTextGenerated}
-            />
-          </div>
+          {/* Leo Panel - Mode modal */}
+          {showLeo && (
+            <div className="flex-shrink-0">
+              <LeoWizardPanel
+                isOpen={showLeo}
+                onToggle={() => setShowLeo(!showLeo)}
+                currentStep={currentStep}
+                formData={formData}
+                companies={companies}
+                onTextGenerated={handleTextGenerated}
+                mode="panel"
+              />
+            </div>
+          )}
         </>
       )}
 
@@ -585,16 +621,31 @@ export default function SubmissionWizard({
       <div className={`flex flex-col sm:flex-row justify-between gap-2 sm:gap-0 pt-4 border-t border-border relative z-10 bg-background flex-shrink-0 ${
         isPageMode ? 'mt-6' : ''
       }`}>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={currentStep === 0 ? onCancel : prevStep}
-          disabled={loading}
-          className="w-full sm:w-auto"
-        >
-          <ChevronLeft className="w-4 h-4 mr-2" />
-          {currentStep === 0 ? 'Annuler' : 'Précédent'}
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={currentStep === 0 ? onCancel : prevStep}
+            disabled={loading}
+            className="flex-1 sm:flex-initial"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            {currentStep === 0 ? 'Annuler' : 'Précédent'}
+          </Button>
+          
+          {/* Bouton Leo sur mobile */}
+          {isPageMode && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowLeo(!showLeo)}
+              className="sm:hidden flex-shrink-0"
+              aria-label={showLeo ? 'Masquer l\'assistant Leo' : 'Afficher l\'assistant Leo'}
+            >
+              <Sparkles className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
         
         <div className="flex gap-2 w-full sm:w-auto">
           {onSaveDraft && (

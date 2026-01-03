@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
@@ -64,6 +64,10 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
   const [showTaskDrawer, setShowTaskDrawer] = useState(false);
   const [taskDetails, setTaskDetails] = useState<ProjectTask | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState('');
+  const [savingTask, setSavingTask] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([]);
   const [employees, setEmployees] = useState<Array<{ id: number; first_name: string; last_name: string; email?: string }>>([]);
   const [activeTimer, setActiveTimer] = useState<{ taskId: number; elapsedSeconds: number } | null>(null);
@@ -236,6 +240,8 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     try {
       const details = await projectTasksAPI.get(task.id);
       setTaskDetails(details);
+      setTitleValue(details.title);
+      setEditingTitle(false);
       setShowTaskDrawer(true);
     } catch (err) {
       const appError = handleApiError(err);
@@ -244,6 +250,49 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       setLoadingDetails(false);
     }
   };
+
+  // Fonction pour sauvegarder une tâche avec debounce
+  const saveTaskField = useCallback(async (updates: Partial<ProjectTask>) => {
+    if (!taskDetails) return;
+
+    // Clear previous timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Update local state optimistically
+    setTaskDetails(prev => prev ? { ...prev, ...updates } : null);
+
+    // Debounce the API call
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        setSavingTask(true);
+        const updatedTask = await projectTasksAPI.update(taskDetails.id, updates as any);
+        setTaskDetails(updatedTask);
+        // Also update in tasks list
+        setTasks(prevTasks => 
+          prevTasks.map(task => task.id === updatedTask.id ? updatedTask : task)
+        );
+      } catch (err) {
+        const appError = handleApiError(err);
+        showErrorToast(appError.message || 'Erreur lors de la sauvegarde');
+        // Revert on error
+        const originalTask = await projectTasksAPI.get(taskDetails.id);
+        setTaskDetails(originalTask);
+      } finally {
+        setSavingTask(false);
+      }
+    }, 800); // 800ms debounce
+  }, [taskDetails, showErrorToast]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleEditTask = async (task: ProjectTask) => {
     setSelectedTask(task);
@@ -802,9 +851,38 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
             {/* Header personnalisé avec titre et menu d'actions */}
             <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div className="flex-1 min-w-0 pr-4">
-                <h2 className="text-xl font-semibold text-foreground mb-2 break-words">
-                  {taskDetails.title}
-                </h2>
+                {editingTitle ? (
+                  <input
+                    type="text"
+                    value={titleValue}
+                    onChange={(e) => setTitleValue(e.target.value)}
+                    onBlur={() => {
+                      if (titleValue.trim() && titleValue !== taskDetails.title) {
+                        saveTaskField({ title: titleValue.trim() });
+                      } else {
+                        setTitleValue(taskDetails.title);
+                      }
+                      setEditingTitle(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur();
+                      } else if (e.key === 'Escape') {
+                        setTitleValue(taskDetails.title);
+                        setEditingTitle(false);
+                      }
+                    }}
+                    className="w-full text-xl font-semibold text-foreground mb-2 bg-transparent border-b-2 border-primary-500 focus:outline-none pb-1"
+                    autoFocus
+                  />
+                ) : (
+                  <h2 
+                    className="text-xl font-semibold text-foreground mb-2 break-words cursor-text hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded px-2 py-1 -mx-2 -my-1 transition-colors"
+                    onClick={() => setEditingTitle(true)}
+                  >
+                    {taskDetails.title}
+                  </h2>
+                )}
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${STATUS_COLUMNS.find(s => s.status === taskDetails.status)?.bgColor} ${STATUS_COLUMNS.find(s => s.status === taskDetails.status)?.color}`}>
                     {STATUS_COLUMNS.find(s => s.status === taskDetails.status)?.label || taskDetails.status}
@@ -812,6 +890,12 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                   <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${PRIORITY_COLORS[taskDetails.priority]}`}>
                     {PRIORITY_LABELS[taskDetails.priority]}
                   </span>
+                  {savingTask && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
+                      Enregistrement...
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -865,15 +949,17 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                     Assigné & Échéance
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {taskDetails.assignee_name && (
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      {taskDetails.assignee_name ? (
                         <span className="text-sm text-foreground">{taskDetails.assignee_name}</span>
-                      </div>
-                    )}
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">Non assigné</span>
+                      )}
+                    </div>
                     {taskDetails.due_date && (
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         <span className="text-sm text-foreground">
                           {new Date(taskDetails.due_date).toLocaleDateString('fr-FR', {
                             year: 'numeric',
@@ -883,6 +969,45 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                         </span>
                       </div>
                     )}
+                  </div>
+                </div>
+
+                {/* Section: Statut & Priorité (éditables) */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Statut & Priorité
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1.5">Statut</label>
+                      <Select
+                        value={taskDetails.status}
+                        onChange={(e) => {
+                          const newStatus = e.target.value as TaskStatus;
+                          saveTaskField({ status: newStatus });
+                        }}
+                        options={STATUS_COLUMNS.map(col => ({
+                          label: col.label,
+                          value: col.status,
+                        }))}
+                        className="text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1.5">Priorité</label>
+                      <Select
+                        value={taskDetails.priority}
+                        onChange={(e) => {
+                          const newPriority = e.target.value as TaskPriority;
+                          saveTaskField({ priority: newPriority });
+                        }}
+                        options={Object.entries(PRIORITY_LABELS).map(([value, label]) => ({
+                          label,
+                          value,
+                        }))}
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -904,15 +1029,17 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                     Détails
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {taskDetails.estimated_hours && (
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Heures estimées</div>
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1.5">Heures estimées</label>
+                      {taskDetails.estimated_hours !== null && taskDetails.estimated_hours !== undefined ? (
                         <div className="text-sm font-medium text-foreground">{taskDetails.estimated_hours}h</div>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="text-sm text-muted-foreground italic">Non définies</div>
+                      )}
+                    </div>
                     {taskDetails.project_id && (
                       <div>
-                        <div className="text-xs text-muted-foreground mb-1">Projet</div>
+                        <label className="block text-xs text-muted-foreground mb-1.5">Projet</label>
                         <div className="text-sm font-medium text-foreground">
                           {projects.find(p => p.id === taskDetails.project_id)?.name || `ID: ${taskDetails.project_id}`}
                         </div>
