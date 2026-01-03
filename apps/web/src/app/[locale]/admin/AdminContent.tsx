@@ -125,6 +125,17 @@ export default function AdminContent() {
           </Link>
         </Card>
 
+        <Card title="Tickets de Feedback" className="flex flex-col">
+          <p className="text-muted-foreground mb-4">
+            Gérer les tickets de feedback et les retours utilisateurs.
+          </p>
+          <Link href="/admin/feedback">
+            <Button variant="primary" className="w-full">
+              Gérer les tickets
+            </Button>
+          </Link>
+        </Card>
+
         <Card title="Pages Démos" className="flex flex-col">
           <p className="text-muted-foreground mb-4">
             Liste complète de toutes les pages de démonstration disponibles.

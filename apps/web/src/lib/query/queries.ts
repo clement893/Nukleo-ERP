@@ -17,6 +17,7 @@ import { projectTasksAPI, type ProjectTaskUpdate } from '@/lib/api/project-tasks
 import { employeesAPI } from '@/lib/api/employees';
 import { facturationsAPI } from '@/lib/api/finances/facturations';
 import { onboardingAPI } from '@/lib/api/onboarding';
+import { feedbackAPI, type Feedback, type FeedbackStatus, type FeedbackType } from '@/lib/api/feedback';
 import { extractApiData } from '@/lib/api/utils';
 import { TokenStorage } from '@/lib/auth/tokenStorage';
 
@@ -69,6 +70,11 @@ export const queryKeys = {
     all: ['facturations'] as const,
     list: (filters?: { status?: string; project_id?: number }) => ['facturations', 'list', filters] as const,
     detail: (id: number) => ['facturations', id] as const,
+  },
+  feedback: {
+    all: ['feedback'] as const,
+    list: (filters?: { status?: FeedbackStatus; type?: FeedbackType }) => ['feedback', 'list', filters] as const,
+    detail: (id: number) => ['feedback', id] as const,
   },
   invitations: {
     all: (params?: { status?: string }) => ['invitations', params] as const,

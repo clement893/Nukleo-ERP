@@ -40,7 +40,9 @@ class Transaction(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     
     # Transaction details
-    type = Column(SQLEnum(TransactionType), nullable=False, index=True)  # revenue or expense
+    # Use native_enum=False to store as string instead of PostgreSQL enum
+    # This avoids issues with enum value mismatches between Python and PostgreSQL
+    type = Column(SQLEnum(TransactionType, native_enum=False), nullable=False, index=True)  # revenue or expense
     description = Column(String(500), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
     tax_amount = Column(Numeric(10, 2), nullable=True, default=0)  # Tax amount (GST, QST, etc.)

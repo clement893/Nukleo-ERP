@@ -15,13 +15,13 @@ import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority }
 import { projectsAPI } from '@/lib/api';
 import { employeesAPI } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
-import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock, MoreVertical, Copy, X } from 'lucide-react';
 import TaskTimer from './TaskTimer';
 import { timeEntriesAPI } from '@/lib/api/time-entries';
 import ProjectAttachments from './ProjectAttachments';
 import ProjectComments from './ProjectComments';
 import { validateEstimatedHours } from '@/lib/utils/capacity-validation';
-import Tabs from '@/components/ui/Tabs';
+import Dropdown from '@/components/ui/Dropdown';
 import { Info, MessageSquare, Paperclip } from 'lucide-react';
 
 interface TaskKanbanProps {
@@ -376,6 +376,38 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
     }
   };
 
+  const handleDuplicateTask = async (task: ProjectTask) => {
+    try {
+      setSaving(true);
+      // Get full task details if needed
+      const taskDetails = await projectTasksAPI.get(task.id);
+      
+      const duplicatedTask = await projectTasksAPI.create({
+        title: `${taskDetails.title} (copie)`,
+        description: taskDetails.description || null,
+        status: 'todo',
+        priority: taskDetails.priority,
+        project_id: taskDetails.project_id,
+        assignee_id: taskDetails.assignee_id,
+        due_date: taskDetails.due_date || null,
+        estimated_hours: taskDetails.estimated_hours || null,
+      });
+      
+      success('Tâche dupliquée avec succès');
+      await loadTasks(false, true);
+      
+      // Open the duplicated task in drawer
+      const newTaskDetails = await projectTasksAPI.get(duplicatedTask.id);
+      setTaskDetails(newTaskDetails);
+      setShowTaskDrawer(true);
+    } catch (err) {
+      const appError = handleApiError(err);
+      showErrorToast(appError.message || 'Erreur lors de la duplication de la tâche');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDeleteTask = async (taskId: number) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
       return;
@@ -385,6 +417,12 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
       setLoading(true);
       await projectTasksAPI.delete(taskId);
       success('Tâche supprimée avec succès');
+      
+      // Close drawer if the deleted task is open
+      if (taskDetails?.id === taskId) {
+        setShowTaskDrawer(false);
+        setTaskDetails(null);
+      }
       
       // Optimistic update: remove task from local state immediately
       setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
@@ -739,107 +777,176 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
         </div>
       </Modal>
 
-      {/* Drawer de détails de la tâche */}
+      {/* Drawer de détails de la tâche - Version améliorée avec sections verticales */}
       <Drawer
         isOpen={showTaskDrawer}
         onClose={() => {
           setShowTaskDrawer(false);
           setTaskDetails(null);
         }}
-        title={taskDetails?.title || ''}
+        title=""
         position="right"
         size="xl"
         closeOnOverlayClick={true}
         closeOnEscape={true}
+        className="!w-[600px]"
+        showCloseButton={false}
       >
         {loadingDetails ? (
           <div className="py-8 text-center">
             <Loading />
           </div>
         ) : taskDetails ? (
-          <div className="h-full">
-            <Tabs
-              tabs={[
-                {
-                  id: 'info',
-                  label: 'Informations',
-                  icon: <Info className="w-4 h-4" />,
-                  content: (
-                    <div className="space-y-6">
-                      {taskDetails.description && (
-                        <div>
-                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                            Description
-                          </h4>
-                          <p className="text-sm text-foreground whitespace-pre-wrap">
-                            {taskDetails.description}
-                          </p>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                            Statut
-                          </h4>
-                          <span className="text-sm">{STATUS_COLUMNS.find(s => s.status === taskDetails.status)?.label || taskDetails.status}</span>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                            Priorité
-                          </h4>
-                          <span className={`px-2 py-1 text-xs rounded-full text-white ${PRIORITY_COLORS[taskDetails.priority]}`}>
-                            {PRIORITY_LABELS[taskDetails.priority]}
-                          </span>
-                        </div>
-                        {taskDetails.due_date && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                              Échéance
-                            </h4>
-                            <span className="text-sm">
-                              {new Date(taskDetails.due_date).toLocaleDateString('fr-FR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                              })}
-                            </span>
-                          </div>
-                        )}
-                        {taskDetails.estimated_hours && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                              Heures estimées
-                            </h4>
-                            <span className="text-sm">{taskDetails.estimated_hours}h</span>
-                          </div>
-                        )}
-                        {taskDetails.assignee_name && (
-                          <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                              Assigné à
-                            </h4>
-                            <span className="text-sm">{taskDetails.assignee_name}</span>
-                          </div>
-                        )}
+          <div className="flex flex-col h-full">
+            {/* Header personnalisé avec titre et menu d'actions */}
+            <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex-1 min-w-0 pr-4">
+                <h2 className="text-xl font-semibold text-foreground mb-2 break-words">
+                  {taskDetails.title}
+                </h2>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${STATUS_COLUMNS.find(s => s.status === taskDetails.status)?.bgColor} ${STATUS_COLUMNS.find(s => s.status === taskDetails.status)?.color}`}>
+                    {STATUS_COLUMNS.find(s => s.status === taskDetails.status)?.label || taskDetails.status}
+                  </span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${PRIORITY_COLORS[taskDetails.priority]}`}>
+                    {PRIORITY_LABELS[taskDetails.priority]}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Dropdown
+                  trigger={
+                    <button
+                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                      aria-label="Menu d'actions"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                  }
+                  items={[
+                    {
+                      label: 'Dupliquer',
+                      icon: <Copy className="w-4 h-4" />,
+                      onClick: () => handleDuplicateTask(taskDetails),
+                    },
+                    {
+                      label: 'Supprimer',
+                      icon: <Trash2 className="w-4 h-4" />,
+                      onClick: () => {
+                        if (confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
+                          handleDeleteTask(taskDetails.id);
+                        }
+                      },
+                      variant: 'danger',
+                    },
+                  ]}
+                  position="bottom"
+                />
+                <button
+                  onClick={() => {
+                    setShowTaskDrawer(false);
+                    setTaskDetails(null);
+                  }}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                  aria-label="Fermer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenu avec sections verticales */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-6 space-y-8">
+                {/* Section: Assigné & Échéance */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Assigné & Échéance
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {taskDetails.assignee_name && (
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-foreground">{taskDetails.assignee_name}</span>
                       </div>
-                    </div>
-                  ),
-                },
-                {
-                  id: 'comments',
-                  label: 'Commentaires',
-                  icon: <MessageSquare className="w-4 h-4" />,
-                  content: <ProjectComments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />,
-                },
-                {
-                  id: 'documents',
-                  label: 'Documents',
-                  icon: <Paperclip className="w-4 h-4" />,
-                  content: <ProjectAttachments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />,
-                },
-              ]}
-              defaultTab="info"
-            />
+                    )}
+                    {taskDetails.due_date && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-foreground">
+                          {new Date(taskDetails.due_date).toLocaleDateString('fr-FR', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Section: Description */}
+                {taskDetails.description && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      Description
+                    </h3>
+                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                      {taskDetails.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Section: Métadonnées */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Détails
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {taskDetails.estimated_hours && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Heures estimées</div>
+                        <div className="text-sm font-medium text-foreground">{taskDetails.estimated_hours}h</div>
+                      </div>
+                    )}
+                    {taskDetails.project_id && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Projet</div>
+                        <div className="text-sm font-medium text-foreground">
+                          {projects.find(p => p.id === taskDetails.project_id)?.name || `ID: ${taskDetails.project_id}`}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Section: Commentaires */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      Commentaires
+                    </h3>
+                  </div>
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <ProjectComments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />
+                  </div>
+                </div>
+
+                {/* Section: Documents */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Paperclip className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      Documents
+                    </h3>
+                  </div>
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <ProjectAttachments taskId={taskDetails.id} projectId={taskDetails.project_id || undefined} />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : null}
       </Drawer>

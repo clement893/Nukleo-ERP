@@ -306,7 +306,24 @@ async def create_transaction(
                 )
         
         # Use .value to get the string value ("expense" or "revenue") instead of enum name
-        type_value = transaction_data.type.value if isinstance(transaction_data.type, TransactionType) else str(transaction_data.type).lower()
+        # Force lowercase conversion to avoid PostgreSQL enum issues
+        if isinstance(transaction_data.type, TransactionType):
+            type_value = transaction_data.type.value  # Get "expense" or "revenue"
+        else:
+            type_value = str(transaction_data.type).lower()
+        
+        # Ensure we're using the lowercase string value
+        type_value = str(type_value).lower().strip()
+        if type_value not in ['expense', 'revenue']:
+            # Fallback: map common variations
+            if type_value in ['depense', 'dépense', 'depenses', 'dépenses', 'sortie']:
+                type_value = 'expense'
+            elif type_value in ['revenu', 'revenus', 'income', 'recette']:
+                type_value = 'revenue'
+            else:
+                # Default to expense if unclear
+                type_value = 'expense'
+        
         transaction = Transaction(
             user_id=current_user.id,
             type=type_value,
@@ -938,10 +955,53 @@ async def import_transactions(
                 # Create transaction
                 # Use .value to get the string value ("expense" or "revenue") instead of enum name
                 # This ensures we send the enum value string, not the enum name
-                type_value = final_type.value if isinstance(final_type, TransactionType) else str(final_type).lower()
+                # Convert enum to its string value to avoid PostgreSQL enum type mismatch
+                if isinstance(final_type, TransactionType):
+                    type_value = final_type.value  # Get "expense" or "revenue"
+                else:
+                    type_value = str(final_type).lower()
+                
+                # Ensure we're using the lowercase string value - force lowercase conversion
+                type_value = str(type_value).lower().strip()
+                if type_value not in ['expense', 'revenue']:
+                    # Fallback: map common variations
+                    if type_value in ['depense', 'dépense', 'depenses', 'dépenses', 'sortie']:
+                        type_value = 'expense'
+                    elif type_value in ['revenu', 'revenus', 'income', 'recette']:
+                        type_value = 'revenue'
+                    else:
+                        # Default to expense if unclear
+                        type_value = 'expense'
+                
+                # Double-check: ensure type_value is a plain string, not an enum
+                # This is critical to avoid PostgreSQL enum type errors
+                # Force conversion to lowercase string to ensure compatibility
+                type_value_final = str(type_value).lower().strip()
+                if type_value_final not in ['expense', 'revenue']:
+                    # Last resort fallback
+                    if 'expense' in type_value_final or 'depense' in type_value_final:
+                        type_value_final = 'expense'
+                    else:
+                        type_value_final = 'revenue'
+                
+                # CRITICAL FIX: Force type_value_final to be a plain Python string, not an enum
+                # SQLAlchemy may use enum name (EXPENSE) instead of value ("expense") if enum PostgreSQL exists
+                type_value_final = str(type_value_final).lower().strip()
+                if type_value_final not in ['expense', 'revenue']:
+                    type_value_final = 'expense'  # Default fallback
+                
+                # Also convert status to string value to avoid enum issues
+                status_value = transaction_status
+                if isinstance(transaction_status, TransactionStatus):
+                    status_value = transaction_status.value  # Get "pending", "paid", or "cancelled"
+                status_value = str(status_value).lower()
+                
+                # Log the final values being used
+                logger.debug(f"Creating transaction - type_value: '{type_value_final}' (type: {type(type_value_final)}), status: '{status_value}'")
+                
                 transaction = Transaction(
                     user_id=current_user.id,
-                    type=type_value,
+                    type=type_value_final,  # Plain string "expense" or "revenue" - CRITICAL to avoid enum issues
                     description=description,
                     amount=amount,
                     tax_amount=tax_amount_decimal,
@@ -950,7 +1010,7 @@ async def import_transactions(
                     transaction_date=transaction_date,
                     expected_payment_date=expected_payment_date,
                     payment_date=payment_date,
-                    status=transaction_status,
+                    status=status_value,  # Plain string "pending", "paid", or "cancelled"
                     client_name=str(client_name) if client_name else None,
                     supplier_name=str(supplier_name) if supplier_name else None,
                     invoice_number=str(invoice_number) if invoice_number else None,
