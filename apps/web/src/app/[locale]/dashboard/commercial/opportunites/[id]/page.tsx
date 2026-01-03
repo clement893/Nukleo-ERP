@@ -23,6 +23,7 @@ import {
   User
 } from 'lucide-react';
 import Link from 'next/link';
+import { OpportunityNotesEditor } from '@/components/commercial/OpportunityNotesEditor';
 
 export default function OpportunityDetailPage() {
   const params = useParams();
@@ -345,22 +346,25 @@ export default function OpportunityDetailPage() {
                 <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                   Notes
                 </h3>
-                {opportunity.notes ? (
-                  <div className="space-y-4">
-                    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                      <p className="text-foreground whitespace-pre-wrap">{opportunity.notes}</p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Les notes peuvent être modifiées depuis le formulaire d'édition de l'opportunité.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Aucune note pour cette opportunité.</p>
-                    <p className="text-sm mt-2">Ajoutez des notes depuis le formulaire d'édition.</p>
-                  </div>
-                )}
+                <OpportunityNotesEditor
+                  opportunityId={opportunity.id}
+                  initialNotes={opportunity.notes}
+                  updatedAt={opportunity.updated_at}
+                  onSaveSuccess={() => {
+                    // Rafraîchir les données de l'opportunité
+                    loadOpportunity();
+                    showToast({
+                      message: 'Notes enregistrées avec succès',
+                      type: 'success',
+                    });
+                  }}
+                  onSaveError={(error) => {
+                    showToast({
+                      message: error.message || 'Erreur lors de la sauvegarde des notes',
+                      type: 'error',
+                    });
+                  }}
+                />
               </Card>
             )}
           </div>
