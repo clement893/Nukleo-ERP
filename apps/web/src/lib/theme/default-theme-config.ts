@@ -202,11 +202,11 @@ export const DEFAULT_THEME_CONFIG = {
         },
         outline: {
           border: "2px solid var(--color-primary-500)",
-          text: "var(--color-primary-600)",
+          // No text color - let CSS classes (text-foreground/dark:text-foreground) handle it
           hover: "var(--color-primary-50)"
         },
         ghost: {
-          text: "var(--color-foreground)",
+          // No text color - let CSS classes (text-foreground) handle it
           hover: "var(--color-muted)"
         },
         danger: {
