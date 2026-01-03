@@ -287,8 +287,21 @@ class LeoContextService:
             
             # Check if query mentions "client" or "clients"
             query_lower = query.lower()
-            if "client" in query_lower or "clients" in query_lower:
+            is_client_query = any(word in query_lower for word in ["client", "clients", "nos clients", "mes clients", "combien de client"])
+            if is_client_query:
                 stmt = stmt.where(Company.is_client == True)
+                # For client queries, increase limit
+                limit = min(limit * 2, 100)
+            
+            # For general company queries (e.g., "notre entreprise"), return more results
+            is_our_company_query = any(phrase in query_lower for phrase in [
+                "notre entreprise", "notre société", "s'appelle", "nom de l'entreprise", 
+                "comment s'appelle", "quel est le nom"
+            ])
+            if is_our_company_query:
+                # Prioritize clients
+                stmt = stmt.order_by(Company.is_client.desc())
+                limit = min(limit * 3, 50)
             
             # Limit results
             stmt = stmt.limit(limit)
@@ -388,6 +401,9 @@ class LeoContextService:
             limit = self.MAX_ITEMS_PER_TYPE
         
         try:
+            # Lazy import to avoid MetaData conflicts
+            Project, ProjectStatus = _get_project_model()
+            
             keywords = self._extract_keywords(query)
             query_lower = query.lower()
             
@@ -473,6 +489,9 @@ class LeoContextService:
                 selectinload(Employee.user)
             )
             
+            query_lower = query.lower()
+            is_general_employee_query = not all_keywords and any(word in query_lower for word in ["employé", "employee", "employés", "employees", "nos", "mes", "qui sont", "who are"])
+            
             # Filter by keywords if any
             if all_keywords:
                 conditions = []
@@ -494,6 +513,10 @@ class LeoContextService:
                         ])
                 stmt = stmt.where(or_(*conditions))
             # If no keywords and query is about employees in general, return all employees (no filter needed)
+            elif is_general_employee_query:
+                # Increase limit for general queries
+                limit = min(limit * 2, 100)
+                logger.info(f"General employee query detected - returning all employees (limit: {limit})")
             
             # Limit results
             stmt = stmt.limit(limit)
