@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Badge, Input, Select, Modal, Textarea, Loading, Heading, Text } from '@/components/ui';
 import { 
-  DollarSign, Plus, Edit, Trash2, Loader2, PieChart, TrendingUp
+  DollarSign, Plus, Edit, Trash2, Loader2
 } from 'lucide-react';
 import { projectBudgetItemsAPI, type ProjectBudgetItem, type ProjectBudgetItemCreate, type BudgetCategory, type ProjectBudgetSummary } from '@/lib/api/projects';
 import { useToast } from '@/lib/toast';
@@ -254,51 +254,6 @@ export default function ProjectBudgetManager({ projectId }: ProjectBudgetManager
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="glass-card p-xl rounded-xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="glass-badge p-3 rounded-lg bg-green-500/10">
-              <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-          <Text variant="small" className="text-muted-foreground mb-1">
-            Budget total
-          </Text>
-          <p className="text-3xl font-black text-foreground">
-            {formatCurrency(summary?.total_budget || calculateTotal())}
-          </p>
-        </Card>
-
-        <Card className="glass-card p-xl rounded-xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="glass-badge p-3 rounded-lg bg-primary/10">
-              <PieChart className="w-6 h-6 text-primary" />
-            </div>
-          </div>
-          <Text variant="small" className="text-muted-foreground mb-1">
-            Nombre de lignes
-          </Text>
-          <p className="text-3xl font-black text-foreground">
-            {items.length}
-          </p>
-        </Card>
-
-        <Card className="glass-card p-xl rounded-xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="glass-badge p-3 rounded-lg bg-blue-500/10">
-              <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <Text variant="small" className="text-muted-foreground mb-1">
-            Moyenne par ligne
-          </Text>
-          <p className="text-3xl font-black text-foreground">
-            {items.length > 0 ? formatCurrency(calculateTotal() / items.length) : '-'}
-          </p>
-        </Card>
-      </div>
-
       {/* Budget by Category Chart */}
       {summary && summary.by_category && Object.keys(summary.by_category).length > 0 && (
         <Card className="glass-card p-xl rounded-xl">
