@@ -67,14 +67,14 @@
 
 ---
 
-### 📁 Batch 7: Widgets Projets Priorité MOYENNE
-- [ ] `projects-progress-chart` - Progression des projets
-- [ ] `projects-by-status-bar` - Projets par statut (BarChart)
-- [ ] `workload-by-project` - Charge par projet
-- [ ] `tasks-by-priority` - Tâches par priorité
-- [ ] `project-health-score` - Score de santé
+### ✅ Batch 7: Widgets Projets Priorité MOYENNE
+- [x] `projects-progress-chart` - Progression des projets
+- [x] `projects-by-status-bar` - Projets par statut (BarChart)
+- [x] `workload-by-project` - Charge par projet
+- [x] `tasks-by-priority` - Tâches par priorité
+- [x] `project-health-score` - Score de santé
 
-**Statut:** 0/5 widgets créés
+**Statut:** ✅ COMPLÉTÉ - 5/5 widgets créés et pushés
 
 ---
 
@@ -119,12 +119,12 @@
 
 ## 📈 Progression Globale
 
-- **Batches complétés:** 6/10 (60%)
-- **Widgets créés:** 16/40 (40%)
+- **Batches complétés:** 7/10 (70%)
+- **Widgets créés:** 21/40 (52.5%)
 - **Intégrations complétées:** 1/1 (100%)
 
 ## 🔄 Dernière Mise à Jour
 
-- **Date:** Batch 6 complété et pushé
-- **Batch actif:** Batch 7 (Widgets Projets Priorité MOYENNE)
-- **Prochaine étape:** Créer les 5 widgets projets priorité MOYENNE
+- **Date:** Batch 7 complété et pushé
+- **Batch actif:** Batch 8 (Widgets Finances Priorité MOYENNE)
+- **Prochaine étape:** Créer les 5 widgets finances priorité MOYENNE
