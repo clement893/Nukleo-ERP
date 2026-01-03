@@ -1397,7 +1397,7 @@ export default function ContactsPage() {
                         <div className="flex justify-end mb-4">
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="primary"
                             onClick={() => {
                               router.push(`/${locale}/dashboard/reseau/contacts/${contactDetails.id}`);
                               handleCloseDrawer();

@@ -71,16 +71,16 @@ class LeoContextService:
         query_lower = query.lower()
         
         # Keywords for each data type
-        contact_keywords = ["contact", "personne", "client", "prospect", "personnel", "qui est", "qui", "nommé", "appelé"]
-        company_keywords = ["entreprise", "company", "société", "client", "clients", "organisation"]
+        contact_keywords = ["contact", "personne", "client", "prospect", "personnel", "qui est", "qui", "nommé", "appelé", "connais", "connais-tu", "connaissez"]
+        company_keywords = ["entreprise", "company", "société", "client", "clients", "organisation", "combien de client", "combien de clients", "avons nous", "avons-nous"]
         opportunity_keywords = ["opportunité", "opportunite", "deal", "affaire", "vente", "pipeline"]
         project_keywords = ["projet", "project", "mission"]
         invoice_keywords = ["facture", "invoice", "facturation", "facturé"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
-        employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés"]
+        employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés", "qui sont nos", "qui sont mes"]
         
-        # Check if query contains what looks like a person name (capitalized words)
-        # This is a simple heuristic: if there are capitalized words that aren't at the start of sentence
+        # Check if query contains what looks like a person name
+        # This includes capitalized words AND single lowercase words that could be names
         has_potential_name = False
         words = query.split()
         if len(words) > 0:
@@ -91,6 +91,14 @@ class LeoContextService:
                 has_potential_name = True
             elif len(capitalized_words) == 1 and capitalized_words[0].lower() not in ["le", "la", "les", "un", "une", "des", "de", "du", "et", "ou", "à", "dans", "sur", "pour", "avec", "sans", "par"]:
                 has_potential_name = True
+            
+            # Also check for single lowercase words that could be names (e.g., "fabien")
+            # If query is just one or two words and they're not common words, might be a name
+            if len(words) <= 2:
+                non_stop_words = [w.lower().strip(".,!?;:()[]{}") for w in words 
+                                 if w.lower().strip(".,!?;:()[]{}") not in ["le", "la", "les", "un", "une", "des", "de", "du", "et", "ou", "à", "dans", "sur", "pour", "avec", "sans", "par", "qui", "est", "sont", "nos", "mes", "nos", "vos", "votre", "notre", "contact", "contacts", "client", "clients", "employé", "employés"]]
+                if len(non_stop_words) > 0 and all(len(w) > 2 for w in non_stop_words):
+                    has_potential_name = True
         
         # Check for "qui est" pattern (who is) - this strongly suggests a person query
         has_qui_est = "qui est" in query_lower or "c'est qui" in query_lower or "c est qui" in query_lower
@@ -98,13 +106,17 @@ class LeoContextService:
         # Check for employee queries (more specific)
         is_employee_query = any(word in query_lower for word in employee_keywords)
         
+        # Check for general queries about contacts/companies/employees
+        is_general_contact_query = any(phrase in query_lower for phrase in ["connais-tu", "connais tu", "connaissez-vous", "connaissez vous", "nos contacts", "mes contacts", "qui sont nos", "qui sont mes"])
+        is_general_company_query = any(phrase in query_lower for phrase in ["combien de client", "combien de clients", "nos clients", "mes clients", "avons nous", "avons-nous"])
+        
         # Check availability lazily
         opp_available = _get_opportunite_model() is not None if OPPORTUNITIES_AVAILABLE is None else OPPORTUNITIES_AVAILABLE
         emp_available = _get_employee_model() is not None if EMPLOYEES_AVAILABLE is None else EMPLOYEES_AVAILABLE
         
         return {
-            "contacts": any(word in query_lower for word in contact_keywords) or has_potential_name or has_qui_est,
-            "companies": any(word in query_lower for word in company_keywords),
+            "contacts": any(word in query_lower for word in contact_keywords) or has_potential_name or has_qui_est or is_general_contact_query,
+            "companies": any(word in query_lower for word in company_keywords) or is_general_company_query,
             "opportunities": any(word in query_lower for word in opportunity_keywords) if opp_available else False,
             "projects": any(word in query_lower for word in project_keywords),
             "invoices": any(word in query_lower for word in invoice_keywords),

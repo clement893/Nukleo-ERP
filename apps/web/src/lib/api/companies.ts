@@ -23,6 +23,7 @@ export interface Company {
   facebook: string | null;
   instagram: string | null;
   linkedin: string | null;
+  notes?: string | null;
   contacts_count?: number;
   projects_count?: number;
   created_at: string;
@@ -44,6 +45,7 @@ export interface CompanyCreate {
   facebook?: string | null;
   instagram?: string | null;
   linkedin?: string | null;
+  notes?: string | null;
 }
 
 export interface CompanyUpdate extends Partial<CompanyCreate> {}

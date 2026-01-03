@@ -476,6 +476,7 @@ async def create_company(
 
 @router.put("/{company_id}", response_model=CompanySchema)
 async def update_company(
+    request: Request,
     company_id: int,
     company_data: CompanyUpdate,
     db: AsyncSession = Depends(get_db),
@@ -520,12 +521,53 @@ async def update_company(
                     detail=f"Parent company not found: {company_data.parent_company_id}"
                 )
     
+    # Store old values for activity tracking
+    old_values = {
+        'name': company.name,
+        'parent_company_id': company.parent_company_id,
+        'description': company.description,
+        'website': company.website,
+        'email': company.email,
+        'phone': company.phone,
+        'address': company.address,
+        'city': company.city,
+        'country': company.country,
+        'is_client': company.is_client,
+        'facebook': company.facebook,
+        'instagram': company.instagram,
+        'linkedin': company.linkedin,
+    }
+    
     # Update company
     update_data = company_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(company, field, value)
     
     await db.commit()
+    
+    # Log activities for each modified field
+    from app.core.security_audit import SecurityAuditLogger, SecurityEventType
+    
+    for field, new_value in update_data.items():
+        old_value = old_values.get(field)
+        if old_value != new_value:
+            try:
+                await SecurityAuditLogger.log_event(
+                    db=db,
+                    event_type=SecurityEventType.DATA_MODIFIED,
+                    description=f"Company {company_id} - {field} modified",
+                    user_id=current_user.id,
+                    ip_address=request.client.host if request.client else None,
+                    event_metadata={
+                        "entity_type": "company",
+                        "entity_id": str(company_id),
+                        "field": field,
+                        "old_value": old_value,
+                        "new_value": new_value
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log activity for company {company_id} field {field}: {e}")
     await db.refresh(company, ["parent_company", "contacts"])
     
     # Regenerate presigned URL for logo if it exists

@@ -25,6 +25,7 @@ export interface Contact {
   language: string | null;
   employee_id: number | null;
   employee_name?: string;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +47,7 @@ export interface ContactCreate {
   birthday?: string | null;
   language?: string | null;
   employee_id?: number | null;
+  notes?: string | null;
 }
 
 export interface ContactUpdate extends Partial<ContactCreate> {}

@@ -657,6 +657,23 @@ async def update_contact(
                 detail="Employee not found"
             )
     
+    # Store old values for activity tracking
+    old_values = {
+        'first_name': contact.first_name,
+        'last_name': contact.last_name,
+        'email': contact.email,
+        'phone': contact.phone,
+        'position': contact.position,
+        'company_id': contact.company_id,
+        'circle': contact.circle,
+        'city': contact.city,
+        'country': contact.country,
+        'birthday': contact.birthday.isoformat() if contact.birthday else None,
+        'language': contact.language,
+        'linkedin': contact.linkedin,
+        'employee_id': contact.employee_id,
+    }
+    
     # Update fields (exclude company_name as it's not a database field)
     update_data = contact_data.model_dump(exclude_unset=True, exclude={'company_name'})
     
@@ -668,6 +685,53 @@ async def update_contact(
         setattr(contact, field, value)
     
     await db.commit()
+    
+    # Log activities for each modified field
+    from app.core.security_audit import SecurityAuditLogger, SecurityEventType
+    
+    for field, new_value in update_data.items():
+        old_value = old_values.get(field)
+        
+        # Handle birthday field specially (datetime conversion)
+        if field == 'birthday':
+            new_value_str = new_value.isoformat() if new_value and hasattr(new_value, 'isoformat') else (str(new_value) if new_value else None)
+            old_value_str = old_values.get(field)
+            if old_value_str != new_value_str:
+                try:
+                    await SecurityAuditLogger.log_event(
+                        db=db,
+                        event_type=SecurityEventType.DATA_MODIFIED,
+                        description=f"Contact {contact_id} - {field} modified",
+                        user_id=current_user.id,
+                        ip_address=request.client.host if request.client else None,
+                        event_metadata={
+                            "entity_type": "contact",
+                            "entity_id": str(contact_id),
+                            "field": field,
+                            "old_value": old_value_str,
+                            "new_value": new_value_str
+                        }
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to log activity for contact {contact_id} field {field}: {e}")
+        elif old_value != new_value:
+            try:
+                await SecurityAuditLogger.log_event(
+                    db=db,
+                    event_type=SecurityEventType.DATA_MODIFIED,
+                    description=f"Contact {contact_id} - {field} modified",
+                    user_id=current_user.id,
+                    ip_address=request.client.host if request.client else None,
+                    event_metadata={
+                        "entity_type": "contact",
+                        "entity_id": str(contact_id),
+                        "field": field,
+                        "old_value": old_value,
+                        "new_value": new_value
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log activity for contact {contact_id} field {field}: {e}")
     await db.refresh(contact)
     await db.refresh(contact, ["company", "employee"])
     
