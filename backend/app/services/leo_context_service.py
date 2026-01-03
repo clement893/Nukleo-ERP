@@ -82,7 +82,8 @@ class LeoContextService:
         # Keywords for each data type (more tolerant to typos)
         contact_keywords = ["contact", "personne", "client", "prospect", "personnel", "qui est", "qui", "nommé", "appelé", "connais", "connais-tu", "connaissez"]
         company_keywords = ["entreprise", "company", "société", "client", "clients", "cleint", "cleints", "organisation", "combien de client", "combien de clients", "avons nous", "avons-nous", "module commercial"]
-        opportunity_keywords = ["opportunité", "opportunite", "deal", "affaire", "vente", "pipeline", "pipeline de vente", "pipelines"]
+        opportunity_keywords = ["opportunité", "opportunite", "deal", "affaire", "vente"]
+        pipeline_keywords = ["pipeline", "pipeline de vente", "pipelines", "pipeline commercial"]
         project_keywords = ["projet", "project", "mission"]
         invoice_keywords = ["facture", "invoice", "facturation", "facturé"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
@@ -127,6 +128,7 @@ class LeoContextService:
             "contacts": any(word in query_lower for word in contact_keywords) or has_potential_name or has_qui_est or is_general_contact_query,
             "companies": any(word in query_lower for word in company_keywords) or is_general_company_query,
             "opportunities": any(word in query_lower for word in opportunity_keywords) if opp_available else False,
+            "pipelines": any(word in query_lower for word in pipeline_keywords),
             "projects": any(word in query_lower for word in project_keywords),
             "invoices": any(word in query_lower for word in invoice_keywords),
             "events": any(word in query_lower for word in event_keywords),
@@ -609,6 +611,52 @@ class LeoContextService:
             logger.error(f"Error getting relevant employees: {e}", exc_info=True)
             return []
 
+    async def get_relevant_pipelines(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant pipelines based on query"""
+        Pipeline = _get_pipeline_model()
+        if Pipeline is None:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            # Lazy import to avoid MetaData conflicts
+            Pipeline = _get_pipeline_model()
+            if Pipeline is None:
+                return []
+            
+            # Build query - get all active pipelines
+            stmt = select(Pipeline).where(Pipeline.is_active == True)
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            pipelines = result.scalars().all()
+            
+            # Format results
+            formatted = []
+            for pipeline in pipelines:
+                formatted.append({
+                    "id": str(pipeline.id),
+                    "name": pipeline.name,
+                    "description": pipeline.description,
+                    "is_default": pipeline.is_default,
+                })
+            
+            logger.debug(f"Found {len(formatted)} pipelines for query: {query}")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant pipelines: {e}", exc_info=True)
+            return []
+
     async def get_relevant_data(
         self,
         user_id: int,
@@ -633,6 +681,9 @@ class LeoContextService:
         if data_types.get("employees"):
             result["employees"] = await self.get_relevant_employees(user_id, query)
         
+        if data_types.get("pipelines"):
+            result["pipelines"] = await self.get_relevant_pipelines(user_id, query)
+        
         return result
 
     async def build_context_string(
@@ -649,14 +700,14 @@ class LeoContextService:
             "combien", "how many", "nombre", "total", "count", "quantité"
         ])
         
-        # For counting queries, provide summary first, then details if needed
+        # For counting queries, provide SIMPLE summary first
         if is_counting_query:
             summary_parts = []
             if data.get("contacts"):
                 summary_parts.append(f"CONTACTS: {len(data['contacts'])}")
             if data.get("companies"):
                 clients_count = sum(1 for c in data["companies"] if c.get("is_client"))
-                if any(word in query_lower for word in ["client", "clients"]):
+                if any(word in query_lower for word in ["client", "clients", "cleint", "cleints"]):
                     summary_parts.append(f"CLIENTS: {clients_count}")
                 else:
                     summary_parts.append(f"ENTREPRISES: {len(data['companies'])} (dont {clients_count} clients)")
@@ -664,12 +715,13 @@ class LeoContextService:
                 summary_parts.append(f"EMPLOYÉS: {len(data['employees'])}")
             if data.get("opportunities"):
                 summary_parts.append(f"OPPORTUNITÉS: {len(data['opportunities'])}")
+            if data.get("pipelines"):
+                summary_parts.append(f"PIPELINES: {len(data['pipelines'])}")
             if data.get("projects"):
                 summary_parts.append(f"PROJETS: {len(data['projects'])}")
             
             if summary_parts:
-                context_parts.append("=== RÉSUMÉ ===")
-                context_parts.append(" | ".join(summary_parts))
+                context_parts.append("RÉSUMÉ: " + " | ".join(summary_parts))
                 context_parts.append("")
         
         # Detailed data (simplified format)
@@ -733,6 +785,18 @@ class LeoContextService:
                         line += f" [{opp['statut']}]"
                     context_parts.append(line)
             context_parts.append("")
+        
+        if data.get("pipelines"):
+            if is_counting_query:
+                context_parts.append(f"PIPELINES DE VENTE: {len(data['pipelines'])}")
+            else:
+                context_parts.append(f"=== PIPELINES ({len(data['pipelines'])}) ===")
+                for pipeline in data["pipelines"]:
+                    line = f"{pipeline['name']}"
+                    if pipeline.get("is_default"):
+                        line += " [PAR DÉFAUT]"
+                    context_parts.append(line)
+                context_parts.append("")
         
         if data.get("projects"):
             if not is_counting_query:
