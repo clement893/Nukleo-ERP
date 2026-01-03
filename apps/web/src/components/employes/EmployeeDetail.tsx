@@ -76,7 +76,7 @@ export default function EmployeeDetail({
       
       // Revoke the local preview URL and use the server URL
       URL.revokeObjectURL(localPreviewUrl);
-      setPreviewUrl(updatedEmployee.photo_url);
+      setPreviewUrl((updatedEmployee.photo_url ?? null) as string | null);
       
       // Notify parent component to refresh
       if (onPhotoUpdate) {
@@ -90,7 +90,7 @@ export default function EmployeeDetail({
     } catch (error) {
       // Revert preview on error
       URL.revokeObjectURL(localPreviewUrl);
-      setPreviewUrl(employee.photo_url);
+      setPreviewUrl((employee.photo_url ?? null) as string | null);
       
       const appError = handleApiError(error);
       showToast({
