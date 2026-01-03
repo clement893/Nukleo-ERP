@@ -27,6 +27,7 @@ import {
   Clock,
   CheckSquare,
   TrendingUp,
+  TrendingDown,
   AlertCircle,
 } from 'lucide-react';
 import TaskKanban from '@/components/projects/TaskKanban';
@@ -37,7 +38,9 @@ import ProjectGantt from '@/components/projects/ProjectGantt';
 import ProjectStatistics from '@/components/projects/ProjectStatistics';
 import ProjectDeadlines from '@/components/projects/ProjectDeadlines';
 import ProjectEmployees from '@/components/projects/ProjectEmployees';
+import ProjectBudgetManager from '@/components/projects/ProjectBudgetManager';
 import { projectTasksAPI } from '@/lib/api/project-tasks';
+import { transactionsAPI, type Transaction } from '@/lib/api/finances/transactions';
 
 type Tab = 'overview' | 'tasks' | 'timeline' | 'financial' | 'links' | 'deliverables' | 'files' | 'comments' | 'gantt' | 'statistics' | 'deadlines' | 'employees';
 
@@ -51,11 +54,30 @@ function ProjectDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [tasksCount, setTasksCount] = useState({ total: 0, completed: 0, inProgress: 0 });
+  const [financialData, setFinancialData] = useState<{
+    expenses: Transaction[];
+    revenues: Transaction[];
+    totalExpenses: number;
+    totalRevenues: number;
+    loading: boolean;
+  }>({
+    expenses: [],
+    revenues: [],
+    totalExpenses: 0,
+    totalRevenues: 0,
+    loading: false,
+  });
 
   useEffect(() => {
     loadProject();
     loadTasksStats();
   }, [projectId]);
+
+  useEffect(() => {
+    if (project && activeTab === 'financial') {
+      loadFinancialData();
+    }
+  }, [project, activeTab, projectId]);
 
   const loadTasksStats = async () => {
     try {
@@ -82,6 +104,58 @@ function ProjectDetailContent() {
       setError(appError.message || 'Erreur lors du chargement du projet');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFinancialData = async () => {
+    if (!project) return;
+    
+    setFinancialData(prev => ({ ...prev, loading: true }));
+    try {
+      // Load all transactions and filter by client if project has a client
+      // Note: Transactions don't have direct project_id, so we filter by client_name or description
+      const [expenses, revenues] = await Promise.all([
+        transactionsAPI.list({ 
+          type: 'expense',
+          limit: 1000,
+        }),
+        transactionsAPI.list({ 
+          type: 'revenue',
+          limit: 1000,
+        }),
+      ]);
+
+      // Filter transactions related to this project
+      // We match by client_name if project has a client, or by description containing project name
+      const projectExpenses = expenses.filter(t => {
+        if (project.client_name && t.supplier_name) {
+          // For expenses, we might match by supplier or description
+          return t.description?.toLowerCase().includes(project.name.toLowerCase()) || false;
+        }
+        return t.description?.toLowerCase().includes(project.name.toLowerCase()) || false;
+      });
+
+      const projectRevenues = revenues.filter(t => {
+        if (project.client_name && t.client_name) {
+          return t.client_name === project.client_name || 
+                 t.description?.toLowerCase().includes(project.name.toLowerCase()) || false;
+        }
+        return t.description?.toLowerCase().includes(project.name.toLowerCase()) || false;
+      });
+
+      const totalExpenses = projectExpenses.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      const totalRevenues = projectRevenues.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+
+      setFinancialData({
+        expenses: projectExpenses,
+        revenues: projectRevenues,
+        totalExpenses,
+        totalRevenues,
+        loading: false,
+      });
+    } catch (err) {
+      console.warn('Could not load financial data:', err);
+      setFinancialData(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -580,34 +654,205 @@ function ProjectDetailContent() {
         )}
 
         {activeTab === 'financial' && (
-          <Card className="glass-card p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Informations financières
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 rounded-lg bg-gradient-to-br from-green-50 to-green-100 border border-green-200">
-                <p className="text-sm text-green-700 mb-2">Budget total</p>
-                <p className="text-3xl font-bold text-green-900">
+          <div className="space-y-6">
+            {/* Financial Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-green-500/10">
+                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">Budget total</p>
+                <p className="text-2xl font-bold text-foreground">
                   {formatCurrency((project as Project & { budget?: number | null }).budget ?? null)}
                 </p>
-              </div>
+              </Card>
 
-              <div className="p-6 rounded-lg bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200">
-                <p className="text-sm text-primary-700 mb-2">Taux horaire</p>
-                <p className="text-3xl font-bold text-primary-900">
-                  {(project as Project & { taux_horaire?: number | null }).taux_horaire ? `${formatCurrency((project as Project & { taux_horaire?: number | null }).taux_horaire!)}/h` : '-'}
+              <Card className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-red-500/10">
+                    <TrendingDown className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">Dépenses réelles</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {financialData.loading ? (
+                    <span className="text-muted-foreground">Chargement...</span>
+                  ) : (
+                    formatCurrency(financialData.totalExpenses)
+                  )}
                 </p>
-              </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {financialData.expenses.length} transaction{financialData.expenses.length > 1 ? 's' : ''}
+                </p>
+              </Card>
+
+              <Card className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-blue-500/10">
+                    <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">Revenus réels</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {financialData.loading ? (
+                    <span className="text-muted-foreground">Chargement...</span>
+                  ) : (
+                    formatCurrency(financialData.totalRevenues)
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {financialData.revenues.length} transaction{financialData.revenues.length > 1 ? 's' : ''}
+                </p>
+              </Card>
+
+              <Card className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <DollarSign className="w-6 h-6 text-primary" />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">Marge nette</p>
+                <p className={`text-2xl font-bold ${
+                  financialData.totalRevenues - financialData.totalExpenses >= 0 
+                    ? 'text-green-600 dark:text-green-400' 
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  {financialData.loading ? (
+                    <span className="text-muted-foreground">Chargement...</span>
+                  ) : (
+                    formatCurrency(financialData.totalRevenues - financialData.totalExpenses)
+                  )}
+                </p>
+                {(project as Project & { budget?: number | null }).budget && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {(() => {
+                      const budget = (project as Project & { budget?: number | null }).budget || 0;
+                      const margin = financialData.totalRevenues - financialData.totalExpenses;
+                      const percentage = budget > 0 ? ((margin / budget) * 100).toFixed(1) : '0';
+                      return `${percentage}% du budget`;
+                    })()}
+                  </p>
+                )}
+              </Card>
             </div>
 
-            {!((project as Project & { budget?: number | null }).budget) && !((project as Project & { taux_horaire?: number | null }).taux_horaire) && (
-              <div className="text-center py-8 text-muted-foreground">
-                <DollarSign className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Aucune information financière disponible</p>
-              </div>
+            {/* Budget vs Expenses Comparison */}
+            {(project as Project & { budget?: number | null }).budget && (
+              <Card className="glass-card p-6 rounded-xl">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Comparaison Budget vs Dépenses
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-muted-foreground">Budget alloué</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {formatCurrency((project as Project & { budget?: number | null }).budget)}
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-3">
+                      <div 
+                        className="bg-green-500 h-3 rounded-full transition-all"
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-muted-foreground">Dépenses réelles</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {formatCurrency(financialData.totalExpenses)}
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-3">
+                      <div 
+                        className={`h-3 rounded-full transition-all ${
+                          financialData.totalExpenses > ((project as Project & { budget?: number | null }).budget || 0)
+                            ? 'bg-red-500'
+                            : 'bg-yellow-500'
+                        }`}
+                        style={{ 
+                          width: `${Math.min(
+                            ((financialData.totalExpenses / ((project as Project & { budget?: number | null }).budget || 1)) * 100),
+                            100
+                          )}%` 
+                        }}
+                      />
+                    </div>
+                    {financialData.totalExpenses > ((project as Project & { budget?: number | null }).budget || 0) && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                        Dépassement de {formatCurrency(financialData.totalExpenses - ((project as Project & { budget?: number | null }).budget || 0))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </Card>
             )}
-          </Card>
+
+            {/* Project Budget Manager */}
+            <ProjectBudgetManager projectId={projectId} />
+
+            {/* Additional Financial Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="glass-card p-6 rounded-xl">
+                <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Informations de base
+                </h3>
+                <div className="space-y-4">
+                  {(project as Project & { taux_horaire?: number | null }).taux_horaire && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Taux horaire</p>
+                      <p className="text-lg font-semibold text-foreground">
+                        {formatCurrency((project as Project & { taux_horaire?: number | null }).taux_horaire!)}/h
+                      </p>
+                    </div>
+                  )}
+                  {project.client_name && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Client</p>
+                      <p className="text-lg font-semibold text-foreground">{project.client_name}</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              {(financialData.expenses.length > 0 || financialData.revenues.length > 0) && (
+                <Card className="glass-card p-6 rounded-xl">
+                  <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5" />
+                    Transactions récentes
+                  </h3>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {[...financialData.revenues.slice(0, 3), ...financialData.expenses.slice(0, 3)]
+                      .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
+                      .slice(0, 5)
+                      .map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">{transaction.description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(transaction.transaction_date).toLocaleDateString('fr-FR')}
+                            </p>
+                          </div>
+                          <p className={`text-sm font-semibold ${
+                            transaction.type === 'revenue' 
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {transaction.type === 'revenue' ? '+' : '-'}
+                            {formatCurrency(parseFloat(transaction.amount))}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          </div>
         )}
 
         {activeTab === 'links' && (
