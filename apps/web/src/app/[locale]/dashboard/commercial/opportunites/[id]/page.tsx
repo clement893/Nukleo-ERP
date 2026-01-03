@@ -15,7 +15,6 @@ import {
   DollarSign,
   TrendingUp,
   Target,
-  Clock,
   Building2,
   User
 } from 'lucide-react';

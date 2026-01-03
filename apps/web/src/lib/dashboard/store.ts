@@ -20,7 +20,7 @@ const debouncedSave = (saveFn: () => Promise<void>, delay: number = 1000) => {
 };
 
 // Type pour le contexte du dashboard (page/module)
-export type DashboardContext = 'main' | 'commercial' | 'projects' | 'finances' | 'team' | 'system' | 'erp';
+export type DashboardContext = 'main' | 'commercial' | 'projects' | 'finances' | 'team' | 'system' | 'erp' | 'reseau';
 
 // Fonction pour obtenir la clé de préférence basée sur le contexte
 const getPreferenceKey = (context: DashboardContext): string => {
@@ -37,6 +37,8 @@ const getPreferenceKey = (context: DashboardContext): string => {
       return 'dashboard_system_configs';
     case 'erp':
       return 'dashboard_erp_configs';
+    case 'reseau':
+      return 'dashboard_reseau_configs';
     case 'main':
     default:
       return 'dashboard_configs';
@@ -432,6 +434,7 @@ const stores: Record<DashboardContext, ReturnType<typeof createDashboardStore>> 
   team: createDashboardStore('team'),
   system: createDashboardStore('system'),
   erp: createDashboardStore('erp'),
+  reseau: createDashboardStore('reseau'),
 };
 
 // Hook principal qui retourne le bon store selon le contexte

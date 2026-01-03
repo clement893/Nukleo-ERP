@@ -504,7 +504,8 @@ export default function SoumissionsPage() {
   
   const handleDeleteSelectedSubmissions = async () => {
     if (selectedSubmissions.size === 0) return;
-    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${selectedSubmissions.size} soumissions ?\n\nCette action est irréversible.`)) {
+    const count = selectedSubmissions.size;
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer ${count} soumissions ?\n\nCette action est irréversible.`)) {
       return;
     }
     
@@ -515,7 +516,7 @@ export default function SoumissionsPage() {
       await Promise.all(deletePromises);
       setSelectedSubmissions(new Set());
       showToast({
-        message: `${selectedSubmissions.size} soumissions supprimées avec succès`,
+        message: `${count} soumission${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''} avec succès`,
         type: 'success',
       });
     } catch (err) {

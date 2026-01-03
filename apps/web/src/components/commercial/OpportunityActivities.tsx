@@ -16,15 +16,11 @@ import {
   Clock, 
   FileText, 
   Settings, 
-  Tag, 
   DollarSign, 
-  TrendingUp, 
   Calendar,
   User,
-  Users,
   Sparkles,
-  Filter,
-  X
+  Filter
 } from 'lucide-react';
 
 export interface OpportunityActivitiesProps {
@@ -196,12 +192,12 @@ const getActivityDescription = (activity: Activity, type: ActivityType, opportun
     if (action.includes('montant') || action.includes('amount')) {
       const oldAmount = metadata.old_value as number;
       const newAmount = metadata.new_value as number || opportunity.amount;
-      if (oldAmount !== undefined && newAmount !== undefined) {
+      if (oldAmount !== undefined && newAmount !== undefined && newAmount !== null) {
         const formatCurrency = (amount: number) => 
           new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
         return `${formatCurrency(oldAmount)} → ${formatCurrency(newAmount)}`;
       }
-      return newAmount ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(newAmount) : 'Montant modifié';
+      return newAmount !== null && newAmount !== undefined ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(newAmount) : 'Montant modifié';
     }
     if (action.includes('probabilité') || action.includes('probability')) {
       const oldProb = metadata.old_value as number;
@@ -239,9 +235,12 @@ const groupActivitiesByDate = (activities: ActivityItem[]): Record<string, Activ
   
   // Sort activities within each group (newest first)
   Object.keys(groups).forEach((key) => {
-    groups[key].sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    const group = groups[key];
+    if (group) {
+      group.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+    }
   });
   
   return groups;
@@ -338,35 +337,35 @@ export function OpportunityActivities({ opportunityId, opportunity }: Opportunit
         <Filter className="w-4 h-4 text-muted-foreground" />
         <Button
           size="sm"
-          variant={filterType === 'all' ? 'default' : 'outline'}
+          variant={filterType === 'all' ? 'primary' : 'outline'}
           onClick={() => setFilterType('all')}
         >
           Toutes
         </Button>
         <Button
           size="sm"
-          variant={filterType === 'creation' ? 'default' : 'outline'}
+          variant={filterType === 'creation' ? 'primary' : 'outline'}
           onClick={() => setFilterType('creation')}
         >
           Création
         </Button>
         <Button
           size="sm"
-          variant={filterType === 'modification' ? 'default' : 'outline'}
+          variant={filterType === 'modification' ? 'primary' : 'outline'}
           onClick={() => setFilterType('modification')}
         >
           Modifications
         </Button>
         <Button
           size="sm"
-          variant={filterType === 'note' ? 'default' : 'outline'}
+          variant={filterType === 'note' ? 'primary' : 'outline'}
           onClick={() => setFilterType('note')}
         >
           Notes
         </Button>
         <Button
           size="sm"
-          variant={filterType === 'document' ? 'default' : 'outline'}
+          variant={filterType === 'document' ? 'primary' : 'outline'}
           onClick={() => setFilterType('document')}
         >
           Documents
@@ -391,7 +390,7 @@ export function OpportunityActivities({ opportunityId, opportunity }: Opportunit
               </h4>
               
               <div className="space-y-3 ml-6 border-l-2 border-border pl-6">
-                {groupedActivities[dateKey].map((activity) => {
+                {(groupedActivities[dateKey] || []).map((activity) => {
                   const type = getActivityType(activity);
                   const title = getActivityTitle(activity, type);
                   const description = getActivityDescription(activity, type, opportunity);
@@ -405,7 +404,7 @@ export function OpportunityActivities({ opportunityId, opportunity }: Opportunit
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h5 className="font-medium text-foreground">{title}</h5>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="default" className="text-xs">
                               {type}
                             </Badge>
                           </div>

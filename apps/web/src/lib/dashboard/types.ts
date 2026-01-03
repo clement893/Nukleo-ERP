@@ -14,6 +14,7 @@ export type DashboardModule =
   | 'finances'
   | 'team'
   | 'system'
+  | 'reseau'
   | 'global'; // Pour les widgets accessibles partout
 
 /**

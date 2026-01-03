@@ -140,7 +140,8 @@ export default function SubmissionWizard({
       }
     };
     loadCompanies();
-  }, [showToast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   // Sauvegarde automatique du brouillon (uniquement en mode page)
   useEffect(() => {

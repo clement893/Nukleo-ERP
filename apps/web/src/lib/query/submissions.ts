@@ -142,7 +142,23 @@ export function useDeleteSubmission() {
     onSuccess: (_, deletedId) => {
       // Remove submission from cache
       queryClient.removeQueries({ queryKey: submissionKeys.detail(deletedId) });
-      // Invalidate lists to refetch
+      
+      // Update infinite query cache to remove the deleted submission
+      queryClient.setQueriesData(
+        { queryKey: submissionKeys.lists(), type: 'infinite' },
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any[]) => 
+              page.filter((submission: any) => submission.id !== deletedId)
+            ),
+          };
+        }
+      );
+      
+      // Invalidate lists to refetch and ensure consistency
       queryClient.invalidateQueries({ queryKey: submissionKeys.lists() });
     },
     onError: (error) => {
