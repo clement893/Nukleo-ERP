@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { OpportunityNotesEditor } from '@/components/commercial/OpportunityNotesEditor';
+import { OpportunityDocuments } from '@/components/commercial/OpportunityDocuments';
 
 export default function OpportunityDetailPage() {
   const params = useParams();
@@ -333,10 +334,11 @@ export default function OpportunityDetailPage() {
                 <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
                   Documents
                 </h3>
-                <div className="text-center py-12 text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucun document associé à cette opportunité.</p>
-                </div>
+                <OpportunityDocuments
+                  opportunityId={opportunity.id}
+                  opportunity={opportunity}
+                  onUpdate={loadOpportunity}
+                />
               </Card>
             )}
 
