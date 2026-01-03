@@ -165,7 +165,7 @@ export default function LeoAdvancedSettings({
             <Switch
               id="enable_erp_context"
               checked={settings.enable_erp_context ?? true}
-              onCheckedChange={(checked) => onChange({ enable_erp_context: checked })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ enable_erp_context: e.target.checked })}
             />
           </div>
           
