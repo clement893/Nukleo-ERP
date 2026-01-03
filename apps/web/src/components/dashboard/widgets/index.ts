@@ -53,3 +53,44 @@ export { CashFlowForecastWidget } from './CashFlowForecastWidget';
 // Batch 4: Widgets Équipe Priorité HAUTE
 export { TeamGrowthTimelineWidget } from './TeamGrowthTimelineWidget';
 export { EmployeesByDepartmentWidget } from './EmployeesByDepartmentWidget';
+
+// Batch 6: Widgets Commercial Priorité MOYENNE
+export { OpportunitiesTimelineWidget } from './OpportunitiesTimelineWidget';
+export { OpportunitiesBySourceWidget } from './OpportunitiesBySourceWidget';
+export { ClientsByTypeWidget } from './ClientsByTypeWidget';
+export { WinRateTrendWidget } from './WinRateTrendWidget';
+export { RevenueForecastWidget } from './RevenueForecastWidget';
+
+// Batch 7: Widgets Projets Priorité MOYENNE
+export { ProjectsProgressChartWidget } from './ProjectsProgressChartWidget';
+export { ProjectsByStatusBarWidget } from './ProjectsByStatusBarWidget';
+export { WorkloadByProjectWidget } from './WorkloadByProjectWidget';
+export { TasksByPriorityWidget } from './TasksByPriorityWidget';
+export { ProjectHealthScoreWidget } from './ProjectHealthScoreWidget';
+
+// Batch 8: Widgets Finances Priorité MOYENNE
+export { ProfitMarginChartWidget } from './ProfitMarginChartWidget';
+export { RevenueBySourceWidget } from './RevenueBySourceWidget';
+export { InvoicesStatusWidget } from './InvoicesStatusWidget';
+export { FinancialForecastWidget } from './FinancialForecastWidget';
+export { AgingReceivablesWidget } from './AgingReceivablesWidget';
+
+// Batch 9: Widgets Équipe Priorité MOYENNE
+export { ProductivityTrendWidget } from './ProductivityTrendWidget';
+export { EmployeesByRoleWidget } from './EmployeesByRoleWidget';
+export { WorkloadBalanceWidget } from './WorkloadBalanceWidget';
+export { PerformanceReviewsWidget } from './PerformanceReviewsWidget';
+export { AttendanceTrackingWidget } from './AttendanceTrackingWidget';
+
+// Batch 10: Widgets Avancés
+export { AverageDealSizeWidget } from './AverageDealSizeWidget';
+export { SalesVelocityWidget } from './SalesVelocityWidget';
+export { ResourceAllocationWidget } from './ResourceAllocationWidget';
+export { MilestonesTimelineWidget } from './MilestonesTimelineWidget';
+export { BreakEvenAnalysisWidget } from './BreakEvenAnalysisWidget';
+export { FinancialRatiosWidget } from './FinancialRatiosWidget';
+export { SkillsMatrixWidget } from './SkillsMatrixWidget';
+export { TrainingCompletionWidget } from './TrainingCompletionWidget';
+export { EmployeeSatisfactionWidget } from './EmployeeSatisfactionWidget';
+export { DashboardScorecardWidget } from './DashboardScorecardWidget';
+export { TrendAnalysisWidget } from './TrendAnalysisWidget';
