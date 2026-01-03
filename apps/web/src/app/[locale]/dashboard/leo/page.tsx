@@ -267,7 +267,8 @@ export default function LeoPage() {
   };
 
   const handleSuggestionClick = (text: string) => {
-    setMessage(text);
+    if (!text.trim() || sendMessageMutation.isPending) return;
+    sendMessageMutation.mutate(text.trim());
   };
 
   const handleRenameStart = (conv: ConversationWithLastMessage) => {
