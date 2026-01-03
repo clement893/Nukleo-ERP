@@ -945,16 +945,56 @@ async def get_weekly_cashflow(
         if not date_to:
             date_to = date_from + timedelta(weeks=12)
         
-        # Build query for transactions
-        # Cast enum to string for comparison to avoid PostgreSQL type mismatch
-        query = select(Transaction).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.transaction_date >= date_from,
-                Transaction.transaction_date <= date_to,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-            )
-        )
+        # Check which columns exist in the database
+        columns_result = await db.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'transactions'
+        """))
+        existing_columns = {row[0] for row in columns_result}
+        
+        # Determine date column to use
+        date_column = 'transaction_date' if 'transaction_date' in existing_columns else ('date' if 'date' in existing_columns else 'created_at')
+        
+        # Build query using raw SQL to avoid column mismatch issues
+        # Only select columns that exist and are needed
+        select_columns = ['id', 'user_id', 'type', 'amount', 'status']
+        if date_column in existing_columns:
+            select_columns.append(date_column)
+        
+        # Build WHERE clause
+        where_clause = f"user_id = :user_id AND {date_column} >= :date_from AND {date_column} <= :date_to AND CAST(status AS VARCHAR) != :status_cancelled"
+        
+        sql_query = f"""
+            SELECT {', '.join(select_columns)}
+            FROM transactions
+            WHERE {where_clause}
+        """
+        
+        params = {
+            "user_id": current_user.id,
+            "date_from": date_from,
+            "date_to": date_to,
+            "status_cancelled": TransactionStatus.CANCELLED.value
+        }
+        
+        result = await db.execute(text(sql_query), params)
+        rows = result.fetchall()
+        
+        # Convert rows to transaction-like objects
+        transactions = []
+        for row in rows:
+            row_dict = dict(zip(result.keys(), row))
+            # Create a simple object with the fields we need
+            class SimpleTransaction:
+                def __init__(self, row_dict):
+                    self.id = row_dict.get('id')
+                    self.type = TransactionTypeEnum.REVENUE if row_dict.get('type') in ['revenue', 'entry', 'entree', 'entrée'] else TransactionTypeEnum.EXPENSE
+                    self.amount = Decimal(str(row_dict.get('amount', 0)))
+                    self.transaction_date = row_dict.get(date_column) or row_dict.get('created_at') or date_from
+                    self.status = TransactionStatus(row_dict.get('status', 'pending'))
+            
+            transactions.append(SimpleTransaction(row_dict))
         
         # Note: Transaction model doesn't have bank_account_id field
         # Filtering by bank_account_id is not supported for Transaction model
@@ -962,32 +1002,37 @@ async def get_weekly_cashflow(
         if bank_account_id:
             logger.warning(f"bank_account_id filter requested but Transaction model doesn't support it, using all transactions")
         
-        result = await db.execute(query)
-        transactions = result.scalars().all()
-        
         # Get initial balance - calculate from all transactions before date_from
         # Since Transaction model doesn't have bank_account_id, we calculate balance from all user transactions
         # Sum revenues (positive) and subtract expenses (negative)
-        revenue_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.transaction_date < date_from,
-                Transaction.type == TransactionTypeEnum.REVENUE,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-            )
-        )
-        expense_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.transaction_date < date_from,
-                Transaction.type == TransactionTypeEnum.EXPENSE,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-            )
-        )
-        revenue_result = await db.execute(revenue_query)
-        expense_result = await db.execute(expense_query)
-        total_revenues = revenue_result.scalar() or Decimal(0)
-        total_expenses = expense_result.scalar() or Decimal(0)
+        revenue_query = text(f"""
+            SELECT COALESCE(SUM(amount), 0)
+            FROM transactions
+            WHERE user_id = :user_id 
+            AND {date_column} < :date_from
+            AND type = :type_revenue
+            AND CAST(status AS VARCHAR) != :status_cancelled
+        """)
+        expense_query = text(f"""
+            SELECT COALESCE(SUM(amount), 0)
+            FROM transactions
+            WHERE user_id = :user_id 
+            AND {date_column} < :date_from
+            AND type = :type_expense
+            AND CAST(status AS VARCHAR) != :status_cancelled
+        """)
+        
+        balance_params = {
+            "user_id": current_user.id,
+            "date_from": date_from,
+            "type_revenue": TransactionTypeEnum.REVENUE.value,
+            "type_expense": TransactionTypeEnum.EXPENSE.value,
+            "status_cancelled": TransactionStatus.CANCELLED.value
+        }
+        revenue_result = await db.execute(revenue_query, balance_params)
+        expense_result = await db.execute(expense_query, balance_params)
+        total_revenues = Decimal(str(revenue_result.scalar() or 0))
+        total_expenses = Decimal(str(expense_result.scalar() or 0))
         initial_balance = total_revenues - total_expenses
         
         # Group transactions by week
@@ -1016,6 +1061,13 @@ async def get_weekly_cashflow(
             if not transaction_date:
                 logger.warning(f"Transaction {transaction.id} has no transaction_date, skipping")
                 continue
+            # Ensure transaction_date is a datetime object
+            if isinstance(transaction_date, str):
+                try:
+                    transaction_date = datetime.fromisoformat(transaction_date.replace('Z', '+00:00'))
+                except:
+                    logger.warning(f"Could not parse transaction_date {transaction_date}, skipping")
+                    continue
             week_start = transaction_date - timedelta(days=transaction_date.weekday())
             week_key = week_start.isoformat()
             
@@ -1073,24 +1125,60 @@ async def get_treasury_stats(
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=period_days)
         
-        # Build query
-        # Cast enum to string for comparison to avoid PostgreSQL type mismatch
-        query = select(Transaction).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.transaction_date >= start_date,
-                Transaction.transaction_date <= end_date,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-            )
-        )
+        # Check which columns exist in the database
+        columns_result = await db.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'transactions'
+        """))
+        existing_columns = {row[0] for row in columns_result}
+        
+        # Determine date column to use
+        date_column = 'transaction_date' if 'transaction_date' in existing_columns else ('date' if 'date' in existing_columns else 'created_at')
+        
+        # Build query using raw SQL to avoid column mismatch issues
+        select_columns = ['id', 'user_id', 'type', 'amount', 'status']
+        if date_column in existing_columns:
+            select_columns.append(date_column)
+        
+        # Build WHERE clause
+        where_clause = f"user_id = :user_id AND {date_column} >= :start_date AND {date_column} <= :end_date AND CAST(status AS VARCHAR) != :status_cancelled"
+        
+        sql_query = f"""
+            SELECT {', '.join(select_columns)}
+            FROM transactions
+            WHERE {where_clause}
+        """
+        
+        params = {
+            "user_id": current_user.id,
+            "start_date": start_date,
+            "end_date": end_date,
+            "status_cancelled": TransactionStatus.CANCELLED.value
+        }
         
         # Note: Transaction model doesn't have bank_account_id field
         # Filtering by bank_account_id is not supported for Transaction model
         if bank_account_id:
             logger.warning(f"bank_account_id filter requested but Transaction model doesn't support it, using all transactions")
         
-        result = await db.execute(query)
-        transactions = result.scalars().all()
+        result = await db.execute(text(sql_query), params)
+        rows = result.fetchall()
+        
+        # Convert rows to transaction-like objects
+        transactions = []
+        for row in rows:
+            row_dict = dict(zip(result.keys(), row))
+            # Create a simple object with the fields we need
+            class SimpleTransaction:
+                def __init__(self, row_dict):
+                    self.id = row_dict.get('id')
+                    self.type = TransactionTypeEnum.REVENUE if row_dict.get('type') in ['revenue', 'entry', 'entree', 'entrée'] else TransactionTypeEnum.EXPENSE
+                    self.amount = Decimal(str(row_dict.get('amount', 0)))
+                    self.transaction_date = row_dict.get(date_column) or row_dict.get('created_at') or start_date
+                    self.status = TransactionStatus(row_dict.get('status', 'pending'))
+            
+            transactions.append(SimpleTransaction(row_dict))
         
         # Calculate totals
         total_entries = sum(t.amount for t in transactions if t.type == TransactionTypeEnum.REVENUE)
@@ -1115,26 +1203,33 @@ async def get_treasury_stats(
             initial_balance = account.initial_balance
             
             # Calculate current balance
-            entries_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                and_(
-                    Transaction.user_id == current_user.id,
-                    Transaction.type == TransactionTypeEnum.REVENUE,
-                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-                )
-            )
-            exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                and_(
-                    Transaction.user_id == current_user.id,
-                    Transaction.type == TransactionTypeEnum.EXPENSE,
-                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-                )
-            )
+            entries_query = text(f"""
+                SELECT COALESCE(SUM(amount), 0)
+                FROM transactions
+                WHERE user_id = :user_id 
+                AND type = :type_revenue
+                AND CAST(status AS VARCHAR) != :status_cancelled
+            """)
+            exits_query = text(f"""
+                SELECT COALESCE(SUM(amount), 0)
+                FROM transactions
+                WHERE user_id = :user_id 
+                AND type = :type_expense
+                AND CAST(status AS VARCHAR) != :status_cancelled
+            """)
             
-            entries_result = await db.execute(entries_query)
-            exits_result = await db.execute(exits_query)
+            balance_params = {
+                "user_id": current_user.id,
+                "type_revenue": TransactionTypeEnum.REVENUE.value,
+                "type_expense": TransactionTypeEnum.EXPENSE.value,
+                "status_cancelled": TransactionStatus.CANCELLED.value
+            }
             
-            entries_sum = entries_result.scalar() or Decimal(0)
-            exits_sum = exits_result.scalar() or Decimal(0)
+            entries_result = await db.execute(entries_query, balance_params)
+            exits_result = await db.execute(exits_query, balance_params)
+            
+            entries_sum = Decimal(str(entries_result.scalar() or 0))
+            exits_sum = Decimal(str(exits_result.scalar() or 0))
             
             current_balance = initial_balance + entries_sum - exits_sum
         else:
@@ -1146,46 +1241,73 @@ async def get_treasury_stats(
             
             current_balance = Decimal(0)
             for account in accounts:
-                entries_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                    and_(
-                        Transaction.user_id == current_user.id,
-                        Transaction.type == "entry",
-                        cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-                    )
-                )
-                exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                    and_(
-                        Transaction.user_id == current_user.id,
-                        Transaction.type == "exit",
-                        cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-                    )
-                )
+                entries_query = text(f"""
+                    SELECT COALESCE(SUM(amount), 0)
+                    FROM transactions
+                    WHERE user_id = :user_id 
+                    AND type = :type_revenue
+                    AND CAST(status AS VARCHAR) != :status_cancelled
+                """)
+                exits_query = text(f"""
+                    SELECT COALESCE(SUM(amount), 0)
+                    FROM transactions
+                    WHERE user_id = :user_id 
+                    AND type = :type_expense
+                    AND CAST(status AS VARCHAR) != :status_cancelled
+                """)
                 
-                entries_result = await db.execute(entries_query)
-                exits_result = await db.execute(exits_query)
+                balance_params = {
+                    "user_id": current_user.id,
+                    "type_revenue": TransactionTypeEnum.REVENUE.value,
+                    "type_expense": TransactionTypeEnum.EXPENSE.value,
+                    "status_cancelled": TransactionStatus.CANCELLED.value
+                }
                 
-                entries_sum = entries_result.scalar() or Decimal(0)
-                exits_sum = exits_result.scalar() or Decimal(0)
+                entries_result = await db.execute(entries_query, balance_params)
+                exits_result = await db.execute(exits_query, balance_params)
+                
+                entries_sum = Decimal(str(entries_result.scalar() or 0))
+                exits_sum = Decimal(str(exits_result.scalar() or 0))
                 
                 current_balance += account.initial_balance + entries_sum - exits_sum
         
         # Calculate projected balance (30 days)
         projected_date = end_date + timedelta(days=30)
-        projected_query = select(Transaction).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.transaction_date > end_date,
-                Transaction.transaction_date <= projected_date,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-            )
-        )
+        projected_query = text(f"""
+            SELECT {', '.join(select_columns)}
+            FROM transactions
+            WHERE user_id = :user_id 
+            AND {date_column} > :end_date 
+            AND {date_column} <= :projected_date
+            AND CAST(status AS VARCHAR) != :status_cancelled
+        """)
+        
+        projected_params = {
+            "user_id": current_user.id,
+            "end_date": end_date,
+            "projected_date": projected_date,
+            "status_cancelled": TransactionStatus.CANCELLED.value
+        }
         
         if bank_account_id:
             # Note: Transaction model doesn't have bank_account_id, ignoring filter
             logger.warning(f"bank_account_id filter requested but Transaction model doesn't support it")
         
-        projected_result = await db.execute(projected_query)
-        projected_transactions = projected_result.scalars().all()
+        projected_result = await db.execute(projected_query, projected_params)
+        projected_rows = projected_result.fetchall()
+        
+        # Convert rows to transaction-like objects
+        projected_transactions = []
+        for row in projected_rows:
+            row_dict = dict(zip(projected_result.keys(), row))
+            class SimpleTransaction:
+                def __init__(self, row_dict):
+                    self.id = row_dict.get('id')
+                    self.type = TransactionTypeEnum.REVENUE if row_dict.get('type') in ['revenue', 'entry', 'entree', 'entrée'] else TransactionTypeEnum.EXPENSE
+                    self.amount = Decimal(str(row_dict.get('amount', 0)))
+                    self.transaction_date = row_dict.get(date_column) or row_dict.get('created_at') or end_date
+                    self.status = TransactionStatus(row_dict.get('status', 'pending'))
+            projected_transactions.append(SimpleTransaction(row_dict))
         
         projected_entries = sum(t.amount for t in projected_transactions if t.type == TransactionTypeEnum.REVENUE)
         projected_exits = sum(t.amount for t in projected_transactions if t.type == TransactionTypeEnum.EXPENSE)
@@ -1193,21 +1315,41 @@ async def get_treasury_stats(
         
         # Calculate variation (vs previous period)
         prev_start_date = start_date - timedelta(days=period_days)
-        prev_query = select(Transaction).where(
-            and_(
-                Transaction.user_id == current_user.id,
-                Transaction.transaction_date >= prev_start_date,
-                Transaction.transaction_date < start_date,
-                cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-            )
-        )
+        prev_query = text(f"""
+            SELECT {', '.join(select_columns)}
+            FROM transactions
+            WHERE user_id = :user_id 
+            AND {date_column} >= :prev_start_date 
+            AND {date_column} < :start_date
+            AND CAST(status AS VARCHAR) != :status_cancelled
+        """)
+        
+        prev_params = {
+            "user_id": current_user.id,
+            "prev_start_date": prev_start_date,
+            "start_date": start_date,
+            "status_cancelled": TransactionStatus.CANCELLED.value
+        }
         
         if bank_account_id:
             # Note: Transaction model doesn't have bank_account_id, ignoring filter
             logger.warning(f"bank_account_id filter requested but Transaction model doesn't support it")
         
-        prev_result = await db.execute(prev_query)
-        prev_transactions = prev_result.scalars().all()
+        prev_result = await db.execute(prev_query, prev_params)
+        prev_rows = prev_result.fetchall()
+        
+        # Convert rows to transaction-like objects
+        prev_transactions = []
+        for row in prev_rows:
+            row_dict = dict(zip(prev_result.keys(), row))
+            class SimpleTransaction:
+                def __init__(self, row_dict):
+                    self.id = row_dict.get('id')
+                    self.type = TransactionTypeEnum.REVENUE if row_dict.get('type') in ['revenue', 'entry', 'entree', 'entrée'] else TransactionTypeEnum.EXPENSE
+                    self.amount = Decimal(str(row_dict.get('amount', 0)))
+                    self.transaction_date = row_dict.get(date_column) or row_dict.get('created_at') or prev_start_date
+                    self.status = TransactionStatus(row_dict.get('status', 'pending'))
+            prev_transactions.append(SimpleTransaction(row_dict))
         
         prev_total_entries = sum(t.amount for t in prev_transactions if t.type == TransactionTypeEnum.REVENUE)
         prev_total_exits = sum(t.amount for t in prev_transactions if t.type == TransactionTypeEnum.EXPENSE)
@@ -1691,26 +1833,33 @@ async def get_treasury_alerts(
         low_balance_accounts = []
         for account in accounts:
             # Calculate current balance
-            entries_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                and_(
-                    Transaction.user_id == current_user.id,
-                    Transaction.type == TransactionTypeEnum.REVENUE,
-                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-                )
-            )
-            exits_query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
-                and_(
-                    Transaction.user_id == current_user.id,
-                    Transaction.type == TransactionTypeEnum.EXPENSE,
-                    cast(Transaction.status, String) != TransactionStatus.CANCELLED.value
-                )
-            )
+            entries_query = text("""
+                SELECT COALESCE(SUM(amount), 0)
+                FROM transactions
+                WHERE user_id = :user_id 
+                AND type = :type_revenue
+                AND CAST(status AS VARCHAR) != :status_cancelled
+            """)
+            exits_query = text("""
+                SELECT COALESCE(SUM(amount), 0)
+                FROM transactions
+                WHERE user_id = :user_id 
+                AND type = :type_expense
+                AND CAST(status AS VARCHAR) != :status_cancelled
+            """)
             
-            entries_result = await db.execute(entries_query)
-            exits_result = await db.execute(exits_query)
+            balance_params = {
+                "user_id": current_user.id,
+                "type_revenue": TransactionTypeEnum.REVENUE.value,
+                "type_expense": TransactionTypeEnum.EXPENSE.value,
+                "status_cancelled": TransactionStatus.CANCELLED.value
+            }
             
-            entries_sum = entries_result.scalar() or Decimal(0)
-            exits_sum = exits_result.scalar() or Decimal(0)
+            entries_result = await db.execute(entries_query, balance_params)
+            exits_result = await db.execute(exits_query, balance_params)
+            
+            entries_sum = Decimal(str(entries_result.scalar() or 0))
+            exits_sum = Decimal(str(exits_result.scalar() or 0))
             
             current_balance = account.initial_balance + entries_sum - exits_sum
             
