@@ -1,8 +1,12 @@
 /**
- * Modal Component
+ * Modal Component - Ultra-Modern Design
  * 
- * Full-featured modal dialog component with overlay, keyboard support, and accessibility features.
- * Supports multiple sizes and custom footer content.
+ * Full-featured modal dialog with Nukleo design system:
+ * - Intense backdrop blur (60% + blur-md)
+ * - Aurora Borealis gradient headers
+ * - Glassmorphism effects
+ * - Smooth animations
+ * - Space Grotesk typography
  * 
  * @example
  * ```tsx
@@ -11,19 +15,14 @@
  *   <p>Are you sure?</p>
  * </Modal>
  * 
- * // Modal with footer
+ * // Modal with gradient variant
  * <Modal
  *   isOpen={isOpen}
  *   onClose={handleClose}
- *   title="Delete Item"
- *   footer={
- *     <>
- *       <Button onClick={handleClose}>Cancel</Button>
- *       <Button variant="danger" onClick={handleDelete}>Delete</Button>
- *     </>
- *   }
+ *   title="Create Project"
+ *   gradient="violet"
  * >
- *   <p>This action cannot be undone.</p>
+ *   <form>...</form>
  * </Modal>
  * ```
  */
@@ -32,8 +31,8 @@
 
 import { type ReactNode, useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
+import { X, Sparkles } from 'lucide-react';
 import Button from './Button';
-import { useEffects } from '@/lib/theme/use-effects';
 
 export interface ModalProps {
   /** Control modal visibility */
@@ -48,6 +47,10 @@ export interface ModalProps {
   footer?: ReactNode;
   /** Modal size */
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  /** Gradient variant for header */
+  gradient?: 'aurora' | 'violet' | 'blue' | 'green' | 'orange' | 'none';
+  /** Custom icon for header (replaces Sparkles) */
+  icon?: ReactNode;
   /** Close modal when clicking overlay */
   closeOnOverlayClick?: boolean;
   /** Close modal on Escape key */
@@ -72,6 +75,15 @@ const sizeClasses = {
   full: 'md:max-w-[calc(100%-2rem)] md:w-full',
 };
 
+const gradientClasses = {
+  aurora: 'bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817]',
+  violet: 'bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600',
+  blue: 'bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600',
+  green: 'bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600',
+  orange: 'bg-gradient-to-br from-orange-500 via-red-600 to-pink-600',
+  none: 'bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700',
+};
+
 function Modal({
   isOpen,
   onClose,
@@ -79,6 +91,8 @@ function Modal({
   children,
   footer,
   size = 'md',
+  gradient = 'aurora',
+  icon,
   closeOnOverlayClick = true,
   closeOnEscape = true,
   showCloseButton = true,
@@ -90,8 +104,6 @@ function Modal({
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
   const mainContentRef = useRef<HTMLElement | null>(null);
-  const { getGlassmorphismPanelStyles, hasEffect } = useEffects();
-  const glassmorphismStyles = hasEffect('glassmorphism') ? getGlassmorphismPanelStyles() : {};
 
   // Handle Escape key
   useEffect(() => {
@@ -110,10 +122,8 @@ function Modal({
   // Handle body overflow and aria-hidden on main content
   useEffect(() => {
     if (isOpen) {
-      // Store the previously focused element
       previousActiveElementRef.current = document.activeElement as HTMLElement;
       
-      // Find the main content element (usually <main> or the root layout element)
       const mainContent = document.querySelector('main') || 
                          document.querySelector('[role="main"]') ||
                          document.body.querySelector(':not([role="dialog"]):not([aria-modal="true"])') as HTMLElement;
@@ -123,20 +133,15 @@ function Modal({
         mainContent.setAttribute('aria-hidden', 'true');
       }
 
-      // Prevent body scroll
       document.body.style.overflow = 'hidden';
     } else {
-      // Restore aria-hidden on main content
       if (mainContentRef.current) {
         mainContentRef.current.removeAttribute('aria-hidden');
       }
 
-      // Restore body scroll
       document.body.style.overflow = '';
 
-      // Restore focus to the previously focused element
       if (previousActiveElementRef.current) {
-        // Use setTimeout to ensure the modal is fully removed from DOM
         setTimeout(() => {
           previousActiveElementRef.current?.focus();
         }, 0);
@@ -144,7 +149,6 @@ function Modal({
     }
 
     return () => {
-      // Cleanup: ensure aria-hidden is removed and body scroll is restored
       if (mainContentRef.current) {
         mainContentRef.current.removeAttribute('aria-hidden');
       }
@@ -152,24 +156,22 @@ function Modal({
     };
   }, [isOpen]);
 
-  // Focus management: move focus to modal when it opens
+  // Focus management
   useEffect(() => {
     if (isOpen && modalRef.current) {
-      // Find the first focusable element in the modal
       const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
       
       const firstFocusable = focusableElements[0] || modalRef.current;
       
-      // Use setTimeout to ensure the modal is fully rendered
       setTimeout(() => {
         firstFocusable.focus();
       }, 0);
     }
   }, [isOpen]);
 
-  // Focus trapping: keep focus within the modal
+  // Focus trapping
   useEffect(() => {
     if (!isOpen || !modalRef.current) return;
 
@@ -188,13 +190,11 @@ function Modal({
       if (!firstFocusable || !lastFocusable) return;
 
       if (e.shiftKey) {
-        // Shift + Tab: if focus is on first element, move to last
         if (document.activeElement === firstFocusable) {
           e.preventDefault();
           lastFocusable.focus();
         }
       } else {
-        // Tab: if focus is on last element, move to first
         if (document.activeElement === lastFocusable) {
           e.preventDefault();
           firstFocusable.focus();
@@ -211,31 +211,25 @@ function Modal({
   if (!isOpen) return null;
 
   return (
-      <div
-        className={clsx(
-          'fixed inset-0 z-50 flex items-center justify-center',
-          'p-0 md:p-4',
-          'bg-black/50 dark:bg-black/70',
-          'animate-fade-in', // Overlay fade-in animation
-          overlayClassName
-        )}
-        style={{ overflow: 'auto' }}
-        onClick={closeOnOverlayClick ? onClose : undefined}
-      >
+    <div
+      className={clsx(
+        'fixed inset-0 z-50 flex items-center justify-center p-4',
+        'bg-black/60 backdrop-blur-md',
+        'animate-in fade-in duration-200',
+        overlayClassName
+      )}
+      style={{ overflow: 'auto' }}
+      onClick={closeOnOverlayClick ? onClose : undefined}
+    >
       <div
         ref={modalRef}
         className={clsx(
-          // Use glassmorphism background if enabled, otherwise use default
-          hasEffect('glassmorphism') ? '' : 'bg-background',
-          'shadow-xl',
-          'w-full h-full',
-          size === 'full' ? 'md:w-full md:h-full md:rounded-none' : 'md:w-auto md:h-auto md:rounded-lg',
+          'relative w-full max-h-[90vh] overflow-hidden',
+          'rounded-3xl shadow-2xl',
+          'animate-in zoom-in-95 duration-300',
           sizeClasses[size],
-          'md:max-h-[90vh] flex flex-col',
-          'animate-scale-in', // Modal scale-in animation (UX/UI improvements - Batch 16)
           className
         )}
-        style={glassmorphismStyles}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -243,43 +237,48 @@ function Modal({
         aria-describedby={ariaDescribedBy}
         tabIndex={-1}
       >
-        {/* Header */}
-        {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-xl border-b border-border flex-shrink-0">
-            {title && (
-              <h2 className="text-lg md:text-xl font-semibold text-foreground pr-2">{title}</h2>
-            )}
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="ml-auto text-muted-foreground hover:text-foreground transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center p-2 -mr-2"
-                aria-label="Close"
-              >
-                <svg
-                  className="w-6 h-6 md:w-6 md:h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+        {/* Gradient Header */}
+        {title && (
+          <div className={clsx('relative overflow-hidden', gradientClasses[gradient])}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+            <div className="relative px-8 py-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
+                  {icon || <Sparkles className="w-6 h-6 text-white" />}
+                </div>
+                <h2 
+                  className="text-3xl font-black text-white" 
+                  style={{ fontFamily: 'Space Grotesk, sans-serif' }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            )}
+                  {title}
+                </h2>
+              </div>
+              {showCloseButton && (
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 transition-all hover:scale-110"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-xl">{children}</div>
+        <div className="bg-white dark:bg-gray-900 overflow-y-auto max-h-[calc(90vh-180px)]">
+          <div className="p-8">
+            {children}
+          </div>
+        </div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-xl border-t border-border flex-shrink-0">
-            {footer}
+          <div className="bg-white dark:bg-gray-900 border-t-2 border-gray-200 dark:border-gray-700 px-8 py-6">
+            <div className="flex gap-4 justify-end">
+              {footer}
+            </div>
           </div>
         )}
       </div>
@@ -292,11 +291,12 @@ export function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Confirm Action',
+  title = 'Confirmer l\'action',
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText = 'Confirmer',
+  cancelText = 'Annuler',
   variant = 'primary',
+  gradient = 'aurora',
   loading = false,
 }: {
   isOpen: boolean;
@@ -307,6 +307,7 @@ export function ConfirmModal({
   confirmText?: string;
   cancelText?: string;
   variant?: 'primary' | 'danger';
+  gradient?: 'aurora' | 'violet' | 'blue' | 'green' | 'orange';
   loading?: boolean;
 }) {
   return (
@@ -315,9 +316,15 @@ export function ConfirmModal({
       onClose={onClose}
       title={title}
       size="sm"
+      gradient={gradient}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={loading}>
+          <Button 
+            variant="outline" 
+            onClick={onClose} 
+            disabled={loading}
+            className="flex-1 py-3 rounded-xl border-2 hover:scale-105 transition-all"
+          >
             {cancelText}
           </Button>
           <Button
@@ -327,13 +334,14 @@ export function ConfirmModal({
               onClose();
             }}
             disabled={loading}
+            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
           >
-            {loading ? 'Loading...' : confirmText}
+            {loading ? 'Chargement...' : confirmText}
           </Button>
         </>
       }
     >
-      <p className="text-foreground">{message}</p>
+      <p className="text-foreground text-lg">{message}</p>
     </Modal>
   );
 }

@@ -1,6 +1,12 @@
 /**
- * Drawer Component
- * Slide-out panel for mobile navigation and side content
+ * Drawer Component - Ultra-Modern Design
+ * 
+ * Slide-out panel with Nukleo design system:
+ * - Intense backdrop blur
+ * - Aurora Borealis gradient headers
+ * - Glassmorphism effects
+ * - Smooth slide animations
+ * - Space Grotesk typography
  */
 
 'use client';
@@ -8,6 +14,7 @@
 import { type ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
+import { X, Sparkles } from 'lucide-react';
 
 export interface DrawerProps {
   isOpen: boolean;
@@ -16,6 +23,8 @@ export interface DrawerProps {
   title?: string;
   position?: 'left' | 'right' | 'top' | 'bottom';
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  gradient?: 'aurora' | 'violet' | 'blue' | 'green' | 'orange' | 'none';
+  icon?: ReactNode;
   showCloseButton?: boolean;
   overlay?: boolean;
   closeOnOverlayClick?: boolean;
@@ -33,28 +42,28 @@ const positionClasses = {
 
 const sizeClasses = {
   sm: {
-    left: 'w-64',
-    right: 'w-64',
-    top: 'h-64',
-    bottom: 'h-64',
-  },
-  md: {
     left: 'w-80',
     right: 'w-80',
     top: 'h-80',
     bottom: 'h-80',
   },
-  lg: {
+  md: {
     left: 'w-96',
     right: 'w-96',
     top: 'h-96',
     bottom: 'h-96',
   },
-  xl: {
+  lg: {
     left: 'w-[32rem]',
     right: 'w-[32rem]',
     top: 'h-[32rem]',
     bottom: 'h-[32rem]',
+  },
+  xl: {
+    left: 'w-[40rem]',
+    right: 'w-[40rem]',
+    top: 'h-[40rem]',
+    bottom: 'h-[40rem]',
   },
   full: {
     left: 'w-full',
@@ -83,6 +92,15 @@ const slideAnimations = {
   },
 };
 
+const gradientClasses = {
+  aurora: 'bg-gradient-to-br from-[#5F2B75] via-[#523DC9] to-[#6B1817]',
+  violet: 'bg-gradient-to-br from-violet-600 via-purple-600 to-pink-600',
+  blue: 'bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600',
+  green: 'bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600',
+  orange: 'bg-gradient-to-br from-orange-500 via-red-600 to-pink-600',
+  none: 'bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700',
+};
+
 export default function Drawer({
   isOpen,
   onClose,
@@ -90,6 +108,8 @@ export default function Drawer({
   title,
   position = 'right',
   size = 'md',
+  gradient = 'aurora',
+  icon,
   showCloseButton = true,
   overlay = true,
   closeOnOverlayClick = true,
@@ -118,10 +138,8 @@ export default function Drawer({
   // Handle body overflow and aria-hidden on main content
   useEffect(() => {
     if (isOpen) {
-      // Store the previously focused element
       previousActiveElementRef.current = document.activeElement as HTMLElement;
       
-      // Find the main content element (usually <main> or the root layout element)
       const mainContent = document.querySelector('main') || 
                          document.querySelector('[role="main"]') ||
                          document.body.querySelector(':not([role="dialog"]):not([aria-modal="true"])') as HTMLElement;
@@ -131,20 +149,15 @@ export default function Drawer({
         mainContent.setAttribute('aria-hidden', 'true');
       }
 
-      // Prevent body scroll
       document.body.style.overflow = 'hidden';
     } else {
-      // Restore aria-hidden on main content
       if (mainContentRef.current) {
         mainContentRef.current.removeAttribute('aria-hidden');
       }
 
-      // Restore body scroll
       document.body.style.overflow = '';
 
-      // Restore focus to the previously focused element
       if (previousActiveElementRef.current) {
-        // Use setTimeout to ensure the drawer is fully removed from DOM
         setTimeout(() => {
           previousActiveElementRef.current?.focus();
         }, 0);
@@ -152,7 +165,6 @@ export default function Drawer({
     }
 
     return () => {
-      // Cleanup: ensure aria-hidden is removed and body scroll is restored
       if (mainContentRef.current) {
         mainContentRef.current.removeAttribute('aria-hidden');
       }
@@ -160,24 +172,22 @@ export default function Drawer({
     };
   }, [isOpen]);
 
-  // Focus management: move focus to drawer when it opens
+  // Focus management
   useEffect(() => {
     if (isOpen && drawerRef.current) {
-      // Find the first focusable element in the drawer
       const focusableElements = drawerRef.current.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
       );
       
       const firstFocusable = focusableElements[0] || drawerRef.current;
       
-      // Use setTimeout to ensure the drawer is fully rendered
       setTimeout(() => {
         firstFocusable.focus();
       }, 0);
     }
   }, [isOpen]);
 
-  // Focus trapping: keep focus within the drawer
+  // Focus trapping
   useEffect(() => {
     if (!isOpen || !drawerRef.current) return;
 
@@ -196,13 +206,11 @@ export default function Drawer({
       if (!firstFocusable || !lastFocusable) return;
 
       if (e.shiftKey) {
-        // Shift + Tab: if focus is on first element, move to last
         if (document.activeElement === firstFocusable) {
           e.preventDefault();
           lastFocusable.focus();
         }
       } else {
-        // Tab: if focus is on last element, move to first
         if (document.activeElement === lastFocusable) {
           e.preventDefault();
           firstFocusable.focus();
@@ -221,12 +229,11 @@ export default function Drawer({
 
   if (!isOpen) return null;
 
-  // Render drawer content using portal to ensure it's always on top
   const drawerContent = (
     <div
       className={clsx(
         'fixed inset-0 z-[9999]',
-        overlay && 'bg-black/50 dark:bg-black/70',
+        overlay && 'bg-black/60 backdrop-blur-md',
         overlayClassName,
         'animate-fade-in'
       )}
@@ -235,7 +242,7 @@ export default function Drawer({
       <div
         ref={drawerRef}
         className={clsx(
-          'fixed bg-background shadow-strong',
+          'fixed bg-background shadow-2xl',
           'flex flex-col',
           positionClasses[position],
           sizeClass,
@@ -249,49 +256,48 @@ export default function Drawer({
         aria-labelledby={title ? 'drawer-title' : undefined}
         tabIndex={-1}
       >
-        {/* Header */}
-        {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            {title && (
-              <h2 id="drawer-title" className="text-lg font-semibold text-foreground">
-                {title}
-              </h2>
-            )}
-            {showCloseButton && (
-              <button
-                onClick={onClose}
-                className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Close drawer"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+        {/* Gradient Header */}
+        {title && (
+          <div className={clsx('relative overflow-hidden', gradientClasses[gradient])}>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+            <div className="relative px-6 py-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
+                  {icon || <Sparkles className="w-5 h-5 text-white" />}
+                </div>
+                <h2 
+                  id="drawer-title" 
+                  className="text-2xl font-black text-white"
+                  style={{ fontFamily: 'Space Grotesk, sans-serif' }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            )}
+                  {title}
+                </h2>
+              </div>
+              {showCloseButton && (
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 transition-all hover:scale-110"
+                  aria-label="Close drawer"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">{children}</div>
+        <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-gray-900">
+          {children}
+        </div>
       </div>
     </div>
   );
 
-  // Use portal to render drawer at body level, ensuring it's always on top
+  // Use portal to render drawer at body level
   if (typeof window !== 'undefined') {
     return createPortal(drawerContent, document.body);
   }
 
   return drawerContent;
 }
-
