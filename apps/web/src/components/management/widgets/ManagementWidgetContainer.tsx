@@ -56,7 +56,6 @@ function WidgetErrorFallback({ error, widgetType }: { error: Error; widgetType: 
 export function ManagementWidgetContainer({ widget, isEditMode }: ManagementWidgetContainerProps) {
   const { removeWidget } = useManagementDashboardStore();
   const queryClient = useQueryClient();
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
   
   const handleRemove = () => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce widget ?')) {
@@ -136,12 +135,14 @@ export function ManagementWidgetContainer({ widget, isEditMode }: ManagementWidg
             console.error(`Widget error for ${widget.widget_type}:`, error, errorInfo);
           }}
           showDetails={process.env.NODE_ENV === 'development'}
-          fallback={(error) => (
-            <WidgetErrorFallback 
-              error={error || new Error('Widget rendering error')} 
-              widgetType={widget.widget_type}
-            />
-          )}
+          fallback={(error) => {
+            return (
+              <WidgetErrorFallback 
+                error={error || new Error('Widget rendering error')} 
+                widgetType={widget.widget_type}
+              />
+            );
+          }}
         >
           <ManagementWidgetRenderer widget={widget} />
         </ErrorBoundary>

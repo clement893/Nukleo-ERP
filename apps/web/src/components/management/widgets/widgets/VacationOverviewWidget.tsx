@@ -7,7 +7,7 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, CheckCircle } from 'lucide-react';
+import { Plane, Clock, CheckCircle } from 'lucide-react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { vacationRequestsAPI } from '@/lib/api/vacationRequests';
 import type { ManagementWidgetProps } from '@/lib/management/types';
