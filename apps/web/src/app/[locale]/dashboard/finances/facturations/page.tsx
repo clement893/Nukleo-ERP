@@ -11,7 +11,7 @@ import {
   CheckCircle, XCircle, Mail, Phone, MapPin, CreditCard, Loader2, Trash2,
   Download, Copy, X, Bell, Upload, FileDown
 } from 'lucide-react';
-import { Badge, Button, Card, Input, Modal, useToast } from '@/components/ui';
+import { Badge, Button, Card, Input, Modal, useToast, Select } from '@/components/ui';
 import { 
   useFacturations, 
   useFacturation, 
