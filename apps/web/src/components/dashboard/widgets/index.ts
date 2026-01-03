@@ -34,3 +34,22 @@ export { QuotesWidget } from './QuotesWidget';
 export { SubmissionsWidget } from './SubmissionsWidget';
 export { OpportunitiesNeedingActionWidget } from './OpportunitiesNeedingActionWidget';
 export { CommercialStatsWidget } from './CommercialStatsWidget';
+
+// Batch 1: Widgets Commercial Priorité HAUTE
+export { QuotesStatusPieWidget } from './QuotesStatusPieWidget';
+export { RevenueCommercialChartWidget } from './RevenueCommercialChartWidget';
+export { ConversionFunnelChartWidget } from './ConversionFunnelChartWidget';
+
+// Batch 2: Widgets Projets Priorité HAUTE
+export { BudgetVsActualWidget } from './BudgetVsActualWidget';
+export { ProjectsTimelineWidget } from './ProjectsTimelineWidget';
+export { TasksCompletionTrendWidget } from './TasksCompletionTrendWidget';
+
+// Batch 3: Widgets Finances Priorité HAUTE
+export { RevenueVsExpensesWidget } from './RevenueVsExpensesWidget';
+export { ExpensesByCategoryWidget } from './ExpensesByCategoryWidget';
+export { CashFlowForecastWidget } from './CashFlowForecastWidget';
+
+// Batch 4: Widgets Équipe Priorité HAUTE
+export { TeamGrowthTimelineWidget } from './TeamGrowthTimelineWidget';
+export { EmployeesByDepartmentWidget } from './EmployeesByDepartmentWidget';

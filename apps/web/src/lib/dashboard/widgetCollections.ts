@@ -66,6 +66,18 @@ const widgetCollections: WidgetCollection[] = [
     widgetTypes: [
       'quotes-list',
       'submissions-list',
+      'quotes-status-pie',
+    ],
+  },
+  {
+    id: 'commercial-analytics',
+    name: 'Analytiques Commerciales',
+    description: 'Graphiques et analyses des performances commerciales',
+    module: 'commercial',
+    color: 'blue',
+    widgetTypes: [
+      'revenue-commercial-chart',
+      'conversion-funnel-chart',
     ],
   },
   {
@@ -100,6 +112,18 @@ const widgetCollections: WidgetCollection[] = [
     widgetTypes: [
       'tasks-kanban',
       'tasks-list',
+      'tasks-completion-trend',
+    ],
+  },
+  {
+    id: 'projects-analytics',
+    name: 'Analytiques Projets',
+    description: 'Analyses approfondies des budgets, timelines et performance',
+    module: 'projects',
+    color: 'green',
+    widgetTypes: [
+      'budget-vs-actual',
+      'projects-timeline',
     ],
   },
 
@@ -114,6 +138,9 @@ const widgetCollections: WidgetCollection[] = [
       'revenue-chart',
       'expenses-chart',
       'cash-flow',
+      'revenue-vs-expenses',
+      'expenses-by-category',
+      'cash-flow-forecast',
     ],
   },
 
@@ -127,6 +154,8 @@ const widgetCollections: WidgetCollection[] = [
     widgetTypes: [
       'employees-count',
       'workload-chart',
+      'team-growth-timeline',
+      'employees-by-department',
     ],
   },
 

@@ -43,15 +43,24 @@ export type WidgetType =
   | 'quotes-list'
   | 'submissions-list'
   | 'commercial-stats'
+  | 'quotes-status-pie'
+  | 'revenue-commercial-chart'
+  | 'conversion-funnel-chart'
   // Projects
   | 'projects-active'
   | 'projects-status'
   | 'tasks-kanban'
   | 'tasks-list'
+  | 'budget-vs-actual'
+  | 'projects-timeline'
+  | 'tasks-completion-trend'
   // Finances
   | 'revenue-chart'
   | 'expenses-chart'
   | 'cash-flow'
+  | 'revenue-vs-expenses'
+  | 'expenses-by-category'
+  | 'cash-flow-forecast'
   // Performance
   | 'kpi-custom'
   | 'goals-progress'
@@ -59,6 +68,8 @@ export type WidgetType =
   // Team
   | 'employees-count'
   | 'workload-chart'
+  | 'team-growth-timeline'
+  | 'employees-by-department'
   // System
   | 'user-profile'
   | 'notifications'
