@@ -478,8 +478,10 @@ class LeoContextService:
             keywords = self._extract_keywords(query)
             query_lower = query.lower()
             
-            # Build query
+            # Build query with tenant scoping
             stmt = select(Project)
+            # Apply tenant scoping
+            stmt = scope_query(stmt, Project)
             
             # Filter by status if mentioned
             if "en cours" in query_lower or "actif" in query_lower or "active" in query_lower:
@@ -554,11 +556,13 @@ class LeoContextService:
             if Employee is None:
                 return []
             
-            # Build query
+            # Build query with tenant scoping
             stmt = select(Employee).options(
                 selectinload(Employee.team),
                 selectinload(Employee.user)
             )
+            # Apply tenant scoping
+            stmt = scope_query(stmt, Employee)
             
             query_lower = query.lower()
             is_general_employee_query = any(phrase in query_lower for phrase in [
@@ -646,8 +650,10 @@ class LeoContextService:
             if Pipeline is None:
                 return []
             
-            # Build query - get all active pipelines
+            # Build query - get all active pipelines with tenant scoping
             stmt = select(Pipeline).where(Pipeline.is_active == True)
+            # Apply tenant scoping
+            stmt = scope_query(stmt, Pipeline)
             
             # Limit results
             stmt = stmt.limit(limit)
