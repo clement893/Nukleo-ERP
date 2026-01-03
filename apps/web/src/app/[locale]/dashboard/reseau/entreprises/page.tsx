@@ -3,10 +3,9 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { PageContainer } from '@/components/layout';
-import MotionDiv from '@/components/motion/MotionDiv';
+import { NukleoPageHeader } from '@/components/nukleo';
 import { 
   Plus, 
   Building2, 
@@ -15,15 +14,18 @@ import {
   TrendingUp, 
   Eye, 
   Trash2,
-  Grid,
-  List,
+  LayoutGrid,
+  List as ListIcon,
   Globe,
   Search,
   Info,
   MessageSquare,
   Paperclip,
   Edit,
-  ExternalLink
+  ExternalLink,
+  Star,
+  X,
+  Tag
 } from 'lucide-react';
 import { Badge, Button, Card, Loading, Input } from '@/components/ui';
 import { useInfiniteCompanies, useDeleteCompany, useCreateCompany, useCompany, companiesAPI } from '@/lib/query/companies';
@@ -34,17 +36,23 @@ import Drawer from '@/components/ui/Drawer';
 import Tabs from '@/components/ui/Tabs';
 import { handleApiError } from '@/lib/errors/api';
 import { type CompanyCreate, type CompanyUpdate } from '@/lib/api/companies';
+import EmptyState from '@/components/ui/EmptyState';
+import Skeleton from '@/components/ui/Skeleton';
+
+type ViewMode = 'gallery' | 'list';
+type FilterType = 'all' | 'client' | 'prospect';
 
 export default function EntreprisesPage() {
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as string || 'fr';
   const { showToast } = useToast();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('gallery');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'client' | 'prospect'>('all');
+  const [filterType, setFilterType] = useState<FilterType>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
   
   // Drawer state
   const [showCompanyDrawer, setShowCompanyDrawer] = useState(false);
@@ -52,6 +60,9 @@ export default function EntreprisesPage() {
   const [companyDetails, setCompanyDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [drawerTab, setDrawerTab] = useState<'info' | 'comments' | 'attachments' | 'edit'>('info');
+  
+  // Infinite scroll ref
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Debounce search query to avoid too many API calls
   useEffect(() => {
@@ -116,6 +127,31 @@ export default function EntreprisesPage() {
     
     return { total, clients, prospects };
   }, [companies]);
+
+  // Toggle favorite
+  const toggleFavorite = (companyId: number) => {
+    setFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(companyId)) {
+        newFavorites.delete(companyId);
+      } else {
+        newFavorites.add(companyId);
+      }
+      return newFavorites;
+    });
+  };
+
+  // Get tag colors (same as contacts)
+  const getTagColors = (tag: string) => {
+    const colors: Record<string, { bg: string; text: string; border: string }> = {
+      'VIP': { bg: 'bg-yellow-500/10', text: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-500/30' },
+      'Client': { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400', border: 'border-green-500/30' },
+      'Prospect': { bg: 'bg-primary-500/10', text: 'text-primary-600 dark:text-primary-400', border: 'border-primary-500/30' },
+      'Partenaire': { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30' },
+      'Fournisseur': { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/30' },
+    };
+    return colors[tag] || { bg: 'bg-gray-500/10', text: 'text-gray-600 dark:text-gray-400', border: 'border-gray-500/30' };
+  };
 
 
   const handleDelete = async (id: number) => {
@@ -185,331 +221,457 @@ export default function EntreprisesPage() {
     }
   };
 
-  if (isLoading) {
-  return (
-    <PageContainer maxWidth="full">
-        <div className="flex items-center justify-center h-96">
-          <Loading />
+  // Loading skeleton for gallery view
+  const CompanyCardSkeleton = () => (
+    <div className="glass-card rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
+      <Skeleton variant="rectangular" height={256} className="w-full" />
+      <div className="p-4 space-y-3">
+        <div className="space-y-2">
+          <Skeleton variant="text" width="70%" height={24} />
+          <Skeleton variant="text" width="50%" height={16} />
+          <Skeleton variant="text" width="60%" height={16} />
         </div>
-      </PageContainer>
+        <div className="flex gap-1">
+          <Skeleton variant="rectangular" width={60} height={24} />
+          <Skeleton variant="rectangular" width={60} height={24} />
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} variant="circular" width={40} height={40} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen p-6">
+        <div className="space-y-6">
+          {/* Header skeleton */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="space-y-2">
+                <Skeleton variant="text" width={200} height={36} />
+                <Skeleton variant="text" width={300} height={20} />
+              </div>
+              <Skeleton variant="rectangular" width={160} height={44} />
+            </div>
+          </div>
+
+          {/* Filters skeleton */}
+          <div className="glass-card p-4 rounded-xl mb-6 space-y-4">
+            <Skeleton variant="rectangular" width="100%" height={44} />
+            <div className="flex gap-2">
+              <Skeleton variant="rectangular" width={100} height={36} />
+              <Skeleton variant="rectangular" width={100} height={36} />
+            </div>
+          </div>
+
+          {/* Gallery skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <CompanyCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <PageContainer className="flex flex-col h-full">
-      <MotionDiv variant="slideUp" duration="normal" className="flex flex-col flex-1 space-y-6">
-        {/* Hero Header */}
-        <div className="relative rounded-2xl overflow-hidden -mt-4 -mx-4 sm:-mx-6 lg:-mx-8 xl:-mx-10 2xl:-mx-12 3xl:-mx-16 4xl:-mx-20 px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 3xl:px-16 4xl:px-20 pt-6 pb-8">
-          <div className="absolute inset-0 bg-nukleo-gradient opacity-90" />
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' /%3E%3C/svg%3E")',
-            backgroundSize: '200px 200px'
-          }} />
-          
-          <div className="relative flex items-center justify-between">
-            <div>
-              <h1 className="text-5xl font-black text-white mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                Entreprises
-              </h1>
-              <p className="text-white/80 text-lg">Gérez votre réseau d'entreprises</p>
-            </div>
-            <Button 
-              className="bg-white text-primary-500 hover:bg-white/90"
+    <div className="min-h-screen p-6">
+      {/* Header Nukleo */}
+      <NukleoPageHeader
+        title="Entreprises"
+        description="Gérez votre réseau d'entreprises efficacement"
+        compact
+        actions={
+          <div className="flex items-center gap-3">
+            <span className="badge-nukleo px-3 py-1.5">
+              {stats.total} total
+            </span>
+            <button
               onClick={() => setShowCreateModal(true)}
+              className="glass-button px-6 py-3 rounded-xl flex items-center gap-2 text-white bg-primary-500 hover:bg-primary-600 transition-all hover-nukleo"
+              aria-label="Créer une nouvelle entreprise"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-5 h-5" aria-hidden="true" />
               Nouvelle entreprise
-            </Button>
+            </button>
           </div>
+        }
+      />
+
+      {/* Search and Filters */}
+      <div className="glass-card p-4 rounded-xl mb-6 mt-6 space-y-4">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
+          <input
+            type="text"
+            placeholder="Rechercher par nom, ville, pays..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="glass-input w-full pl-12 pr-4 py-3 rounded-lg"
+            aria-label="Rechercher des entreprises"
+          />
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <div className="flex items-center justify-between mb-3">
-              <Building2 className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.total}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Total</div>
-          </Card>
-
-          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <div className="flex items-center justify-between mb-3">
-              <TrendingUp className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.clients}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Clients actifs</div>
-          </Card>
-
-          <Card className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
-            <div className="flex items-center justify-between mb-3">
-              <Users className="w-6 h-6 text-gray-400 dark:text-gray-500" />
-            </div>
-            <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-              {stats.prospects}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Prospects</div>
-          </Card>
+        {/* View Toggle */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('gallery')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              viewMode === 'gallery'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
+                : 'text-muted-accessible hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            aria-label="Afficher en mode galerie"
+            aria-pressed={viewMode === 'gallery'}
+          >
+            <LayoutGrid className="w-4 h-4" aria-hidden="true" />
+            Galerie
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              viewMode === 'list'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
+                : 'text-muted-accessible hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+            aria-label="Afficher en mode liste"
+            aria-pressed={viewMode === 'list'}
+          >
+            <ListIcon className="w-4 h-4" aria-hidden="true" />
+            Liste
+          </button>
         </div>
 
-        {/* Filters */}
-        <Card className="glass-card p-4 rounded-xl border border-nukleo-lavender/20">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex-1 w-full relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                placeholder="Rechercher une entreprise..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
-              />
-            </div>
+        {/* Quick Filters */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <button
+            onClick={() => setFilterType('all')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              filterType === 'all'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
+                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <Building2 className="w-4 h-4" aria-hidden="true" />
+            Tous {stats.total}
+          </button>
+          <button
+            onClick={() => setFilterType('client')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              filterType === 'client'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
+                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" aria-hidden="true" />
+            Clients {stats.clients}
+          </button>
+          <button
+            onClick={() => setFilterType('prospect')}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+              filterType === 'prospect'
+                ? 'bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-500/30'
+                : 'glass-badge hover:bg-gray-100 dark:hover:bg-gray-800'
+            }`}
+          >
+            <Users className="w-4 h-4" aria-hidden="true" />
+            Prospects {stats.prospects}
+          </button>
+        </div>
+      </div>
+
+      {/* Results Count */}
+      <div className="mb-4 text-muted-accessible">
+        {searchQuery || filterType !== 'all'
+          ? `${filteredCompanies.length} entreprise${filteredCompanies.length > 1 ? 's' : ''} trouvée${filteredCompanies.length > 1 ? 's' : ''}`
+          : `${stats.total} entreprise${stats.total > 1 ? 's' : ''} au total`
+        }
+      </div>
+
+      {/* Gallery View */}
+      {viewMode === 'gallery' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6">
+          {filteredCompanies.map((company) => {
+            const tags: string[] = [];
+            if (company.is_client) tags.push('Client');
+            if (!company.is_client) tags.push('Prospect');
             
-            <div className="flex gap-2">
-              <Button 
-                variant={filterType === 'all' ? 'primary' : 'outline'}
-                onClick={() => setFilterType('all')}
-              >
-                Tous
-              </Button>
-              <Button 
-                variant={filterType === 'client' ? 'primary' : 'outline'}
-                onClick={() => setFilterType('client')}
-              >
-                Clients
-              </Button>
-              <Button 
-                variant={filterType === 'prospect' ? 'primary' : 'outline'}
-                onClick={() => setFilterType('prospect')}
-              >
-                Prospects
-              </Button>
-            </div>
-
-            <div className="flex gap-2 border-l pl-4">
-              <Button
-                variant={viewMode === 'grid' ? 'primary' : 'outline'}
-                onClick={() => setViewMode('grid')}
-                size="sm"
-              >
-                <Grid className="w-4 h-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'primary' : 'outline'}
-                onClick={() => setViewMode('list')}
-                size="sm"
-              >
-                <List className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Companies Grid/List */}
-        {filteredCompanies.length === 0 ? (
-          <Card className="glass-card p-12 rounded-xl border border-nukleo-lavender/20 text-center">
-            <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Aucune entreprise trouvée
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {searchQuery || filterType !== 'all' 
-                ? 'Essayez de modifier vos filtres' 
-                : 'Créez votre première entreprise'}
-            </p>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvelle entreprise
-            </Button>
-          </Card>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6">
-            {filteredCompanies.map((company) => (
-              <Card 
+            return (
+              <div
                 key={company.id}
-                className="glass-card rounded-xl overflow-hidden hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer group"
                 onClick={() => handleView(company.id)}
+                className="glass-card rounded-xl overflow-hidden hover:scale-[1.01] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleView(company.id);
+                  }
+                }}
+                aria-label={`Voir la fiche de ${company.name}`}
               >
-                <div className="flex flex-col">
-                  {/* Logo Section - Format horizontal pour les logos */}
-                  <div className="relative">
-                    <div className="w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
-                      {company.logo_url ? (
-                        <img
-                          src={company.logo_url}
-                          alt={`${company.name} logo`}
-                          className="w-full h-full object-contain"
-                          loading="lazy"
-                          decoding="async"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
-                            if (fallback) fallback.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <div className="logo-fallback hidden w-full h-full flex items-center justify-center">
-                        <div className="text-4xl font-bold text-gray-400">
-                          {company.name?.charAt(0)?.toUpperCase() || '?'}
-                        </div>
+                {/* Logo */}
+                <div className="relative">
+                  <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
+                    {company.logo_url ? (
+                      <img
+                        src={company.logo_url}
+                        alt={`${company.name} logo`}
+                        className="w-full h-full object-contain p-4"
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className="logo-fallback hidden w-full h-full flex items-center justify-center">
+                      <div className="text-6xl font-bold text-gray-400">
+                        {company.name?.charAt(0)?.toUpperCase() || '?'}
                       </div>
                     </div>
-                    {/* Badge en overlay */}
-                    {company.is_client && (
-                      <div className="absolute top-3 right-3">
-                        <Badge className="bg-success-500/10 text-success-500 border border-success-500/30">
-                          Client
-                        </Badge>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(company.id);
+                    }}
+                    className="absolute top-3 right-3 glass-badge p-2 rounded-full hover:scale-110 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center z-10"
+                    aria-label={favorites.has(company.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                    title={favorites.has(company.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                  >
+                    <Star
+                      className={`w-5 h-5 ${
+                        favorites.has(company.id)
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-400'
+                      }`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
+
+                {/* Info */}
+                <div className="p-4 space-y-3">
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                      {company.name}
+                    </h3>
+                    {company.description && (
+                      <p className="text-sm text-muted-accessible line-clamp-2 mt-1">{company.description}</p>
+                    )}
+                    {(company.city || company.country) && (
+                      <p className="text-sm text-muted-accessible flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3" aria-hidden="true" />
+                        {[company.city, company.country].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Tags */}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {tags.map((tag: string, idx: number) => {
+                        const colors = getTagColors(tag);
+                        return (
+                          <span
+                            key={idx}
+                            className={`px-2 py-1 rounded-md text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
+                          >
+                            {tag}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="grid grid-cols-4 gap-2" onClick={(e) => e.stopPropagation()}>
+                    {company.website && (
+                      <a
+                        href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                        aria-label={`Visiter le site web de ${company.name}`}
+                        title="Site web"
+                      >
+                        <Globe className="w-4 h-4" aria-hidden="true" />
+                      </a>
+                    )}
+                    <button
+                      onClick={() => handleView(company.id)}
+                      className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                      aria-label={`Voir les détails de ${company.name}`}
+                      title="Voir"
+                    >
+                      <Eye className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                    <div className="glass-badge p-2 rounded-lg flex items-center justify-center min-w-[44px] min-h-[44px]">
+                      <Users className="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true" />
+                    </div>
+                    <button
+                      onClick={() => handleDelete(company.id)}
+                      className="glass-badge p-2 rounded-lg hover:bg-red-500/10 hover:text-red-600 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
+                      aria-label={`Supprimer ${company.name}`}
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* List View */}
+      {viewMode === 'list' && (
+        <div className="space-y-2">
+          {filteredCompanies.map((company) => {
+            const tags: string[] = [];
+            if (company.is_client) tags.push('Client');
+            if (!company.is_client) tags.push('Prospect');
+            
+            return (
+              <div
+                key={company.id}
+                onClick={() => handleView(company.id)}
+                className="glass-card p-4 rounded-xl hover:scale-[1.005] transition-all border border-gray-200/50 dark:border-gray-700/50 cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleView(company.id);
+                  }
+                }}
+                aria-label={`Voir la fiche de ${company.name}`}
+              >
+                <div className="flex items-center gap-4">
+                  {/* Logo */}
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {company.logo_url ? (
+                      <img
+                        src={company.logo_url}
+                        alt={`${company.name} logo`}
+                        className="w-full h-full object-contain p-2"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="text-xl font-bold text-gray-400">
+                        {company.name?.charAt(0)?.toUpperCase() || '?'}
                       </div>
                     )}
                   </div>
 
-                  {/* Contenu de la carte */}
-                  <div className="p-4 space-y-3">
-                    <div>
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-bold text-gray-900 dark:text-white truncate">
                         {company.name}
                       </h3>
-                      {company.description && (
-                        <p className="text-sm text-muted-accessible line-clamp-2 mt-1">{company.description}</p>
-                      )}
-                    </div>
-
-                    {/* Informations clés */}
-                    <div className="space-y-2.5">
-                      {(company.city || company.country) && (
-                        <div className="flex items-center gap-2 text-sm text-muted-accessible">
-                          <MapPin className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
-                          <span className="truncate">{[company.city, company.country].filter(Boolean).join(', ')}</span>
-                        </div>
-                      )}
-                      {company.website && (
-                        <div className="flex items-center gap-2 text-sm text-muted-accessible group/website">
-                          <Globe className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
-                          <span className="truncate flex-1">{company.website}</span>
-                          <a
-                            href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="opacity-0 group-hover/website:opacity-100 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-all"
-                            title="Visiter le site web"
-                            aria-label={`Visiter le site web de ${company.name}`}
+                      {tags.map((tag: string, idx: number) => {
+                        const colors = getTagColors(tag);
+                        return (
+                          <span
+                            key={idx}
+                            className={`px-2 py-0.5 rounded-md text-xs font-medium border ${colors.bg} ${colors.text} ${colors.border}`}
                           >
-                            <Globe className="w-4 h-4" />
-                          </a>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 text-sm text-muted-accessible">
-                        <Users className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500" />
-                        <span>{company.contacts_count || 0} contact{company.contacts_count !== 1 ? 's' : ''}</span>
-                      </div>
+                            {tag}
+                          </span>
+                        );
+                      })}
                     </div>
+                    {company.description && (
+                      <p className="text-sm text-muted-accessible line-clamp-1">
+                        {company.description}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-accessible mt-1">
+                      {company.city && `${company.city} • `}
+                      {company.contacts_count || 0} contact{company.contacts_count !== 1 ? 's' : ''}
+                    </p>
+                  </div>
 
-                    {/* Actions */}
-                    <div className="grid grid-cols-3 gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleView(company.id)}
-                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
-                        aria-label={`Voir les détails de ${company.name}`}
-                        title="Voir"
+                  {/* Actions */}
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => toggleFavorite(company.id)}
+                      className="glass-badge p-2 rounded-lg hover:scale-110 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      aria-label={favorites.has(company.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                      title={favorites.has(company.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                    >
+                      <Star
+                        className={`w-4 h-4 ${
+                          favorites.has(company.id)
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-400'
+                        }`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                    {company.website && (
+                      <a
+                        href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        aria-label={`Visiter le site web de ${company.name}`}
+                        title="Site web"
                       >
-                        <Eye className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      </Button>
-                      {company.website && (
-                        <a
-                          href={company.website.startsWith('http') ? company.website : `https://${company.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
-                          aria-label={`Visiter le site web de ${company.name}`}
-                          title="Site web"
-                        >
-                          <Globe className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        </a>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(company.id)}
-                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-red-600 dark:hover:text-red-400 transition-all flex items-center justify-center min-w-[44px] min-h-[44px]"
-                        aria-label={`Supprimer ${company.name}`}
-                        title="Supprimer"
-                      >
-                        <Trash2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      </Button>
-                    </div>
+                        <Globe className="w-4 h-4" aria-hidden="true" />
+                      </a>
+                    )}
+                    <button
+                      onClick={() => handleView(company.id)}
+                      className="glass-badge p-2 rounded-lg hover:bg-primary-500/10 hover:text-primary-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      aria-label={`Voir les détails de ${company.name}`}
+                      title="Voir"
+                    >
+                      <Eye className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(company.id)}
+                      className="glass-badge p-2 rounded-lg hover:bg-red-500/10 hover:text-red-600 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      aria-label={`Supprimer ${company.name}`}
+                      title="Supprimer"
+                    >
+                      <Trash2 className="w-4 h-4" aria-hidden="true" />
+                    </button>
                   </div>
                 </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="glass-card rounded-xl border border-nukleo-lavender/20 overflow-hidden">
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredCompanies.map((company) => (
-                <div 
-                  key={company.id}
-                  className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors"
-                  onClick={() => handleView(company.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      {company.logo_url ? (
-                        <img 
-                          src={company.logo_url} 
-                          alt={`${company.name} logo`}
-                          className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <div className={`w-10 h-10 rounded-lg bg-primary-500/10 border border-primary-500/30 flex items-center justify-center ${company.logo_url ? 'hidden' : ''}`}>
-                        <Building2 className="w-5 h-5 text-primary-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{company.name}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {[company.description, company.city, company.country].filter(Boolean).map(s => String(s).substring(0, 30)).join(' • ')}
-                        </p>
-                      </div>
-                      {company.is_client && (
-                        <Badge className="bg-success-500/10 text-success-500">
-                          Client
-                        </Badge>
-                      )}
-                      <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          <span>{company.contacts_count || 0}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Button size="sm" variant="ghost" onClick={() => handleView(company.id)}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDelete(company.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-      </MotionDiv>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {filteredCompanies.length === 0 && (
+        <EmptyState
+          icon={Building2}
+          title="Aucune entreprise trouvée"
+          description="Essayez de modifier vos filtres ou créez une nouvelle entreprise"
+          variant="default"
+          action={{
+            label: "Nouvelle entreprise",
+            onClick: () => setShowCreateModal(true)
+          }}
+        />
+      )}
 
       {/* Company Details Drawer */}
       <Drawer
@@ -723,6 +885,6 @@ export default function EntreprisesPage() {
           />
         </Modal>
       )}
-    </PageContainer>
+    </div>
   );
 }
