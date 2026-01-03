@@ -67,6 +67,33 @@ def _get_pipeline_model():
         logger.debug(f"Pipeline model not available: {e}")
         return None
 
+def _get_project_task_model():
+    """Get ProjectTask model from app.models to avoid MetaData conflicts"""
+    try:
+        from app.models import ProjectTask, TaskStatus
+        return ProjectTask, TaskStatus
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"ProjectTask model not available: {e}")
+        return None, None
+
+def _get_vacation_request_model():
+    """Get VacationRequest model from app.models to avoid MetaData conflicts"""
+    try:
+        from app.models import VacationRequest
+        return VacationRequest
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"VacationRequest model not available: {e}")
+        return None
+
+def _get_expense_account_model():
+    """Get ExpenseAccount model from app.models to avoid MetaData conflicts"""
+    try:
+        from app.models import ExpenseAccount, ExpenseAccountStatus
+        return ExpenseAccount, ExpenseAccountStatus
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"ExpenseAccount model not available: {e}")
+        return None, None
+
 
 class LeoContextService:
     """Service for building ERP context for Leo"""
