@@ -7,9 +7,9 @@ import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
   TrendingUp, Plus, Edit, Trash2, Search, Calendar,
-  DollarSign, Filter, FileText, CheckCircle2, AlertCircle
+  DollarSign, Filter, FileText, CheckCircle2, AlertCircle, Upload, Download
 } from 'lucide-react';
-import { Button, Badge, Input, Select, Modal, Textarea, Loading, useToast } from '@/components/ui';
+import { Button, Badge, Input, Select, Modal, Textarea, Loading, useToast, Tabs, TabList, Tab, TabPanels, TabPanel } from '@/components/ui';
 import { transactionsAPI, type Transaction, type TransactionCreate, type TransactionUpdate, type TransactionStatus } from '@/lib/api/finances/transactions';
 import { handleApiError } from '@/lib/errors/api';
 
@@ -35,6 +35,7 @@ export default function RevenusPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<TransactionStatus | 'all'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<string>('all');
   
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -146,6 +147,7 @@ export default function RevenusPage() {
         client_name: formData.client_name,
         invoice_number: formData.invoice_number,
         notes: formData.notes,
+        transaction_metadata: formData.transaction_metadata,
       };
 
       await transactionsAPI.update(selectedTransaction.id, updateData);
@@ -204,6 +206,7 @@ export default function RevenusPage() {
       client_name: transaction.client_name || null,
       invoice_number: transaction.invoice_number || null,
       notes: transaction.notes || null,
+      transaction_metadata: transaction.transaction_metadata || null,
     });
     setShowEditModal(true);
   };
@@ -224,11 +227,46 @@ export default function RevenusPage() {
       client_name: null,
       invoice_number: null,
       notes: null,
+      transaction_metadata: null,
     });
   };
 
+  // Helper function to parse transaction_metadata
+  const getRevenueType = (transaction: Transaction): string | null => {
+    if (!transaction.transaction_metadata) return null;
+    try {
+      const metadata = JSON.parse(transaction.transaction_metadata);
+      return metadata.revenue_type || null;
+    } catch {
+      return null;
+    }
+  };
+
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
+    let filtered = transactions.filter(t => {
+      // Tab filtering
+      if (activeTab === 'facture_recu') {
+        // Facturé reçu: status = 'paid' ET payment_date existe
+        if (t.status !== 'paid' || !t.payment_date) return false;
+      } else if (activeTab === 'facture_a_recevoir') {
+        // Facturé à recevoir: status = 'pending' ET invoice_number existe
+        if (t.status !== 'pending' || !t.invoice_number) return false;
+      } else if (activeTab === 'signed_contract') {
+        // $ signé à venir: revenue_type = 'signed_contract'
+        const revenueType = getRevenueType(t);
+        if (revenueType !== 'signed_contract') return false;
+      } else if (activeTab === 'monthly') {
+        // $ mensuels à venir: revenue_type = 'monthly'
+        const revenueType = getRevenueType(t);
+        if (revenueType !== 'monthly') return false;
+      } else if (activeTab === 'hour_bank') {
+        // Banque d'heures: revenue_type = 'hour_bank'
+        const revenueType = getRevenueType(t);
+        if (revenueType !== 'hour_bank') return false;
+      }
+      // activeTab === 'all' : pas de filtre par onglet
+
+      // Other filters
       if (searchQuery && !t.description.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
@@ -240,7 +278,8 @@ export default function RevenusPage() {
       }
       return true;
     });
-  }, [transactions, searchQuery, statusFilter, categoryFilter]);
+    return filtered;
+  }, [transactions, searchQuery, statusFilter, categoryFilter, activeTab]);
 
   const stats = useMemo(() => {
     const total = filteredTransactions
@@ -306,16 +345,58 @@ export default function RevenusPage() {
               </h1>
               <p className="text-white/80 text-sm">Gérez tous vos revenus et recettes</p>
             </div>
-            <Button 
-              className="bg-white text-primary-500 hover:bg-white/90"
-              onClick={() => {
-                resetForm();
-                setShowCreateModal(true);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouveau revenu
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                className="bg-white/90 text-primary-500 hover:bg-white border-white/50"
+                onClick={async () => {
+                  try {
+                    const blob = await transactionsAPI.downloadTemplate('zip');
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'template_import_revenus.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showToast({ 
+                      message: 'Template téléchargé avec succès', 
+                      type: 'success' 
+                    });
+                  } catch (err) {
+                    const appError = handleApiError(err);
+                    showToast({ 
+                      message: appError.message || 'Erreur lors du téléchargement', 
+                      type: 'error' 
+                    });
+                  }
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger template
+              </Button>
+              <Button 
+                variant="outline"
+                className="bg-white/90 text-primary-500 hover:bg-white border-white/50"
+                onClick={() => {
+                  setShowImportModal(true);
+                }}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Importer
+              </Button>
+              <Button 
+                className="bg-white text-primary-500 hover:bg-white/90"
+                onClick={() => {
+                  resetForm();
+                  setShowCreateModal(true);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nouveau revenu
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -368,6 +449,20 @@ export default function RevenusPage() {
               {stats.count}
             </div>
           </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="glass-card p-6 rounded-xl border border-nukleo-lavender/20">
+          <Tabs value={activeTab} onChange={setActiveTab}>
+            <TabList className="flex-wrap">
+              <Tab value="all">Tous</Tab>
+              <Tab value="facture_recu">Facturé reçu</Tab>
+              <Tab value="facture_a_recevoir">Facturé à recevoir</Tab>
+              <Tab value="signed_contract">$ signé à venir</Tab>
+              <Tab value="monthly">$ mensuels à venir</Tab>
+              <Tab value="hour_bank">Banque d'heures</Tab>
+            </TabList>
+          </Tabs>
         </div>
 
         {/* Filters and Search */}
@@ -772,6 +867,45 @@ export default function RevenusPage() {
               placeholder="Ex: FAC-2025-001"
             />
 
+            <Select
+              label="Type de revenu"
+              value={(() => {
+                try {
+                  if (formData.transaction_metadata) {
+                    const metadata = JSON.parse(formData.transaction_metadata);
+                    return metadata.revenue_type || '';
+                  }
+                } catch {}
+                return '';
+              })()}
+              onChange={(e) => {
+                const revenueType = e.target.value;
+                let metadata = {};
+                try {
+                  if (formData.transaction_metadata) {
+                    metadata = JSON.parse(formData.transaction_metadata);
+                  }
+                } catch {}
+                if (revenueType) {
+                  metadata = { ...metadata, revenue_type: revenueType };
+                } else {
+                  delete (metadata as any).revenue_type;
+                }
+                setFormData({ 
+                  ...formData, 
+                  transaction_metadata: Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : null 
+                });
+              }}
+              options={[
+                { label: 'Aucun type spécifique', value: '' },
+                { label: 'Facturé reçu', value: 'facture_recu' },
+                { label: 'Facturé à recevoir', value: 'facture_a_recevoir' },
+                { label: '$ signé à venir', value: 'signed_contract' },
+                { label: '$ mensuels à venir', value: 'monthly' },
+                { label: "Banque d'heures", value: 'hour_bank' },
+              ]}
+            />
+
             <Textarea
               label="Notes"
               value={formData.notes || ''}
@@ -821,12 +955,21 @@ export default function RevenusPage() {
               <div className="flex items-start gap-3">
                 <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Instructions</h3>
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Instructions d'import</h3>
                   <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
                     <li>Téléchargez le modèle pour voir le format attendu</li>
                     <li>Remplissez le fichier CSV ou Excel avec vos données</li>
-                    <li>Colonnes requises: Type, Description, Montant HT, Date Emission</li>
-                    <li>Colonnes optionnelles: Montant Taxes, Client, Date Reception Prevue, etc.</li>
+                    <li><strong>Colonnes requises:</strong> Description, Montant HT, Date Emission</li>
+                    <li><strong>Colonnes optionnelles:</strong> Montant Taxes, Client, Date Reception Prevue, Date Reception Reelle, Statut, Numero Facture, Notes</li>
+                    <li><strong>Type de revenu:</strong> Utilisez la colonne "Type Revenu" avec les valeurs suivantes:
+                      <ul className="list-disc list-inside ml-4 mt-1">
+                        <li><code>facture_recu</code> - Facturé reçu (paiement reçu)</li>
+                        <li><code>facture_a_recevoir</code> - Facturé à recevoir (facture envoyée mais non reçue)</li>
+                        <li><code>signed_contract</code> - $ signé à venir (contrats signés)</li>
+                        <li><code>monthly</code> - $ mensuels à venir (mensualité client)</li>
+                        <li><code>hour_bank</code> - Banque d'heures (banques d'heures à recevoir)</li>
+                      </ul>
+                    </li>
                     <li>Formats acceptés: CSV, Excel (.xlsx, .xls), ou ZIP</li>
                   </ul>
                 </div>
