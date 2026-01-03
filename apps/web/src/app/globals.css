@@ -609,6 +609,30 @@ button[class*="bg-[#523DC9]"] * {
   color: white !important;
 }
 
+/* Forcer texte blanc pour les boutons outline avec backgrounds semi-transparents */
+button[class*="bg-white/"]:not([class*="text-foreground"]),
+button[class*="bg-white/20"],
+button[class*="bg-white/30"],
+button[class*="bg-white/40"],
+button[class*="bg-white/50"] {
+  color: white !important;
+}
+
+/* Forcer texte blanc pour les boutons outline dans les headers avec gradient */
+.bg-nukleo-gradient ~ * button[variant="outline"],
+[class*="bg-nukleo-gradient"] button[variant="outline"],
+button[variant="outline"][class*="bg-white/"],
+button[class*="bg-white/"][class*="border-white/"] {
+  color: white !important;
+}
+
+/* Forcer texte blanc pour les éléments enfants dans les boutons avec bg-white/ */
+button[class*="bg-white/"] *,
+button[class*="bg-white/20"] *,
+button[class*="bg-white/30"] * {
+  color: white !important;
+}
+
 .glass-button:hover {
   background: color-mix(in srgb, var(--color-primary-500) 90%, transparent);
   box-shadow: 

@@ -1069,14 +1069,14 @@ export default function DepensesPage() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  className="bg-white/20 hover:bg-white/30 !text-white border-white/30 backdrop-blur-sm"
                   onClick={handleDownloadTemplate}
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Modèle Excel
                 </Button>
                 <Button
-                  className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  className="bg-white/20 hover:bg-white/30 !text-white border-white/30 backdrop-blur-sm"
                   onClick={() => setShowUploadModal(true)}
                 >
                   <Upload className="w-4 h-4 mr-2" />
