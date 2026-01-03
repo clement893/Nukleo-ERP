@@ -1,4 +1,4 @@
-﻿"""
+"""
 Teams Endpoints
 API endpoints for team management
 """
@@ -228,7 +228,7 @@ async def create_team(
 @router.get("", response_model=TeamListResponse)
 async def list_teams(
     skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=1000),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
