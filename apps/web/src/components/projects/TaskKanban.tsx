@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import RichTextEditor from '@/components/ui/RichTextEditor';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
@@ -15,14 +16,13 @@ import { projectTasksAPI, type ProjectTask, type TaskStatus, type TaskPriority }
 import { projectsAPI } from '@/lib/api';
 import { employeesAPI } from '@/lib/api/employees';
 import { handleApiError } from '@/lib/errors/api';
-import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock, MoreVertical, Copy, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar, User, GripVertical, Clock, MoreVertical, Copy, X, CheckCircle2, Play, MessageSquare, Paperclip } from 'lucide-react';
 import TaskTimer from './TaskTimer';
 import { timeEntriesAPI } from '@/lib/api/time-entries';
 import ProjectAttachments from './ProjectAttachments';
 import ProjectComments from './ProjectComments';
 import { validateEstimatedHours } from '@/lib/utils/capacity-validation';
 import Dropdown from '@/components/ui/Dropdown';
-import { MessageSquare, Paperclip } from 'lucide-react';
 
 interface TaskKanbanProps {
   projectId?: number;
@@ -899,6 +899,33 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Actions rapides */}
+                {taskDetails.status !== 'completed' && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={async () => {
+                      await saveTaskField({ status: 'completed' });
+                    }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Compléter
+                  </Button>
+                )}
+                {taskDetails.status === 'todo' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      await saveTaskField({ status: 'in_progress' });
+                    }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Play className="w-4 h-4" />
+                    Commencer
+                  </Button>
+                )}
                 <Dropdown
                   trigger={
                     <button
@@ -1012,16 +1039,20 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                 </div>
 
                 {/* Section: Description */}
-                {taskDetails.description && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                      Description
-                    </h3>
-                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                      {taskDetails.description}
-                    </p>
-                  </div>
-                )}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Description
+                  </h3>
+                  <RichTextEditor
+                    value={taskDetails.description || ''}
+                    onChange={(value) => {
+                      saveTaskField({ description: value || null });
+                    }}
+                    placeholder="Ajouter une description..."
+                    minHeight="150px"
+                    toolbar={true}
+                  />
+                </div>
 
                 {/* Section: Métadonnées */}
                 <div className="space-y-3">
