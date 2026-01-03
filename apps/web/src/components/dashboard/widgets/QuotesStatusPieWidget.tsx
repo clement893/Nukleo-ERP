@@ -5,7 +5,6 @@
  * PieChart des devis (acceptés, en attente, refusés)
  */
 
-import { FileText } from 'lucide-react';
 import type { WidgetProps } from '@/lib/dashboard/types';
 import { SkeletonWidget } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/ui/EmptyState';
@@ -131,6 +130,7 @@ export function QuotesStatusPieWidget({ }: WidgetProps) {
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
                   const data = payload[0];
+                  if (!data) return null;
                   return (
                     <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
                       <p className="font-semibold text-gray-900 dark:text-white">{data.name}</p>
@@ -138,7 +138,7 @@ export function QuotesStatusPieWidget({ }: WidgetProps) {
                         {data.value} devis
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {total > 0 ? (((data.value as number) / total) * 100).toFixed(1) : 0}%
+                        {total > 0 && data.value ? (((data.value as number) / total) * 100).toFixed(1) : 0}%
                       </p>
                     </div>
                   );
@@ -156,7 +156,7 @@ export function QuotesStatusPieWidget({ }: WidgetProps) {
               fill="#8884d8"
               dataKey="value"
             >
-              {chartData.map((entry, index) => (
+              {chartData.map((_, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>

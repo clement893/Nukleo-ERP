@@ -1,12 +1,12 @@
 {
   "version": "1.0.0",
-  "generated": "2026-01-02T05:14:39.434Z",
+  "generated": "2026-01-03T22:21:32.112Z",
   "summary": {
-    "total": 312,
-    "connected": 114,
-    "partial": 79,
-    "needsIntegration": 198,
-    "static": 198
+    "total": 317,
+    "connected": 113,
+    "partial": 78,
+    "needsIntegration": 204,
+    "static": 204
   },
   "pages": [
     {
@@ -41,6 +41,15 @@
       "apiCalls": [],
       "hasApiCalls": false,
       "imports": []
+    },
+    {
+      "path": "app\\[locale]\\admin\\feedback\\page.tsx",
+      "url": "/admin/feedback",
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": [
+        "feedback"
+      ]
     },
     {
       "path": "app\\[locale]\\admin\\invitations\\page.tsx",
@@ -255,6 +264,14 @@
         },
         {
           "method": "MODULE",
+          "endpoint": "invitationsAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "invitationsAPI.list"
+        },
+        {
+          "method": "MODULE",
           "endpoint": "usersAPI.createUser"
         },
         {
@@ -268,6 +285,14 @@
         {
           "method": "MODULE",
           "endpoint": "usersAPI.sendInvitation"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "invitationsAPI.resend"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "invitationsAPI.cancel"
         }
       ],
       "hasApiCalls": true,
@@ -1143,9 +1168,16 @@
     {
       "path": "app\\[locale]\\dashboard\\agenda\\deadlines\\page.tsx",
       "url": "/dashboard/agenda/deadlines",
-      "apiCalls": [],
-      "hasApiCalls": false,
-      "imports": []
+      "apiCalls": [
+        {
+          "method": "MODULE",
+          "endpoint": "deadlinesAPI.list"
+        }
+      ],
+      "hasApiCalls": true,
+      "imports": [
+        "deadlines"
+      ]
     },
     {
       "path": "app\\[locale]\\dashboard\\agenda\\evenements\\page.tsx",
@@ -1291,10 +1323,6 @@
         {
           "method": "MODULE",
           "endpoint": "companiesAPI.get"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "companiesAPI.delete"
         }
       ],
       "hasApiCalls": true,
@@ -1316,7 +1344,31 @@
         },
         {
           "method": "MODULE",
+          "endpoint": "opportunitiesAPI.getStats"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "opportunitiesAPI.getStats"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "opportunitiesAPI.getStats"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "opportunitiesAPI.getStats"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "opportunitiesAPI.getStats"
+        },
+        {
+          "method": "MODULE",
           "endpoint": "opportunitiesAPI.export"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "opportunitiesAPI.getStats"
         }
       ],
       "hasApiCalls": true,
@@ -1445,6 +1497,15 @@
       "imports": [
         "pipelines",
         "opportunities"
+      ]
+    },
+    {
+      "path": "app\\[locale]\\dashboard\\commercial\\soumissions\\nouvelle\\page.tsx",
+      "url": "/dashboard/commercial/soumissions/nouvelle",
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": [
+        "submissions"
       ]
     },
     {
@@ -1592,6 +1653,13 @@
       "imports": []
     },
     {
+      "path": "app\\[locale]\\dashboard\\creation-projet-demo\\page.tsx",
+      "url": "/dashboard/creation-projet-demo",
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": []
+    },
+    {
       "path": "app\\[locale]\\dashboard\\deadlines-demo\\page.tsx",
       "url": "/dashboard/deadlines-demo",
       "apiCalls": [],
@@ -1695,7 +1763,8 @@
       ],
       "hasApiCalls": true,
       "imports": [
-        "employees"
+        "employees",
+        "admin"
       ]
     },
     {
@@ -1703,14 +1772,68 @@
       "url": "/dashboard/finances/depenses",
       "apiCalls": [
         {
-          "method": "POST",
-          "endpoint": "/api/v1/imports/import"
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.update"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.create"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.update"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.create"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.update"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.delete"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.create"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.create"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.create"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.downloadTemplate"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.import"
         }
       ],
       "hasApiCalls": true,
-      "imports": [
-        "client"
-      ]
+      "imports": []
     },
     {
       "path": "app\\[locale]\\dashboard\\finances\\facturations\\page.tsx",
@@ -1719,6 +1842,42 @@
         {
           "method": "MODULE",
           "endpoint": "projectsAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "facturationsAPI.generatePDF"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "facturationsAPI.sendEmail"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "facturationsAPI.duplicate"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "facturationsAPI.cancel"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "facturationsAPI.remind"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "facturationsAPI.export"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "facturationsAPI.createPayment"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "facturationsAPI.downloadTemplate"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "facturationsAPI.downloadTemplate"
         }
       ],
       "hasApiCalls": true,
@@ -1729,25 +1888,9 @@
     {
       "path": "app\\[locale]\\dashboard\\finances\\page.tsx",
       "url": "/dashboard/finances",
-      "apiCalls": [
-        {
-          "method": "MODULE",
-          "endpoint": "projectsAPI.list"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "timeEntriesAPI.list"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "employeesAPI.list"
-        }
-      ],
-      "hasApiCalls": true,
-      "imports": [
-        "projects",
-        "employees"
-      ]
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": []
     },
     {
       "path": "app\\[locale]\\dashboard\\finances\\rapport\\page.tsx",
@@ -1767,6 +1910,38 @@
         "projects",
         "employees"
       ]
+    },
+    {
+      "path": "app\\[locale]\\dashboard\\finances\\revenus\\page.tsx",
+      "url": "/dashboard/finances/revenus",
+      "apiCalls": [
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.create"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.update"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.delete"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.downloadTemplate"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.import"
+        }
+      ],
+      "hasApiCalls": true,
+      "imports": []
     },
     {
       "path": "app\\[locale]\\dashboard\\finances\\tresorerie\\page.tsx",
@@ -1833,35 +2008,14 @@
       "apiCalls": [
         {
           "method": "MODULE",
-          "endpoint": "leoAgentAPI.listConversations"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "leoAgentAPI.getConversationMessages"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "leoAgentAPI.getConversationMessages"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "leoAgentAPI.updateConversation"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "leoAgentAPI.query"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "leoAgentAPI.deleteConversation"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "leoAgentAPI.deleteConversation"
+          "endpoint": "leoSettingsAPI.getSettings"
         }
       ],
       "hasApiCalls": true,
-      "imports": []
+      "imports": [
+        "client",
+        "utils"
+      ]
     },
     {
       "path": "app\\[locale]\\dashboard\\leo-demo\\page.tsx",
@@ -1993,6 +2147,10 @@
         },
         {
           "method": "MODULE",
+          "endpoint": "timeEntriesAPI.getAllActiveTimers"
+        },
+        {
+          "method": "MODULE",
           "endpoint": "timeEntriesAPI.get"
         }
       ],
@@ -2017,20 +2175,9 @@
     {
       "path": "app\\[locale]\\dashboard\\management\\page.tsx",
       "url": "/dashboard/management",
-      "apiCalls": [
-        {
-          "method": "MODULE",
-          "endpoint": "vacationRequestsAPI.list"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "timeEntriesAPI.list"
-        }
-      ],
-      "hasApiCalls": true,
-      "imports": [
-        "vacationRequests"
-      ]
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": []
     },
     {
       "path": "app\\[locale]\\dashboard\\management\\vacances\\page.tsx",
@@ -2127,16 +2274,9 @@
     {
       "path": "app\\[locale]\\dashboard\\projects\\page.tsx",
       "url": "/dashboard/projects",
-      "apiCalls": [
-        {
-          "method": "MODULE",
-          "endpoint": "projectsAPI.list"
-        }
-      ],
-      "hasApiCalls": true,
-      "imports": [
-        "projects"
-      ]
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": []
     },
     {
       "path": "app\\[locale]\\dashboard\\projects\\[id]\\page.tsx",
@@ -2333,7 +2473,23 @@
         },
         {
           "method": "MODULE",
+          "endpoint": "transactionsAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "transactionsAPI.list"
+        },
+        {
+          "method": "MODULE",
           "endpoint": "projectsAPI.delete"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "projectsAPI.update"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "projectsAPI.update"
         }
       ],
       "hasApiCalls": true,
@@ -2432,9 +2588,16 @@
     {
       "path": "app\\[locale]\\dashboard\\reseau\\contacts\\[id]\\page.tsx",
       "url": "/dashboard/reseau/contacts/[id]",
-      "apiCalls": [],
-      "hasApiCalls": false,
-      "imports": []
+      "apiCalls": [
+        {
+          "method": "MODULE",
+          "endpoint": "contactsAPI.get"
+        }
+      ],
+      "hasApiCalls": true,
+      "imports": [
+        "contacts"
+      ]
     },
     {
       "path": "app\\[locale]\\dashboard\\reseau\\entreprises\\page.tsx",
@@ -2473,24 +2636,6 @@
       ]
     },
     {
-      "path": "app\\[locale]\\dashboard\\reseau\\entreprises\\[id]\\page.tsx",
-      "url": "/dashboard/reseau/entreprises/[id]",
-      "apiCalls": [
-        {
-          "method": "MODULE",
-          "endpoint": "companiesAPI.get"
-        },
-        {
-          "method": "MODULE",
-          "endpoint": "companiesAPI.delete"
-        }
-      ],
-      "hasApiCalls": true,
-      "imports": [
-        "companies"
-      ]
-    },
-    {
       "path": "app\\[locale]\\dashboard\\reseau\\page.tsx",
       "url": "/dashboard/reseau",
       "apiCalls": [],
@@ -2515,7 +2660,15 @@
         },
         {
           "method": "MODULE",
+          "endpoint": "contactsAPI.get"
+        },
+        {
+          "method": "MODULE",
           "endpoint": "reseauTestimonialsAPI.create"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "reseauTestimonialsAPI.update"
         },
         {
           "method": "MODULE",
@@ -3304,10 +3457,16 @@
         {
           "method": "MODULE",
           "endpoint": "projectTasksAPI.list"
+        },
+        {
+          "method": "MODULE",
+          "endpoint": "projectsAPI.getEmployees"
         }
       ],
       "hasApiCalls": true,
-      "imports": []
+      "imports": [
+        "projects"
+      ]
     },
     {
       "path": "app\\[locale]\\portail-employe\\[id]\\taches\\page.tsx",
@@ -3576,6 +3735,13 @@
       "imports": []
     },
     {
+      "path": "app\\[locale]\\settings\\automation\\page.tsx",
+      "url": "/settings/automation",
+      "apiCalls": [],
+      "hasApiCalls": false,
+      "imports": []
+    },
+    {
       "path": "app\\[locale]\\settings\\billing\\page.tsx",
       "url": "/settings/billing",
       "apiCalls": [],
@@ -3614,6 +3780,13 @@
         }
       ],
       "hasApiCalls": true,
+      "imports": []
+    },
+    {
+      "path": "app\\[locale]\\settings\\leo\\page.tsx",
+      "url": "/settings/leo",
+      "apiCalls": [],
+      "hasApiCalls": false,
       "imports": []
     },
     {

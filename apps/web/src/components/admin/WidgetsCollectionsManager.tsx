@@ -8,9 +8,9 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, Layers, BarChart3 } from 'lucide-react';
-import { Button, Card, Input, Select, Modal, Alert, Tabs, TabList, Tab, TabPanels, TabPanel } from '@/components/ui';
+import { Button, Card, Input, Textarea, Select, Modal, Alert, Tabs, TabList, Tab, TabPanels, TabPanel } from '@/components/ui';
 import { widgetRegistry } from '@/lib/dashboard/widgetRegistry';
-import { widgetCollections, getAvailableCollections, type WidgetCollection } from '@/lib/dashboard/widgetCollections';
+import { getAvailableCollections, type WidgetCollection } from '@/lib/dashboard/widgetCollections';
 import type { WidgetType, DashboardModule } from '@/lib/dashboard/types';
 import { moduleLabels } from '@/lib/dashboard/widgetCollections';
 
@@ -21,7 +21,7 @@ interface WidgetsCollectionsManagerProps {
 export function WidgetsCollectionsManager({ className }: WidgetsCollectionsManagerProps) {
   const [activeTab, setActiveTab] = useState<'widgets' | 'collections'>('collections');
   const [collections, setCollections] = useState<WidgetCollection[]>([]);
-  const [widgets, setWidgets] = useState<typeof widgetRegistry>(widgetRegistry);
+  const widgets = widgetRegistry;
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const [editingCollection, setEditingCollection] = useState<WidgetCollection | null>(null);
   const [formData, setFormData] = useState<Partial<WidgetCollection>>({
@@ -233,18 +233,17 @@ export function WidgetsCollectionsManager({ className }: WidgetsCollectionsManag
             required
           />
 
-          <Input
+          <Textarea
             label="Description"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            multiline
             rows={3}
           />
 
           <Select
             label="Module"
             value={formData.module}
-            onChange={(value) => setFormData({ ...formData, module: value as DashboardModule })}
+            onChange={(e) => setFormData({ ...formData, module: e.target.value as DashboardModule })}
             options={Object.entries(moduleLabels).map(([value, label]) => ({
               value,
               label,
@@ -255,7 +254,7 @@ export function WidgetsCollectionsManager({ className }: WidgetsCollectionsManag
           <Select
             label="Couleur"
             value={formData.color}
-            onChange={(value) => setFormData({ ...formData, color: value as typeof colorOptions[number] })}
+            onChange={(e) => setFormData({ ...formData, color: e.target.value as typeof colorOptions[number] })}
             options={colorOptions.map(color => ({
               value: color,
               label: color.charAt(0).toUpperCase() + color.slice(1),

@@ -91,7 +91,7 @@ export function ConversionFunnelChartWidget({ }: WidgetProps) {
     return <SkeletonWidget />;
   }
 
-  if (funnelData.length === 0 || funnelData[0].count === 0) {
+  if (funnelData.length === 0 || !funnelData[0] || funnelData[0].count === 0) {
     return (
       <EmptyState
         icon={Filter}
@@ -117,7 +117,7 @@ export function ConversionFunnelChartWidget({ }: WidgetProps) {
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-500 dark:text-gray-400">Leads totaux</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{funnelData[0].count}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{funnelData[0]?.count ?? 0}</p>
           </div>
         </div>
       </div>
@@ -185,7 +185,7 @@ export function ConversionFunnelChartWidget({ }: WidgetProps) {
       {/* Legend */}
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-2 gap-2 text-xs">
-          {funnelData.map((stage, index) => (
+          {funnelData.map((stage) => (
             <div key={stage.name} className="flex items-center gap-2">
               <div
                 className="w-3 h-3 rounded"

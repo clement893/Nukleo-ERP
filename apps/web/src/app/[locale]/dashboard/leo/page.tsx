@@ -232,59 +232,78 @@ export default function LeoPage() {
                   }`}
                 >
                   <div className="whitespace-pre-wrap break-words leading-relaxed">
-                    {message.content.split(/(\[([^\]]+)\]\(([^)]+)\))/g).map((part, idx) => {
-                      // Parse markdown links [text](url)
-                      if (idx % 4 === 0) {
-                        // Regular text
+                    {(() => {
+                      // Parse markdown links [text](url) and plain URLs
+                      const content = message.content;
+                      const parts: (string | { type: 'link'; text: string; url: string })[] = [];
+                      let lastIndex = 0;
+                      
+                      // First, find all markdown links [text](url)
+                      const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+                      let match;
+                      
+                      while ((match = markdownLinkRegex.exec(content)) !== null) {
+                        // Add text before the link
+                        if (match.index > lastIndex) {
+                          parts.push(content.substring(lastIndex, match.index));
+                        }
+                        // Add the link
+                        if (match[1] && match[2]) {
+                          parts.push({ type: 'link', text: match[1], url: match[2] });
+                        }
+                        lastIndex = match.index + match[0].length;
+                      }
+                      
+                      // Add remaining text
+                      if (lastIndex < content.length) {
+                        parts.push(content.substring(lastIndex));
+                      }
+                      
+                      // If no markdown links found, try to detect plain URLs
+                      if (parts.length === 1 && typeof parts[0] === 'string') {
+                        const urlRegex = /(https?:\/\/[^\s]+|(?:\/[a-z]{2})?\/dashboard\/[^\s]+|\/settings\/[^\s]+)/gi;
+                        const textParts: (string | { type: 'link'; text: string; url: string })[] = [];
+                        let urlLastIndex = 0;
+                        let urlMatch;
+                        
+                        while ((urlMatch = urlRegex.exec(parts[0])) !== null) {
+                          if (urlMatch.index > urlLastIndex) {
+                            textParts.push(parts[0].substring(urlLastIndex, urlMatch.index));
+                          }
+                          textParts.push({ type: 'link', text: urlMatch[0], url: urlMatch[0] });
+                          urlLastIndex = urlMatch.index + urlMatch[0].length;
+                        }
+                        
+                        if (urlLastIndex < parts[0].length) {
+                          textParts.push(parts[0].substring(urlLastIndex));
+                        }
+                        
+                        return textParts.length > 1 ? textParts : parts;
+                      }
+                      
+                      return parts;
+                    })().map((part, idx) => {
+                      if (typeof part === 'string') {
                         return <span key={idx}>{part}</span>;
-                      } else if (idx % 4 === 1) {
-                        // Full match [text](url)
-                        const text = message.content.split(/(\[([^\]]+)\]\(([^)]+)\))/g)[idx + 1] || '';
-                        const url = message.content.split(/(\[([^\]]+)\]\(([^)]+)\))/g)[idx + 2] || '';
+                      } else {
                         return (
                           <a
                             key={idx}
-                            href={url}
+                            href={part.url}
                             className="text-primary-500 hover:text-primary-600 underline font-medium"
                             onClick={(e) => {
-                              // Handle internal links with Next.js router
-                              if (url.startsWith('/')) {
+                              // Handle internal links
+                              if (part.url.startsWith('/')) {
                                 e.preventDefault();
-                                window.location.href = url;
+                                window.location.href = part.url;
                               }
                             }}
                           >
-                            {text}
+                            {part.text}
                           </a>
                         );
                       }
-                      return null;
                     })}
-                    {/* Fallback: if no markdown links, render as plain text with URL detection */}
-                    {!message.content.includes('](') && (
-                      <span>
-                        {message.content.split(/(https?:\/\/[^\s]+|(?:\/[a-z]{2})?\/dashboard\/[^\s]+|\/settings\/[^\s]+)/gi).map((part, idx) => {
-                          if (part.match(/^(https?:\/\/|\/)/)) {
-                            return (
-                              <a
-                                key={idx}
-                                href={part}
-                                className="text-primary-500 hover:text-primary-600 underline font-medium"
-                                onClick={(e) => {
-                                  if (part.startsWith('/')) {
-                                    e.preventDefault();
-                                    window.location.href = part;
-                                  }
-                                }}
-                              >
-                                {part}
-                              </a>
-                            );
-                          }
-                          return <span key={idx}>{part}</span>;
-                        })}
-                      </span>
-                    )}
                   </div>
                   {message.provider && message.role === 'assistant' && (
                     <p className="text-xs mt-2 opacity-70 capitalize">
