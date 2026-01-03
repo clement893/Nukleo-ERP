@@ -1068,14 +1068,21 @@ export default function TaskKanban({ projectId, teamId, assigneeId }: TaskKanban
                         <div className="text-sm text-muted-foreground italic">Non définies</div>
                       )}
                     </div>
-                    {taskDetails.project_id && (
-                      <div>
-                        <label className="block text-xs text-muted-foreground mb-1.5">Projet</label>
-                        <div className="text-sm font-medium text-foreground">
-                          {projects.find(p => p.id === taskDetails.project_id)?.name || `ID: ${taskDetails.project_id}`}
-                        </div>
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1.5">Projet</label>
+                      <Select
+                        value={taskDetails.project_id?.toString() || ''}
+                        onChange={(e) => {
+                          const newProjectId = e.target.value ? parseInt(e.target.value) : null;
+                          saveTaskField({ project_id: newProjectId });
+                        }}
+                        options={[
+                          { value: '', label: 'Non assigné' },
+                          ...projects.map(p => ({ value: p.id.toString(), label: p.name }))
+                        ]}
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
 

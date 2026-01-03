@@ -152,10 +152,31 @@ async def get_transactions(
         # Build ORDER BY
         order_by_col = date_col_for_filter if date_col_for_filter in existing_columns else 'created_at'
         
+        # Add category name from transaction_categories table if category_id exists
+        category_name_select = ""
+        category_join = ""
+        # Check if transaction_categories table exists
+        try:
+            table_check = await db.execute(text("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'transaction_categories'
+                )
+            """))
+            categories_table_exists = table_check.scalar()
+            
+            if categories_table_exists and 'category_id' in existing_columns:
+                category_name_select = ", transaction_categories.name AS category_name"
+                category_join = "LEFT JOIN transaction_categories ON transactions.category_id = transaction_categories.id"
+        except Exception as e:
+            logger.warning(f"Could not check for transaction_categories table: {e}")
+            # Continue without category name if table doesn't exist
+        
         # Construct full SQL query with parameterized values
         sql_query = f"""
-            SELECT {', '.join(select_parts)}
+            SELECT {', '.join(select_parts)}{category_name_select}
             FROM transactions
+            {category_join}
             WHERE {' AND '.join(where_parts)}
             ORDER BY transactions.{order_by_col} DESC
             LIMIT :limit OFFSET :offset
@@ -189,6 +210,7 @@ async def get_transactions(
                     'tax_amount': Decimal(str(row_dict.get('tax_amount', 0))) if row_dict.get('tax_amount') is not None else Decimal(0),
                     'currency': row_dict.get('currency', 'CAD'),
                     'category_id': row_dict.get('category_id'),
+                    'category': row_dict.get('category_name'),  # Add category name from JOIN
                     'transaction_date': row_dict.get('transaction_date') or row_dict.get('created_at') or datetime.now(),
                     'expected_payment_date': row_dict.get('expected_payment_date'),
                     'payment_date': row_dict.get('payment_date'),
@@ -240,22 +262,27 @@ async def get_transaction(
     Get a specific transaction by ID
     """
     try:
-        query = select(Transaction).where(
+        query = select(Transaction, TransactionCategory.name.label('category_name')).outerjoin(
+            TransactionCategory, Transaction.category_id == TransactionCategory.id
+        ).where(
             and_(
                 Transaction.id == transaction_id,
                 Transaction.user_id == current_user.id
             )
         )
         result = await db.execute(query)
-        transaction = result.scalar_one_or_none()
+        row = result.first()
         
-        if not transaction:
+        if not row:
             raise HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
                 detail="Transaction not found"
             )
         
-        return TransactionResponse.model_validate(transaction)
+        transaction, category_name = row
+        transaction_dict = TransactionResponse.model_validate(transaction).model_dump()
+        transaction_dict['category'] = category_name  # Add category name
+        return TransactionResponse(**transaction_dict)
     except HTTPException:
         raise
     except Exception as e:
@@ -871,27 +898,53 @@ async def import_transactions(
                 currency = get_field_value(row_data, ['currency', 'devise']) or 'CAD'
                 category_name = get_field_value(row_data, ['category', 'categorie', 'catégorie'])
                 
-                # Find category by name if provided
+                # Find or create category by name if provided
                 category_id = None
                 if category_name:
+                    category_name_clean = str(category_name).strip()
+                    # Try exact match first (case-insensitive)
                     category_result = await db.execute(
                         select(TransactionCategory).where(
                             and_(
                                 TransactionCategory.user_id == current_user.id,
-                                TransactionCategory.name.ilike(f"%{category_name}%")
+                                func.lower(TransactionCategory.name) == func.lower(category_name_clean)
                             )
                         ).limit(1)
                     )
                     category = category_result.scalar_one_or_none()
+                    
+                    # If not found, try partial match
+                    if not category:
+                        category_result = await db.execute(
+                            select(TransactionCategory).where(
+                                and_(
+                                    TransactionCategory.user_id == current_user.id,
+                                    TransactionCategory.name.ilike(f"%{category_name_clean}%")
+                                )
+                            ).limit(1)
+                        )
+                        category = category_result.scalar_one_or_none()
+                    
+                    # If still not found, create it automatically
+                    if not category:
+                        from app.models.transaction_category import TransactionType as CategoryTransactionType
+                        # Map TransactionType (REVENUE/EXPENSE) to CategoryTransactionType (ENTRY/EXIT)
+                        category_type = CategoryTransactionType.EXIT if final_type == TransactionType.EXPENSE else CategoryTransactionType.ENTRY
+                        
+                        new_category = TransactionCategory(
+                            user_id=current_user.id,
+                            name=category_name_clean,
+                            type=category_type,
+                            is_active=True
+                        )
+                        db.add(new_category)
+                        await db.flush()
+                        await db.refresh(new_category)
+                        category = new_category
+                        logger.info(f"Auto-created category '{category_name_clean}' (type: {category_type.value}) for user {current_user.id}")
+                    
                     if category:
                         category_id = category.id
-                    else:
-                        warning_msg = f"Catégorie '{category_name}' non trouvée pour la ligne {idx}, la transaction sera créée sans catégorie"
-                        logger.warning(f"Category '{category_name}' not found for user {current_user.id}, transaction will be created without category")
-                        warnings.append({
-                            "row": idx,
-                            "message": warning_msg
-                        })
                 
                 # Parse dates - support French column names
                 expected_payment_date = None

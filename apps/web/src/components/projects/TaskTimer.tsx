@@ -22,35 +22,50 @@ export default function TaskTimer({ taskId, onTimeTracked }: TaskTimerProps) {
     try {
       const status = await timeEntriesAPI.getTimerStatus();
       setTimerStatus(status);
-      if (status.active && status.task_id === taskId && status.start_time) {
-        // Calculate elapsed time from start_time
-        const startTime = new Date(status.start_time).getTime();
-        const now = Date.now();
-        setElapsedSeconds(Math.floor((now - startTime) / 1000));
-      } else {
-        setElapsedSeconds(0);
-      }
     } catch (err) {
       console.error('Error loading timer status:', err);
     }
-  }, [taskId]);
+  }, []);
 
+  // Load initial status and sync periodically (every 10 seconds)
   useEffect(() => {
     loadTimerStatus();
-    const interval = setInterval(loadTimerStatus, 1000);
-    return () => clearInterval(interval);
+    const statusInterval = setInterval(loadTimerStatus, 10000);
+    return () => clearInterval(statusInterval);
   }, [loadTimerStatus]);
 
-  // Update elapsed time every second if timer is active
+  // Calculate and update elapsed time every second if timer is active
   useEffect(() => {
-    if (timerStatus?.active && timerStatus.task_id === taskId) {
-      const interval = setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1);
-      }, 1000);
+    if (timerStatus?.active && timerStatus.task_id === taskId && timerStatus.start_time) {
+      const updateElapsed = () => {
+        try {
+          const startTime = new Date(timerStatus.start_time!).getTime();
+          // Check if date is valid
+          if (isNaN(startTime)) {
+            console.error('Invalid start_time:', timerStatus.start_time);
+            setElapsedSeconds(0);
+            return;
+          }
+          const now = Date.now();
+          const calculatedSeconds = Math.floor((now - startTime) / 1000);
+          setElapsedSeconds(Math.max(0, calculatedSeconds));
+        } catch (error) {
+          console.error('Error calculating elapsed time:', error);
+          setElapsedSeconds(0);
+        }
+      };
+      
+      // Update immediately
+      updateElapsed();
+      
+      // Then update every second
+      const interval = setInterval(updateElapsed, 1000);
       return () => clearInterval(interval);
+    } else {
+      // Reset when timer stops
+      setElapsedSeconds(0);
     }
-    return undefined;
-  }, [timerStatus, taskId]);
+  }, [timerStatus?.active, timerStatus?.task_id, timerStatus?.start_time, taskId]);
 
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
