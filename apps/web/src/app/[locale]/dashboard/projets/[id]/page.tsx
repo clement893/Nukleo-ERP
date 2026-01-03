@@ -176,7 +176,8 @@ function ProjectDetailContent() {
 
     try {
       await projectsAPI.delete(projectId);
-      router.push('/dashboard/projects');
+      const locale = params?.locale as string || 'fr';
+      router.push(`/${locale}/dashboard/projets/projets`);
     } catch (err) {
       const appError = handleApiError(err);
       setError(appError.message || 'Erreur lors de la suppression du projet');
@@ -321,7 +322,10 @@ function ProjectDetailContent() {
           <Alert variant="error" className="mb-6">
             {error || 'Projet introuvable'}
           </Alert>
-          <Button onClick={() => router.push('/dashboard/projects')}>
+          <Button onClick={() => {
+            const locale = params?.locale as string || 'fr';
+            router.push(`/${locale}/dashboard/projets/projets`);
+          }}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Retour aux projets
           </Button>
@@ -337,7 +341,10 @@ function ProjectDetailContent() {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => router.push('/dashboard/projects')}
+            onClick={() => {
+              const locale = params?.locale as string || 'fr';
+              router.push(`/${locale}/dashboard/projets/projets`);
+            }}
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -367,7 +374,10 @@ function ProjectDetailContent() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => router.push(`/dashboard/projects/${projectId}/edit`)}
+                onClick={() => {
+                  const locale = params?.locale as string || 'fr';
+                  router.push(`/${locale}/dashboard/projets/${projectId}/edit`);
+                }}
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Modifier
