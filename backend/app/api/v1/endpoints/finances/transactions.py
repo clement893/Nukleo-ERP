@@ -45,118 +45,186 @@ async def get_transactions(
     Get list of transactions for the current user
     """
     try:
-        # Check which date column exists in the database using a direct SQL query
-        try:
-            # Try to check columns using information_schema
-            columns_result = await db.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'transactions' 
-                AND column_name IN ('transaction_date', 'date')
-            """))
-            columns = [row[0] for row in columns_result]
-            has_transaction_date = 'transaction_date' in columns
-            has_date = 'date' in columns
-        except Exception as check_error:
-            # If we can't check, assume transaction_date exists (new schema)
-            logger.warning(f"Could not check transaction columns: {check_error}")
-            has_transaction_date = True
-            has_date = False
+        # Check which columns exist in the database
+        columns_result = await db.execute(text("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'transactions'
+        """))
+        existing_columns = {row[0] for row in columns_result}
         
-        # Determine which date column to use
-        # Note: Transaction model only has transaction_date, so we need to handle this carefully
-        # If only 'date' exists, we'll need to use raw SQL or handle it in the model
-        use_transaction_date = has_transaction_date or not has_date
+        # Determine which columns to select (only those that exist)
+        base_columns = ['id', 'user_id', 'type', 'description', 'amount', 'status', 'notes', 'created_at', 'updated_at']
+        optional_columns = {
+            'tax_amount': 'tax_amount',
+            'currency': 'currency',
+            'category_id': 'category_id',
+            'transaction_date': 'transaction_date',
+            'date': 'transaction_date',  # Fallback: use 'date' as 'transaction_date'
+            'expected_payment_date': 'expected_payment_date',
+            'payment_date': 'payment_date',
+            'client_id': 'client_id',
+            'client_name': 'client_name',
+            'supplier_id': 'supplier_id',
+            'supplier_name': 'supplier_name',
+            'invoice_number': 'invoice_number',
+            'is_recurring': 'is_recurring',
+            'recurring_id': 'recurring_id',
+            'transaction_metadata': 'transaction_metadata',
+        }
         
-        query = select(Transaction).where(Transaction.user_id == current_user.id)
+        # Build SELECT clause with only existing columns
+        select_parts = []
+        column_mapping = {}  # Maps DB column name to response field name
+        
+        # Add base columns (should always exist)
+        for col in base_columns:
+            if col in existing_columns:
+                select_parts.append(f"transactions.{col}")
+                column_mapping[col] = col
+        
+        # Add optional columns
+        date_column_used = None
+        for db_col, response_field in optional_columns.items():
+            if db_col in existing_columns:
+                if db_col == 'date' and 'transaction_date' not in existing_columns:
+                    # Use 'date' column as 'transaction_date' if transaction_date doesn't exist
+                    select_parts.append(f"transactions.date AS transaction_date")
+                    column_mapping['transaction_date'] = 'date'
+                    date_column_used = 'date'
+                elif db_col == 'transaction_date':
+                    select_parts.append(f"transactions.transaction_date")
+                    column_mapping['transaction_date'] = 'transaction_date'
+                    date_column_used = 'transaction_date'
+                elif db_col != 'date':  # Skip 'date' if we already have transaction_date
+                    select_parts.append(f"transactions.{db_col}")
+                    column_mapping[response_field] = db_col
+        
+        # Ensure we have a date column
+        if not date_column_used:
+            if 'created_at' in existing_columns:
+                select_parts.append("transactions.created_at AS transaction_date")
+                column_mapping['transaction_date'] = 'created_at'
+            else:
+                raise HTTPException(
+                    status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="No date column found in transactions table"
+                )
+        
+        # Ensure currency exists (default to CAD if not in DB)
+        if 'currency' not in existing_columns:
+            select_parts.append("'CAD' AS currency")
+        
+        # Ensure tax_amount exists (default to 0 if not in DB)
+        if 'tax_amount' not in existing_columns:
+            select_parts.append("0 AS tax_amount")
+        
+        # Build WHERE clause with parameters
+        where_parts = ["transactions.user_id = :user_id"]
+        params = {"user_id": current_user.id}
         
         if type:
-            query = query.where(Transaction.type == type)
+            where_parts.append("transactions.type = :type")
+            params["type"] = type.value
         if status:
-            query = query.where(Transaction.status == status)
+            where_parts.append("transactions.status = :status")
+            params["status"] = status.value
         if category:
-            # Support both category_id (integer) and category name (string) for backward compatibility
             try:
                 category_id = int(category)
-                query = query.where(Transaction.category_id == category_id)
+                if 'category_id' in existing_columns:
+                    where_parts.append("transactions.category_id = :category_id")
+                    params["category_id"] = category_id
             except ValueError:
-                # If category is a string, we can't filter by category_id directly
-                # This would require a join with transaction_categories table
-                # For now, skip category filter if it's not a valid integer
-                pass
+                pass  # Skip if not a valid integer
         
-        # Use transaction_date (model column) - if it doesn't exist in DB, the error will be caught
+        # Date filters
+        date_col_for_filter = date_column_used or 'transaction_date'
         if start_date:
-            query = query.where(Transaction.transaction_date >= start_date)
+            where_parts.append(f"transactions.{date_col_for_filter} >= :start_date")
+            params["start_date"] = start_date
         if end_date:
-            query = query.where(Transaction.transaction_date <= end_date)
+            where_parts.append(f"transactions.{date_col_for_filter} <= :end_date")
+            params["end_date"] = end_date
         
-        query = query.order_by(Transaction.transaction_date.desc())
-        query = query.offset(skip).limit(limit)
+        # Build ORDER BY
+        order_by_col = date_col_for_filter if date_col_for_filter in existing_columns else 'created_at'
         
-        result = await db.execute(query)
-        transactions = result.scalars().all()
+        # Construct full SQL query with parameterized values
+        sql_query = f"""
+            SELECT {', '.join(select_parts)}
+            FROM transactions
+            WHERE {' AND '.join(where_parts)}
+            ORDER BY transactions.{order_by_col} DESC
+            LIMIT :limit OFFSET :offset
+        """
+        params["limit"] = limit
+        params["offset"] = skip
         
-        # Convert transactions to response format with fallbacks for schema compatibility
+        # Execute raw SQL with parameters
+        result = await db.execute(text(sql_query), params)
+        rows = result.fetchall()
+        
+        # Get column names from the result
+        result_keys = result.keys()
+        
+        # Convert rows to TransactionResponse
         transaction_responses = []
-        for t in transactions:
+        for row in rows:
             try:
-                # Fallback: if transaction_date doesn't exist, try to use date
-                if not hasattr(t, 'transaction_date') or t.transaction_date is None:
-                    if hasattr(t, 'date') and t.date is not None:
-                        # Create a new attribute transaction_date from date
-                        t.transaction_date = t.date
-                    else:
-                        logger.warning(f"Transaction {getattr(t, 'id', 'unknown')} has no transaction_date or date")
-                        continue
+                # Convert row to dict using column names
+                row_dict = {}
+                for idx, key in enumerate(result_keys):
+                    row_dict[key] = row[idx]
                 
-                # Fallback: ensure currency exists, default to CAD
-                if not hasattr(t, 'currency') or t.currency is None:
-                    t.currency = 'CAD'
+                # Map database columns to response fields
+                response_dict = {
+                    'id': row_dict.get('id'),
+                    'user_id': row_dict.get('user_id'),
+                    'type': TransactionType(row_dict.get('type')),
+                    'description': row_dict.get('description'),
+                    'amount': Decimal(str(row_dict.get('amount', 0))),
+                    'tax_amount': Decimal(str(row_dict.get('tax_amount', 0))) if row_dict.get('tax_amount') is not None else Decimal(0),
+                    'currency': row_dict.get('currency', 'CAD'),
+                    'category_id': row_dict.get('category_id'),
+                    'transaction_date': row_dict.get('transaction_date') or row_dict.get('created_at') or datetime.now(),
+                    'expected_payment_date': row_dict.get('expected_payment_date'),
+                    'payment_date': row_dict.get('payment_date'),
+                    'status': TransactionStatus(row_dict.get('status', 'pending')),
+                    'client_id': row_dict.get('client_id'),
+                    'client_name': row_dict.get('client_name'),
+                    'supplier_id': row_dict.get('supplier_id'),
+                    'supplier_name': row_dict.get('supplier_name'),
+                    'invoice_number': row_dict.get('invoice_number'),
+                    'notes': row_dict.get('notes'),
+                    'is_recurring': row_dict.get('is_recurring', 'false'),
+                    'recurring_id': row_dict.get('recurring_id'),
+                    'transaction_metadata': row_dict.get('transaction_metadata'),
+                    'created_at': row_dict.get('created_at'),
+                    'updated_at': row_dict.get('updated_at'),
+                }
                 
-                transaction_responses.append(TransactionResponse.model_validate(t))
+                # Create TransactionResponse
+                transaction_responses.append(TransactionResponse(**response_dict))
             except Exception as validation_error:
-                logger.error(f"Error validating transaction {getattr(t, 'id', 'unknown')}: {validation_error}", exc_info=True)
-                # Skip this transaction but continue with others
+                logger.error(f"Error validating transaction row: {validation_error}", exc_info=True)
                 continue
         
         return transaction_responses
+    except HTTPException:
+        raise
     except ProgrammingError as e:
-        # Check if error is about missing columns
         error_str = str(e).lower()
         logger.error(f"Database programming error in list_transactions: {e}", exc_info=True)
-        
-        # Check for schema-related errors
-        if ('currency' in error_str or 'transaction_date' in error_str or 'date' in error_str) and 'does not exist' in error_str:
-            logger.error(f"Transaction table schema error. Migration 073 needs to be executed: {e}", exc_info=True)
-            raise HTTPException(
-                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Database schema is out of date. Please run migration 073 to update the transactions table schema (add currency column and rename date to transaction_date). Error: {str(e)}"
-            )
-        # Re-raise other programming errors with more details
-        logger.error(f"Database programming error (not schema-related): {e}", exc_info=True)
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error occurred: {str(e)}"
+            detail=f"Database schema error. Please ensure all migrations are run. Error: {str(e)}"
         )
     except Exception as e:
-        # Catch all other errors to see what's happening
         logger.error(f"Unexpected error in list_transactions: {e}", exc_info=True)
-        error_str = str(e).lower()
-        if ('currency' in error_str or 'transaction_date' in error_str or 'date' in error_str) and ('does not exist' in error_str or 'column' in error_str):
-            raise HTTPException(
-                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Database schema is out of date. Please run migration 073 to update the transactions table schema (add currency column and rename date to transaction_date). Error: {str(e)}"
-            )
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {str(e)}"
-        )
-    except Exception as e:
-        logger.error(f"Error fetching transactions: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error fetching transactions"
+            detail=f"Error fetching transactions: {str(e)}"
         )
 
 
