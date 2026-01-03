@@ -194,8 +194,7 @@ function OpportunitiesContent() {
     };
   }, [opportunities.length]); // Re-fetch when opportunities count changes
   
-  // Debounce search query
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // Search is now real-time (no debounce)
   
   // Derived state
   const loading = isLoading;
@@ -256,18 +255,18 @@ function OpportunitiesContent() {
       // Company filter
       const matchesCompany = filterCompany.length === 0 || (opp.company_id && filterCompany.includes(String(opp.company_id)));
       
-      // Search filter
-      const matchesSearch = !debouncedSearchQuery || 
-        opp.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        opp.description?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        opp.company_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+      // Search filter (real-time)
+      const matchesSearch = !searchQuery || 
+        opp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        opp.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        opp.company_name?.toLowerCase().includes(searchQuery.toLowerCase());
       
       return matchesStatus && matchesPipeline && matchesCompany && matchesSearch;
     });
-  }, [opportunities, filterStatus, filterPipeline, filterCompany, debouncedSearchQuery, hideClosed]);
+  }, [opportunities, filterStatus, filterPipeline, filterCompany, searchQuery, hideClosed]);
 
   // Check if any filters are active
-  const hasActiveFilters = filterStatus.length > 0 || filterPipeline.length > 0 || filterCompany.length > 0 || debouncedSearchQuery.trim() !== '';
+  const hasActiveFilters = filterStatus.length > 0 || filterPipeline.length > 0 || filterCompany.length > 0 || searchQuery.trim() !== '';
 
   // Stats calculation
   const stats = useMemo(() => {
