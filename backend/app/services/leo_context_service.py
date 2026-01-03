@@ -735,8 +735,15 @@ class LeoContextService:
             context_parts.append("")
         
         if data.get("employees"):
-            context_parts.append("=== EMPLOYÉS ===")
-            for employee in data["employees"][:10]:
+            total_employees = len(data["employees"])
+            if is_counting_query:
+                context_parts.append(f"=== EMPLOYÉS (TOTAL: {total_employees}) ===")
+            else:
+                context_parts.append("=== EMPLOYÉS ===")
+            
+            # For counting queries, show more items
+            max_employees = 50 if is_counting_query else 10
+            for employee in data["employees"][:max_employees]:
                 parts = [f"- {employee['nom_complet']}"]
                 if employee.get("email"):
                     parts.append(f"({employee['email']})")
@@ -747,6 +754,9 @@ class LeoContextService:
                 if employee.get("numero_employe"):
                     parts.append(f"- N°: {employee['numero_employe']}")
                 context_parts.append(" ".join(parts))
+            
+            if is_counting_query and total_employees > max_employees:
+                context_parts.append(f"... et {total_employees - max_employees} autres employés")
             context_parts.append("")
         
         return "\n".join(context_parts)
