@@ -6,6 +6,17 @@ import type { ComponentType } from 'react';
 import { LucideIcon } from 'lucide-react';
 
 /**
+ * Modules disponibles dans l'application
+ */
+export type DashboardModule = 
+  | 'commercial'
+  | 'projects' 
+  | 'finances'
+  | 'team'
+  | 'system'
+  | 'global'; // Pour les widgets accessibles partout
+
+/**
  * Catégories de widgets disponibles
  */
 export type WidgetCategory = 
@@ -145,6 +156,7 @@ export interface WidgetDefinition {
   name: string;
   description: string;
   category: WidgetCategory;
+  modules: DashboardModule[]; // Liste des modules où le widget est disponible
   icon: LucideIcon;
   component: ComponentType<WidgetProps>;
   default_size: {
@@ -161,6 +173,7 @@ export interface WidgetDefinition {
   };
   configurable: boolean;
   config_schema?: any; // JSON Schema
+  is_global?: boolean; // true pour widgets graphiques génériques accessibles partout
 }
 
 /**

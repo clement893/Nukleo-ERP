@@ -22,7 +22,7 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 
-import type { WidgetDefinition, WidgetType } from './types';
+import type { WidgetDefinition, WidgetType, DashboardModule } from './types';
 
 // Import des composants de widgets
 import { 
@@ -63,6 +63,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Liste des Opportunités',
     description: 'Affiche la liste des opportunités récentes avec leurs détails',
     category: 'commercial',
+    modules: ['commercial'],
     icon: TrendingUp,
     component: OpportunitiesListWidget,
     default_size: { w: 4, h: 2 },
@@ -76,6 +77,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Pipeline des Opportunités',
     description: 'Vue kanban du pipeline commercial par étape',
     category: 'commercial',
+    modules: ['commercial'],
     icon: BarChart3,
     component: OpportunitiesPipelineWidget,
     default_size: { w: 6, h: 3 },
@@ -89,6 +91,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Nombre de Clients',
     description: 'Compteur du nombre total de clients avec évolution',
     category: 'commercial',
+    modules: ['commercial'],
     icon: Users,
     component: ClientsCountWidget,
     default_size: { w: 2, h: 1 },
@@ -102,6 +105,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Croissance Clients',
     description: 'Graphique d\'évolution du nombre de clients',
     category: 'commercial',
+    modules: ['commercial'],
     icon: LineChart,
     component: ClientsGrowthWidget,
     default_size: { w: 4, h: 2 },
@@ -115,6 +119,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Témoignages Clients',
     description: 'Carrousel des témoignages clients avec notes',
     category: 'commercial',
+    modules: ['commercial'],
     icon: MessageSquare,
     component: TestimonialsCarouselWidget,
     default_size: { w: 4, h: 2 },
@@ -128,6 +133,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Opportunités nécessitant une action',
     description: 'Liste des opportunités nécessitant une soumission ou un suivi',
     category: 'commercial',
+    modules: ['commercial'],
     icon: AlertCircle,
     component: OpportunitiesNeedingActionWidget,
     default_size: { w: 6, h: 3 },
@@ -141,6 +147,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Liste des Devis',
     description: 'Affiche la liste des devis récents avec leurs statuts',
     category: 'commercial',
+    modules: ['commercial'],
     icon: FileText,
     component: QuotesWidget,
     default_size: { w: 4, h: 2 },
@@ -154,6 +161,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Liste des Soumissions',
     description: 'Affiche la liste des soumissions récentes avec leurs statuts',
     category: 'commercial',
+    modules: ['commercial'],
     icon: Briefcase,
     component: SubmissionsWidget,
     default_size: { w: 4, h: 2 },
@@ -167,6 +175,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Statistiques Commerciales',
     description: 'Vue d\'ensemble des statistiques commerciales (opportunités, devis, soumissions)',
     category: 'commercial',
+    modules: ['commercial'],
     icon: LayoutDashboard,
     component: CommercialStatsWidget,
     default_size: { w: 6, h: 2 },
@@ -181,6 +190,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Projets Actifs',
     description: 'Liste des projets en cours avec progression',
     category: 'projects',
+    modules: ['projects'],
     icon: FolderKanban,
     component: ProjectsActiveWidget,
     default_size: { w: 4, h: 2 },
@@ -194,6 +204,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Statuts des Projets',
     description: 'Répartition des projets par statut',
     category: 'projects',
+    modules: ['projects'],
     icon: PieChart,
     component: ProjectsStatusWidget,
     default_size: { w: 3, h: 2 },
@@ -207,6 +218,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Tâches Kanban',
     description: 'Vue kanban des tâches par statut',
     category: 'projects',
+    modules: ['projects'],
     icon: CheckSquare,
     component: TasksKanbanWidget,
     default_size: { w: 6, h: 3 },
@@ -220,6 +232,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Liste des Tâches',
     description: 'Liste des tâches assignées avec priorités',
     category: 'projects',
+    modules: ['projects'],
     icon: CheckSquare,
     component: TasksListWidget,
     default_size: { w: 4, h: 2 },
@@ -234,6 +247,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Revenus',
     description: 'Graphique d\'évolution des revenus',
     category: 'finances',
+    modules: ['finances', 'commercial'],
     icon: DollarSign,
     component: RevenueChartWidget,
     default_size: { w: 4, h: 2 },
@@ -247,12 +261,14 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Dépenses',
     description: 'Graphique de répartition des dépenses',
     category: 'finances',
+    modules: ['finances', 'global'],
     icon: DollarSign,
     component: ExpensesChartWidget,
     default_size: { w: 4, h: 2 },
     min_size: { w: 3, h: 2 },
     max_size: { w: 12, h: 4 },
     configurable: true,
+    is_global: true,
   },
   
   'cash-flow': {
@@ -260,12 +276,14 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Trésorerie',
     description: 'Suivi de la trésorerie et prévisions',
     category: 'finances',
+    modules: ['finances', 'global'],
     icon: DollarSign,
     component: CashFlowWidget,
     default_size: { w: 4, h: 2 },
     min_size: { w: 3, h: 2 },
     max_size: { w: 12, h: 4 },
     configurable: true,
+    is_global: true,
   },
   
   // ========== PERFORMANCE ==========
@@ -274,12 +292,14 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'KPI Personnalisé',
     description: 'Indicateur de performance personnalisable',
     category: 'performance',
+    modules: ['global'],
     icon: Target,
     component: KPICustomWidget,
     default_size: { w: 2, h: 1 },
     min_size: { w: 2, h: 1 },
     max_size: { w: 4, h: 2 },
     configurable: true,
+    is_global: true,
   },
   
   'goals-progress': {
@@ -287,12 +307,14 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Progression des Objectifs',
     description: 'Suivi de la progression vers les objectifs',
     category: 'performance',
+    modules: ['global'],
     icon: Target,
     component: GoalsProgressWidget,
     default_size: { w: 4, h: 2 },
     min_size: { w: 3, h: 2 },
     max_size: { w: 12, h: 4 },
     configurable: true,
+    is_global: true,
   },
   
   'growth-chart': {
@@ -300,12 +322,14 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Croissance',
     description: 'Graphique de croissance globale',
     category: 'performance',
+    modules: ['global'],
     icon: TrendingUp,
     component: GrowthChartWidget,
     default_size: { w: 4, h: 2 },
     min_size: { w: 3, h: 2 },
     max_size: { w: 12, h: 4 },
     configurable: true,
+    is_global: true,
   },
   
   // ========== ÉQUIPE ==========
@@ -314,6 +338,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Nombre d\'Employés',
     description: 'Compteur du nombre d\'employés actifs',
     category: 'team',
+    modules: ['team'],
     icon: Users,
     component: EmployeesCountWidget,
     default_size: { w: 2, h: 1 },
@@ -327,6 +352,7 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Charge de Travail',
     description: 'Graphique de la charge de travail par employé',
     category: 'team',
+    modules: ['team'],
     icon: Briefcase,
     component: WorkloadChartWidget,
     default_size: { w: 4, h: 2 },
@@ -341,12 +367,14 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Profil Utilisateur',
     description: 'Informations du profil utilisateur',
     category: 'system',
+    modules: ['system', 'global'],
     icon: UserCircle,
     component: UserProfileWidget,
     default_size: { w: 2, h: 2 },
     min_size: { w: 2, h: 2 },
     max_size: { w: 4, h: 3 },
     configurable: false,
+    is_global: true,
   },
   
   'notifications': {
@@ -354,12 +382,14 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Notifications',
     description: 'Liste des notifications récentes',
     category: 'system',
+    modules: ['system', 'global'],
     icon: Bell,
     component: NotificationsWidget,
     default_size: { w: 3, h: 2 },
     min_size: { w: 2, h: 2 },
     max_size: { w: 6, h: 4 },
     configurable: true,
+    is_global: true,
   },
   
   // ========== CUSTOM ==========
@@ -368,12 +398,14 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
     name: 'Widget Personnalisé',
     description: 'Widget personnalisé créé par l\'utilisateur',
     category: 'system',
+    modules: ['global'],
     icon: Puzzle,
     component: CustomWidget,
     default_size: { w: 4, h: 2 },
     min_size: { w: 2, h: 2 },
     max_size: { w: 12, h: 6 },
     configurable: true,
+    is_global: true,
   },
 };
 
@@ -397,4 +429,35 @@ export function getWidgetsByCategory(category: string): WidgetDefinition[] {
 export function getCategories(): string[] {
   const categories = new Set(Object.values(widgetRegistry).map(w => w.category));
   return Array.from(categories);
+}
+
+/**
+ * Filtre les widgets par module
+ */
+export function getWidgetsByModule(
+  module: DashboardModule | 'all',
+  registry: Record<WidgetType, WidgetDefinition> = widgetRegistry
+): Record<WidgetType, WidgetDefinition> {
+  if (module === 'all') return registry;
+  
+  return Object.fromEntries(
+    Object.entries(registry).filter(([_, widget]) => 
+      widget.modules.includes(module) || 
+      widget.modules.includes('global') ||
+      widget.is_global === true
+    )
+  ) as Record<WidgetType, WidgetDefinition>;
+}
+
+/**
+ * Obtient tous les widgets globaux (graphiques génériques)
+ */
+export function getGlobalWidgets(
+  registry: Record<WidgetType, WidgetDefinition> = widgetRegistry
+): Record<WidgetType, WidgetDefinition> {
+  return Object.fromEntries(
+    Object.entries(registry).filter(([_, widget]) => 
+      widget.is_global === true || widget.modules.includes('global')
+    )
+  ) as Record<WidgetType, WidgetDefinition>;
 }

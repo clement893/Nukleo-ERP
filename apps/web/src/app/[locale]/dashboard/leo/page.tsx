@@ -25,7 +25,7 @@ import {
   ChevronDown,
   X
 } from 'lucide-react';
-import { Button, Badge, useToast, Input, Select } from '@/components/ui';
+import { Button, Badge, useToast, Input } from '@/components/ui';
 import { leoAgentAPI, type LeoConversation, type LeoMessage } from '@/lib/api/leo-agent';
 import { handleApiError } from '@/lib/errors/api';
 
@@ -61,7 +61,7 @@ export default function LeoPage() {
   const [message, setMessage] = useState('');
   const [showSidebar, setShowSidebar] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [provider, setProvider] = useState<'auto' | 'openai' | 'anthropic'>('auto');
+  const [provider] = useState<'auto' | 'openai' | 'anthropic'>('auto');
   const [skip, setSkip] = useState(0);
   const [conversationsWithLastMessage, setConversationsWithLastMessage] = useState<ConversationWithLastMessage[]>([]);
   const [editingConversationId, setEditingConversationId] = useState<number | null>(null);
