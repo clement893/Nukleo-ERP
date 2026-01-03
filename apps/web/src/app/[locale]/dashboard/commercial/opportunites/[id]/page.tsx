@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { OpportunityNotesEditor } from '@/components/commercial/OpportunityNotesEditor';
 import { OpportunityDocuments } from '@/components/commercial/OpportunityDocuments';
 import { OpportunityActivities } from '@/components/commercial/OpportunityActivities';
+import { OpportunityOverviewEditor } from '@/components/commercial/OpportunityOverviewEditor';
 
 export default function OpportunityDetailPage() {
   const params = useParams();
@@ -171,6 +172,11 @@ export default function OpportunityDetailPage() {
                   <span>{opportunity.company_name}</span>
                 </div>
               )}
+              {opportunity.status && (
+                <Badge variant="outline" className="text-xs">
+                  {opportunity.status}
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -224,89 +230,24 @@ export default function OpportunityDetailPage() {
           {/* Tab Content */}
           <div>
             {activeTab === 'overview' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Informations */}
-                <Card className="glass-card p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
-                    Informations
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <DollarSign className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Montant</p>
-                        <p className="text-foreground font-semibold">{formatCurrency(opportunity.amount)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <TrendingUp className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Probabilité</p>
-                        <p className="text-foreground font-semibold">{opportunity.probability ? `${opportunity.probability}%` : '-'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Date de clôture prévue</p>
-                        <p className="text-foreground">{formatDate(opportunity.expected_close_date)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Building2 className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Entreprise</p>
-                        <p className="text-foreground">{opportunity.company_name || '-'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Tag className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Étape</p>
-                        <Badge className={getStageColor(opportunity.stage_name)}>
-                          {opportunity.stage_name || 'Non défini'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* Contacts */}
-                <Card className="glass-card p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
-                    Contacts ({opportunity.contact_names?.length || 0})
-                  </h3>
-                  {opportunity.contact_names && opportunity.contact_names.length > 0 ? (
-                    <div className="space-y-3">
-                      {opportunity.contact_names.map((name, index) => (
-                        <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                          <div className="w-10 h-10 rounded-full bg-primary-500/10 flex items-center justify-center">
-                            <User className="w-5 h-5 text-primary-500" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">{name}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Aucun contact associé</p>
-                    </div>
-                  )}
-                </Card>
-
-                {/* Description */}
-                {opportunity.description && (
-                  <Card className="glass-card p-6 lg:col-span-2">
-                    <h3 className="text-lg font-semibold mb-4 text-primary-500 font-nukleo">
-                      Description
-                    </h3>
-                    <p className="text-foreground/80 leading-relaxed">{opportunity.description}</p>
-                  </Card>
-                )}
-              </div>
+              <OpportunityOverviewEditor
+                opportunity={opportunity}
+                opportunityId={opportunity.id}
+                onUpdate={(updatedOpportunity) => {
+                  setOpportunity(updatedOpportunity);
+                  loadOpportunity();
+                  showToast({
+                    message: 'Opportunité mise à jour avec succès',
+                    type: 'success',
+                  });
+                }}
+                onError={(error) => {
+                  showToast({
+                    message: error.message || 'Erreur lors de la mise à jour',
+                    type: 'error',
+                  });
+                }}
+              />
             )}
 
             {activeTab === 'activities' && (
