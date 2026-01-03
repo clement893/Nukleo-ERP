@@ -15,7 +15,7 @@ export interface ProjectListItem {
   client: string;
   client_id: number;
   progress: number;
-  status: 'ACTIVE' | 'ARCHIVED' | 'COMPLETED';
+  status: 'active' | 'archived' | 'completed';
   due_date: string;
   created_at: string;
   updated_at: string;
@@ -34,7 +34,7 @@ export interface ProjectsResponse {
  * @param params - Query parameters
  * @param params.limit - Number of projects to fetch (default: 5)
  * @param params.offset - Offset for pagination (default: 0)
- * @param params.status - Filter by status (default: 'ACTIVE')
+ * @param params.status - Filter by status (default: 'active')
  * @param params.client_id - Filter by client (optional)
  * @returns Promise with projects data
  */
@@ -48,7 +48,7 @@ export async function fetchDashboardProjects(params?: {
   
   queryParams.append('limit', (params?.limit || 5).toString());
   queryParams.append('offset', (params?.offset || 0).toString());
-  queryParams.append('status', params?.status || 'ACTIVE');
+  queryParams.append('status', params?.status || 'active');
   
   if (params?.client_id) {
     queryParams.append('client_id', params.client_id.toString());
@@ -81,7 +81,7 @@ export async function fetchDashboardProjects(params?: {
         : 'N/A',
       client_id: project.client_id || project.client?.id,
       progress: project.progress ?? 0,
-      status: project.status || 'ACTIVE',
+      status: (project.status || 'active').toLowerCase() as 'active' | 'archived' | 'completed',
       due_date: project.due_date || project.end_date || project.deadline,
       created_at: project.created_at,
       updated_at: project.updated_at,

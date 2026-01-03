@@ -10,7 +10,7 @@ export interface Project {
   id: number;
   name: string;
   description: string | null;
-  status: 'ACTIVE' | 'ARCHIVED' | 'COMPLETED';
+  status: 'active' | 'archived' | 'completed';
   user_id: number;
   client_id: number | null;
   client_name?: string | null;
@@ -38,7 +38,7 @@ export interface Project {
 export interface ProjectCreate {
   name: string;
   description?: string | null;
-  status?: 'ACTIVE' | 'ARCHIVED' | 'COMPLETED';
+  status?: 'active' | 'archived' | 'completed';
   client_id?: number | null;
   client_name?: string | null;
   responsable_id?: number | null;
@@ -116,7 +116,12 @@ export const projectsAPI = {
    * Create a new project
    */
   create: async (project: ProjectCreate): Promise<Project> => {
-    const response = await apiClient.post<Project>('/v1/projects', project);
+    // Ensure status is lowercase (backend expects lowercase)
+    const projectData = {
+      ...project,
+      status: project.status?.toLowerCase() as 'active' | 'archived' | 'completed' | undefined,
+    };
+    const response = await apiClient.post<Project>('/v1/projects', projectData);
     const data = extractApiData<Project>(response);
     if (!data) {
       throw new Error('Failed to create project: no data returned');
@@ -128,7 +133,14 @@ export const projectsAPI = {
    * Update a project
    */
   update: async (projectId: number, project: ProjectUpdate): Promise<Project> => {
-    const response = await apiClient.put<Project>(`/v1/projects/${projectId}`, project);
+    // Ensure status is lowercase (backend expects lowercase)
+    const projectData = {
+      ...project,
+      ...(project.status && {
+        status: project.status.toLowerCase() as 'active' | 'archived' | 'completed',
+      }),
+    };
+    const response = await apiClient.put<Project>(`/v1/projects/${projectId}`, projectData);
     const data = extractApiData<Project>(response);
     if (!data) {
       throw new Error('Failed to update project: no data returned');

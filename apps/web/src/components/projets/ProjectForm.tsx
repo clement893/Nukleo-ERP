@@ -18,10 +18,9 @@ interface ProjectFormProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'ACTIVE', label: 'Actif' },
-  { value: 'COMPLETED', label: 'Terminé' },
-  { value: 'ARCHIVED', label: 'Archivé' },
-  { value: 'ON_HOLD', label: 'En pause' },
+  { value: 'active', label: 'Actif' },
+  { value: 'completed', label: 'Terminé' },
+  { value: 'archived', label: 'Archivé' },
 ];
 
 export default function ProjectForm({
@@ -37,7 +36,7 @@ export default function ProjectForm({
   const [formData, setFormData] = useState<ProjectCreate>({
     name: project?.name || '',
     description: project?.description || null,
-    status: project?.status || 'ACTIVE',
+    status: project?.status || 'active',
     client_id: project?.client_id || null,
     equipe: project?.equipe || null,
     etape: project?.etape || null,
