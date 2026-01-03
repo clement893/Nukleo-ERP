@@ -20,7 +20,7 @@ from app.core.logging import logger
 router = APIRouter()
 
 
-@router.get("/projects/{project_id}/employees", response_model=List[dict])
+@router.get("/{project_id}/employees", response_model=List[dict])
 async def get_project_employees(
     project_id: int,
     db: AsyncSession = Depends(get_db),
@@ -73,7 +73,7 @@ async def get_project_employees(
         )
 
 
-@router.post("/projects/{project_id}/employees/{employee_id}")
+@router.post("/{project_id}/employees/{employee_id}")
 async def assign_employee_to_project(
     project_id: int,
     employee_id: int,
@@ -154,7 +154,7 @@ async def assign_employee_to_project(
         )
 
 
-@router.delete("/projects/{project_id}/employees/{employee_id}")
+@router.delete("/{project_id}/employees/{employee_id}")
 async def remove_employee_from_project(
     project_id: int,
     employee_id: int,
