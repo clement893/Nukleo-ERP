@@ -6,7 +6,7 @@ export const dynamicParams = true;
 import { useState, useEffect, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
-import { Plus, Search, Building2, User, Calendar, Edit, Trash2, MessageSquare, TrendingUp, CheckCircle2, Clock, Languages } from 'lucide-react';
+import { Plus, Search, Building2, User, Calendar, Edit, Trash2, MessageSquare, TrendingUp, CheckCircle2, Clock, Languages, Grid, List } from 'lucide-react';
 import { Badge, Button, Loading, Alert, Input, Text, Select, Textarea } from '@/components/ui';
 import { useToast } from '@/components/ui';
 import Modal, { ConfirmModal } from '@/components/ui/Modal';
@@ -30,6 +30,7 @@ function TemoignagesContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [filterLanguage, setFilterLanguage] = useState<'all' | 'fr' | 'en'>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   // État pour la langue affichée par témoignage (id -> langue)
   const [displayLanguages, setDisplayLanguages] = useState<Record<number, 'fr' | 'en'>>({});
   
@@ -256,6 +257,27 @@ function TemoignagesContent() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Handler pour changer le statut directement depuis la carte
+  const handleStatusChange = async (testimonial: Testimonial, newStatus: 'true' | 'false' | 'pending') => {
+    try {
+      const updated = await reseauTestimonialsAPI.update(testimonial.id, {
+        ...testimonial,
+        is_published: newStatus,
+      });
+      setTestimonials(prev => prev.map(t => t.id === updated.id ? updated : t));
+      showToast({
+        message: 'Statut mis à jour avec succès',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la mise à jour du statut',
+        type: 'error',
+      });
     }
   };
 
@@ -494,6 +516,25 @@ function TemoignagesContent() {
               <Button variant={filterLanguage === 'fr' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('fr')} aria-pressed={filterLanguage === 'fr'}>FR</Button>
               <Button variant={filterLanguage === 'en' ? 'primary' : 'outline'} onClick={() => setFilterLanguage('en')} aria-pressed={filterLanguage === 'en'}>EN</Button>
             </div>
+
+            <div className="flex gap-2" role="group" aria-label="Mode d'affichage">
+              <Button 
+                variant={viewMode === 'grid' ? 'primary' : 'outline'} 
+                onClick={() => setViewMode('grid')} 
+                aria-pressed={viewMode === 'grid'}
+                title="Vue grille"
+              >
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant={viewMode === 'list' ? 'primary' : 'outline'} 
+                onClick={() => setViewMode('list')} 
+                aria-pressed={viewMode === 'list'}
+                title="Vue liste"
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -516,7 +557,7 @@ function TemoignagesContent() {
               Créer un témoignage
             </Button>
           </div>
-        ) : (
+        ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredTestimonials.map((testimonial) => {
               const status = getStatus(testimonial.is_published);
@@ -597,9 +638,21 @@ function TemoignagesContent() {
                       </div>
                     </div>
                     <div className="flex gap-1.5 items-start flex-shrink-0 ml-2">
-                      <Badge className={`${getStatusColor(status)} text-xs px-1.5 py-0.5`}>
-                        {getStatusLabel(status)}
-                      </Badge>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Select
+                          value={status === 'published' ? 'true' : status === 'pending' ? 'pending' : 'false'}
+                          onChange={(e) => {
+                            const newStatus = e.target.value as 'true' | 'false' | 'pending';
+                            handleStatusChange(testimonial, newStatus);
+                          }}
+                          className="text-xs min-w-[90px]"
+                          options={[
+                            { label: 'Publié', value: 'true' },
+                            { label: 'En attente', value: 'pending' },
+                            { label: 'Brouillon', value: 'false' },
+                          ]}
+                        />
+                      </div>
                       {hasBoth && (
                         <button
                           onClick={(e) => {
@@ -668,6 +721,161 @@ function TemoignagesContent() {
                       </div>
                     </div>
                   )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredTestimonials.map((testimonial) => {
+              const status = getStatus(testimonial.is_published);
+              const displayLang = displayLanguages[testimonial.id] || testimonial.language || 'fr';
+              const content = getContent(testimonial, displayLang as 'fr' | 'en');
+              const hasBoth = hasBothLanguages(testimonial);
+              
+              // Trouver le contact réel
+              const realContact = testimonial.contact_id ? contactsMap[testimonial.contact_id] : null;
+              const contactName = realContact 
+                ? `${realContact.first_name} ${realContact.last_name}`.trim()
+                : testimonial.contact_name || '';
+              const contactPhoto = realContact?.photo_url || (testimonial.contact_id ? contactPhotos[testimonial.contact_id] : null);
+              
+              // Vérifier si photo_url est une URL presignée (commence par http) ou un file_key
+              const isValidPhotoUrl = contactPhoto && (contactPhoto.startsWith('http://') || contactPhoto.startsWith('https://'));
+              
+              return (
+                <div
+                  key={testimonial.id}
+                  className="glass-card p-4 rounded-xl border border-border hover:border-primary-500/40 transition-all duration-200 group"
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Photo du contact */}
+                    <div className="relative w-12 h-12 flex-shrink-0">
+                      {isValidPhotoUrl ? (
+                        <img
+                          src={contactPhoto}
+                          alt={contactName || 'Contact'}
+                          className="w-12 h-12 rounded-full object-cover border border-border"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.parentElement?.querySelector('.photo-fallback') as HTMLElement;
+                            if (fallback) fallback.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-12 h-12 rounded-full bg-primary-500/10 border border-primary-500/30 flex items-center justify-center photo-fallback absolute inset-0 ${isValidPhotoUrl ? 'hidden' : ''}`}>
+                        <User className="w-6 h-6 text-primary-500" />
+                      </div>
+                    </div>
+
+                    {/* Contenu principal */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold group-hover:text-primary-500 transition-colors mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                            {testimonial.title || 'Sans titre'}
+                          </h3>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+                            {contactName && testimonial.contact_id && realContact ? (
+                              <Link 
+                                href={`/${locale}/dashboard/reseau/contacts/${testimonial.contact_id}`}
+                                className="flex items-center gap-1 hover:text-primary-500 transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <User className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                                {contactName}
+                              </Link>
+                            ) : contactName ? (
+                              <span className="flex items-center gap-1">
+                                <User className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                                {contactName}
+                              </span>
+                            ) : null}
+                            {testimonial.company_name && (
+                              <span className="flex items-center gap-1">
+                                <Building2 className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                                {testimonial.company_name}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" aria-hidden="true" />
+                              {new Date(testimonial.created_at).toLocaleDateString('fr-FR')}
+                            </span>
+                            {hasBoth && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleLanguage(testimonial.id);
+                                }}
+                                className="p-1 rounded hover:bg-primary-500/10 hover:border-primary-500/30 border border-transparent transition-all flex items-center gap-1"
+                                aria-label={`Changer la langue (actuellement ${displayLang.toUpperCase()})`}
+                                title={`Basculer entre FR et EN`}
+                              >
+                                <Languages className="w-3 h-3 text-primary-500" />
+                                <span className="text-[10px] font-medium text-primary-500">
+                                  {displayLang === 'fr' ? 'EN' : 'FR'}
+                                </span>
+                              </button>
+                            )}
+                            {!hasBoth && displayLang && (
+                              <Badge variant="default" className="text-[10px] px-1.5 py-0.5">
+                                {displayLang.toUpperCase()}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <Select
+                              value={status === 'published' ? 'true' : status === 'pending' ? 'pending' : 'false'}
+                              onChange={(e) => {
+                                const newStatus = e.target.value as 'true' | 'false' | 'pending';
+                                handleStatusChange(testimonial, newStatus);
+                              }}
+                              className="text-xs min-w-[100px]"
+                              options={[
+                                { label: 'Publié', value: 'true' },
+                                { label: 'En attente', value: 'pending' },
+                                { label: 'Brouillon', value: 'false' },
+                              ]}
+                            />
+                          </div>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800" 
+                              aria-label={`Éditer le témoignage ${testimonial.title || 'sans titre'}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEdit(testimonial);
+                              }}
+                              title="Éditer"
+                            >
+                              <Edit className="w-4 h-4" aria-hidden="true" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400" 
+                              aria-label={`Supprimer le témoignage ${testimonial.title || 'sans titre'}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDelete(testimonial);
+                              }}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" aria-hidden="true" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                      <Text variant="small" className="text-muted-foreground leading-relaxed line-clamp-2">
+                        {content}
+                      </Text>
+                    </div>
+                  </div>
                 </div>
               );
             })}
