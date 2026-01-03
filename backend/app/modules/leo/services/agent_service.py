@@ -146,7 +146,7 @@ class LeoAgentService:
         task_keywords = ['tâche', 'task', 'todo', 'à faire', 'en cours', 'bloqué']
         if any(word in query_lower for word in task_keywords):
             tasks_query = select(ProjectTask).where(
-                ProjectTask.assignee_id == user.id
+                ProjectTask.assignee_id == user_id
             ).order_by(desc(ProjectTask.created_at))
             tasks_result = await self.db.execute(tasks_query)
             tasks = tasks_result.scalars().all()
@@ -165,7 +165,7 @@ class LeoAgentService:
         # Invoices
         invoice_keywords = ['facture', 'invoice', 'paiement', 'payment', 'facturation', 'billing']
         if any(word in query_lower for word in invoice_keywords):
-            invoices_query = select(Invoice).where(Invoice.user_id == user.id).order_by(
+            invoices_query = select(Invoice).where(Invoice.user_id == user_id).order_by(
                 desc(Invoice.created_at)
             )
             invoices_result = await self.db.execute(invoices_query)
@@ -206,7 +206,7 @@ class LeoAgentService:
         contact_keywords = ['contact', 'personne', 'person', 'client', 'prospect']
         if any(word in query_lower for word in contact_keywords):
             contacts_query = select(Contact).where(
-                Contact.employee_id == user.id
+                Contact.employee_id == user_id
             ).order_by(desc(Contact.created_at))
             contacts_result = await self.db.execute(contacts_query)
             contacts = contacts_result.scalars().all()

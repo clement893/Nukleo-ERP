@@ -118,16 +118,38 @@ async def find_employee_by_name(
         return None
     
     try:
+        from sqlalchemy import and_
+        # Try exact match first
         result = await db.execute(
             select(Employee).where(
-                Employee.first_name.ilike(f"%{first_name}%"),
-                Employee.last_name.ilike(f"%{last_name}%")
+                and_(
+                    Employee.first_name.ilike(f"%{first_name}%"),
+                    Employee.last_name.ilike(f"%{last_name}%")
+                )
             )
         )
         employee = result.scalar_one_or_none()
         
         if employee:
+            logger.debug(f"Found employee: {employee.first_name} {employee.last_name} (ID: {employee.id})")
             return employee.id
+        
+        # If not found, try case-insensitive exact match
+        result = await db.execute(
+            select(Employee).where(
+                and_(
+                    Employee.first_name.ilike(first_name),
+                    Employee.last_name.ilike(last_name)
+                )
+            )
+        )
+        employee = result.scalar_one_or_none()
+        
+        if employee:
+            logger.debug(f"Found employee (exact match): {employee.first_name} {employee.last_name} (ID: {employee.id})")
+            return employee.id
+        
+        logger.warning(f"Employee not found: {first_name} {last_name}")
         return None
     except Exception as e:
         logger.error(f"Error finding employee by name {first_name} {last_name}: {e}", exc_info=True)
@@ -165,11 +187,21 @@ async def execute_automation_action(
             # Find employee by name if provided
             user_id = None
             if assignee_name:
+                logger.debug(f"Looking for employee with name: '{assignee_name}'")
                 name_parts = assignee_name.split(' ', 1)
                 if len(name_parts) == 2:
                     employee_id = await find_employee_by_name(name_parts[0], name_parts[1], db)
                     if employee_id:
+                        logger.debug(f"Found employee ID: {employee_id}")
                         user_id = await get_or_create_user_for_employee(employee_id, db)
+                        if user_id:
+                            logger.debug(f"Got or created user ID: {user_id} for employee")
+                        else:
+                            logger.warning(f"Could not get or create user for employee {employee_id}")
+                    else:
+                        logger.warning(f"Employee not found: {assignee_name}")
+                else:
+                    logger.warning(f"Invalid assignee_name format: '{assignee_name}' (expected 'First Last')")
             
             # Get team (use first team or from config)
             team_id = action_config.get('team_id')
@@ -262,6 +294,9 @@ async def handle_opportunity_stage_change(
         )
         rules = rules_result.scalars().all()
         
+        logger.info(f"Found {len(rules)} enabled automation rules for 'opportunity.stage_changed'")
+        logger.info(f"Opportunity {opportunity.id}: pipeline='{pipeline_name}', stage='{stage_name}'")
+        
         # Execute matching rules
         for rule in rules:
             try:
@@ -269,11 +304,17 @@ async def handle_opportunity_stage_change(
                 conditions = rule.trigger_conditions or {}
                 matches = True
                 
+                logger.debug(f"Checking rule '{rule.name}' (ID: {rule.id})")
+                
                 # Check pipeline condition
                 if 'pipeline_name' in conditions:
                     expected_pipeline = conditions['pipeline_name']
-                    if pipeline_name.upper() != expected_pipeline.upper():
+                    pipeline_match = pipeline_name.upper() == expected_pipeline.upper()
+                    if not pipeline_match:
                         matches = False
+                        logger.debug(f"Pipeline condition not met: expected '{expected_pipeline}', got '{pipeline_name}'")
+                    else:
+                        logger.debug(f"Pipeline condition met: '{pipeline_name}' matches '{expected_pipeline}'")
                 
                 # Check stage condition
                 if 'stage_name' in conditions:
@@ -283,12 +324,18 @@ async def handle_opportunity_stage_change(
                     normalized_stage = ' '.join(stage_name.lower().split())
                     # Check if normalized expected stage is contained in normalized stage name
                     # This handles cases like "05-Proposal to do" matching "05 - Proposal to do"
-                    if normalized_expected not in normalized_stage:
+                    stage_match = normalized_expected in normalized_stage
+                    if not stage_match:
                         matches = False
                         logger.debug(f"Stage condition not met: expected '{normalized_expected}' not found in '{normalized_stage}'")
+                    else:
+                        logger.debug(f"Stage condition met: '{normalized_stage}' contains '{normalized_expected}'")
                 
                 if not matches:
+                    logger.debug(f"Rule '{rule.name}' does not match conditions, skipping")
                     continue
+                
+                logger.info(f"Rule '{rule.name}' matches! Executing actions...")
                 
                 # Rule matches! Execute actions
                 logger.info(f"Executing automation rule '{rule.name}' for opportunity {opportunity.id}")
