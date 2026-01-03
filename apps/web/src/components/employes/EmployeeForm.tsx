@@ -73,21 +73,35 @@ export default function EmployeeForm({
     const loadData = async () => {
       try {
         setLoadingData(true);
-        const teamsResponse = await teamsAPI.list(0, 1000);
-        const teamsData = teamsResponse.data?.teams || [];
-        setTeams(teamsData);
+        const response = await teamsAPI.list(0, 1000);
+        // Handle ApiResponse wrapper: { data: T, success: boolean }
+        const responseData = response.data || response;
+        if (responseData && typeof responseData === 'object') {
+          if ('teams' in responseData) {
+            setTeams((responseData as { teams: Team[] }).teams);
+          } else if (Array.isArray(responseData)) {
+            setTeams(responseData);
+          } else if ('items' in responseData && Array.isArray((responseData as { items?: unknown }).items)) {
+            setTeams((responseData as { items: Team[] }).items);
+          } else {
+            setTeams([]);
+          }
+        } else {
+          setTeams([]);
+        }
       } catch (err) {
         const appError = handleApiError(err);
         showToast({
           message: appError.message || 'Erreur lors du chargement des données',
           type: 'error',
         });
+        setTeams([]);
       } finally {
         setLoadingData(false);
       }
     };
     loadData();
-  }, []);
+  }, [showToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
