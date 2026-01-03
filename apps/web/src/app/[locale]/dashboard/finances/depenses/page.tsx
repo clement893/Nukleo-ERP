@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { PageContainer } from '@/components/layout';
 import MotionDiv from '@/components/motion/MotionDiv';
 import { 
@@ -18,6 +18,8 @@ import { transactionsAPI, type Transaction, type TransactionCreate, type Transac
 import { handleApiError } from '@/lib/errors/api';
 import { createLog } from '@/lib/monitoring/logs';
 import ImportLogsViewer from '@/components/finances/ImportLogsViewer';
+import EditableDataGrid, { type CellUpdate } from '@/components/finances/EditableDataGrid';
+import { createExpenseColumns } from './expenses-grid-columns';
 
 const EXPENSE_CATEGORIES = [
   'Fournitures',
@@ -107,6 +109,175 @@ export default function DepensesPage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
+  
+  // Editable grid state
+  const [useGridView, setUseGridView] = useState(true); // Toggle between grid and list view
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdates = useRef<Map<number, Partial<TransactionUpdate>>>(new Map());
+
+  // Prepare suppliers list for select dropdown
+  const suppliersList = useMemo(() => {
+    const supplierSet = new Set<string>();
+    expenses.forEach(exp => {
+      if (exp.supplier_name) {
+        supplierSet.add(exp.supplier_name);
+      }
+    });
+    return Array.from(supplierSet).map(name => ({ name }));
+  }, [expenses]);
+
+  // Create columns for editable grid
+  const expenseColumns = useMemo(() => createExpenseColumns(suppliersList), [suppliersList]);
+
+  // Handle cell change with debounce
+  const handleCellChange = useCallback((rowId: string | number, columnKey: string, value: any) => {
+    const expenseId = typeof rowId === 'string' ? parseInt(rowId) : rowId;
+    const expense = expenses.find(e => e.id === expenseId);
+    if (!expense) return;
+
+    // Clear previous timeout
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+
+    // Prepare update data
+    const updateData: Partial<TransactionUpdate> = {};
+    
+    switch (columnKey) {
+      case 'description':
+        updateData.description = String(value);
+        break;
+      case 'amount':
+        updateData.amount = typeof value === 'number' ? value : parseFloat(String(value));
+        break;
+      // case 'tax_amount':
+      //   updateData.tax_amount = value ? (typeof value === 'number' ? value : parseFloat(String(value))) : null;
+      //   break;
+      case 'transaction_date':
+        updateData.transaction_date = value ? new Date(value as string).toISOString() : new Date().toISOString();
+        break;
+      case 'expected_payment_date':
+        updateData.expected_payment_date = value ? new Date(value as string).toISOString() : null;
+        break;
+      case 'payment_date':
+        updateData.payment_date = value ? new Date(value as string).toISOString() : null;
+        break;
+      case 'status':
+        updateData.status = value as TransactionStatus;
+        break;
+      case 'category':
+        updateData.category = value || null;
+        break;
+      case 'supplier_name':
+        updateData.supplier_name = value || null;
+        break;
+      case 'invoice_number':
+        updateData.invoice_number = value || null;
+        break;
+      case 'notes':
+        updateData.notes = value || null;
+        break;
+    }
+
+    // Store in pending updates
+    const existingUpdate = pendingUpdates.current.get(expenseId) || {};
+    pendingUpdates.current.set(expenseId, { ...existingUpdate, ...updateData });
+
+    // Debounce the API call (500ms)
+    updateTimeoutRef.current = setTimeout(async () => {
+      try {
+        const finalUpdate = pendingUpdates.current.get(expenseId);
+        if (finalUpdate) {
+          await transactionsAPI.update(expenseId, finalUpdate);
+          pendingUpdates.current.delete(expenseId);
+          // Refresh data
+          loadData();
+        }
+      } catch (err) {
+        const appError = handleApiError(err);
+        showToast({
+          message: appError.message || 'Erreur lors de la mise à jour',
+          type: 'error',
+        });
+        // Revert optimistic update
+        loadData();
+      }
+    }, 500);
+  }, [expenses, showToast]);
+
+  // Handle row add
+  const handleRowAdd = useCallback(async () => {
+    try {
+      const newExpense: TransactionCreate = {
+        type: 'expense',
+        description: 'Nouvelle dépense',
+        amount: 0,
+        currency: 'CAD',
+        category: null,
+        transaction_date: new Date().toISOString(),
+        payment_date: null,
+        status: 'pending',
+        supplier_id: null,
+        supplier_name: null,
+        invoice_number: null,
+        notes: null,
+      };
+      await transactionsAPI.create(newExpense);
+      loadData();
+      showToast({
+        message: 'Nouvelle dépense créée',
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la création',
+        type: 'error',
+      });
+    }
+  }, []);
+
+  // Handle bulk update
+  const handleBulkUpdate = useCallback(async (updates: CellUpdate[]) => {
+    try {
+      // Group updates by row ID
+      const updatesByRow = new Map<number, Partial<TransactionUpdate>>();
+      updates.forEach(update => {
+        const rowId = typeof update.rowId === 'string' ? parseInt(update.rowId) : update.rowId;
+        const existing = updatesByRow.get(rowId) || {};
+        updatesByRow.set(rowId, { ...existing, [update.columnKey]: update.value });
+      });
+
+      // Apply all updates
+      await Promise.all(
+        Array.from(updatesByRow.entries()).map(([id, update]) =>
+          transactionsAPI.update(id, update)
+        )
+      );
+
+      loadData();
+      showToast({
+        message: `${updatesByRow.size} dépense(s) mise(s) à jour`,
+        type: 'success',
+      });
+    } catch (err) {
+      const appError = handleApiError(err);
+      showToast({
+        message: appError.message || 'Erreur lors de la mise à jour en lot',
+        type: 'error',
+      });
+      loadData();
+    }
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Form state
   const [formData, setFormData] = useState<TransactionCreate>({
@@ -926,8 +1097,15 @@ export default function DepensesPage() {
                       ]}
                     />
                     <Button
+                      variant={useGridView ? 'outline' : 'primary'}
+                      onClick={() => setUseGridView(!useGridView)}
+                      size="sm"
+                    >
+                      {useGridView ? 'Vue liste' : 'Vue tableau'}
+                    </Button>
+                    <Button
                       variant="primary"
-                      onClick={() => {
+                      onClick={useGridView ? handleRowAdd : () => {
                         resetForm();
                         setShowCreateModal(true);
                       }}
@@ -938,112 +1116,127 @@ export default function DepensesPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {loading ? (
-                    <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
-                    </div>
-                  ) : filteredExpenses.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Receipt className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                      <p className="text-gray-600 dark:text-gray-400 mb-4">
-                        {expenses.length === 0 ? 'Aucune dépense trouvée' : 'Aucune dépense ne correspond à votre recherche'}
-                      </p>
-                      <Button
-                        variant="primary"
-                        onClick={() => {
-                          resetForm();
-                          setShowCreateModal(true);
-                        }}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Ajouter une dépense
-                      </Button>
-                    </div>
-                  ) : (
-                    filteredExpenses.map((expense) => {
-                      const badge = getStatusBadge(expense.status);
-                      const Icon = badge.icon;
-                      return (
-                        <div
-                          key={expense.id}
-                          className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500 transition-all"
+                {useGridView ? (
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <EditableDataGrid<Transaction>
+                      data={filteredExpenses}
+                      columns={expenseColumns}
+                      onCellChange={handleCellChange}
+                      onRowAdd={handleRowAdd}
+                      onBulkUpdate={handleBulkUpdate}
+                      rowKey={(row) => row.id}
+                      loading={loading}
+                      className="min-h-[400px]"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {loading ? (
+                      <div className="text-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+                      </div>
+                    ) : filteredExpenses.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Receipt className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          {expenses.length === 0 ? 'Aucune dépense trouvée' : 'Aucune dépense ne correspond à votre recherche'}
+                        </p>
+                        <Button
+                          variant="primary"
+                          onClick={() => {
+                            resetForm();
+                            setShowCreateModal(true);
+                          }}
                         >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="font-semibold">{expense.description}</h3>
-                              <Badge className={`${badge.color} flex items-center gap-1`}>
-                                <Icon className="w-3 h-3" />
-                                {badge.label}
-                              </Badge>
-                              {expense.category && (
-                                <Badge variant="default">{expense.category}</Badge>
-                              )}
-                              {expense.is_recurring === 'true' && (
-                                <Badge className="bg-purple-100 text-purple-700 border-purple-300 flex items-center gap-1">
-                                  <Repeat className="w-3 h-3" />
-                                  Récurrente
+                          <Plus className="w-4 h-4 mr-2" />
+                          Ajouter une dépense
+                        </Button>
+                      </div>
+                    ) : (
+                      filteredExpenses.map((expense) => {
+                        const badge = getStatusBadge(expense.status);
+                        const Icon = badge.icon;
+                        return (
+                          <div
+                            key={expense.id}
+                            className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-primary-500 transition-all"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="font-semibold">{expense.description}</h3>
+                                <Badge className={`${badge.color} flex items-center gap-1`}>
+                                  <Icon className="w-3 h-3" />
+                                  {badge.label}
                                 </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                              <span>{formatDate(expense.transaction_date)}</span>
-                              {expense.category && (
-                                <>
-                                  <span>•</span>
-                                  <span>{expense.category}</span>
-                                </>
-                              )}
-                              {expense.supplier_name && (
-                                <>
-                                  <span>•</span>
-                                  <span>{expense.supplier_name}</span>
-                                </>
-                              )}
-                              {expense.invoice_number && (
-                                <>
-                                  <span>•</span>
-                                  <span className="font-mono">{expense.invoice_number}</span>
-                                </>
-                              )}
-                              {expense.payment_date && (
-                                <>
-                                  <span>•</span>
-                                  <span>Payé le: {formatDate(expense.payment_date)}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="text-right">
-                              <div className="text-xl font-bold text-red-600">
-                                {formatCurrency(parseFloat(expense.amount), expense.currency)}
+                                {expense.category && (
+                                  <Badge variant="default">{expense.category}</Badge>
+                                )}
+                                {expense.is_recurring === 'true' && (
+                                  <Badge className="bg-purple-100 text-purple-700 border-purple-300 flex items-center gap-1">
+                                    <Repeat className="w-3 h-3" />
+                                    Récurrente
+                                  </Badge>
+                                )}
                               </div>
-                              <div className="text-xs text-gray-500">{expense.currency}</div>
+                              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                                <span>{formatDate(expense.transaction_date)}</span>
+                                {expense.category && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{expense.category}</span>
+                                  </>
+                                )}
+                                {expense.supplier_name && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{expense.supplier_name}</span>
+                                  </>
+                                )}
+                                {expense.invoice_number && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="font-mono">{expense.invoice_number}</span>
+                                  </>
+                                )}
+                                {expense.payment_date && (
+                                  <>
+                                    <span>•</span>
+                                    <span>Payé le: {formatDate(expense.payment_date)}</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleOpenEdit(expense)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDelete(expense.id)}
-                                className="hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <div className="text-xl font-bold text-red-600">
+                                  {formatCurrency(parseFloat(expense.amount), expense.currency)}
+                                </div>
+                                <div className="text-xs text-gray-500">{expense.currency}</div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenEdit(expense)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDelete(expense.id)}
+                                  className="hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
               </Card>
             </TabPanel>
 

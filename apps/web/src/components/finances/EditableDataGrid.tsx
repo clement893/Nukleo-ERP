@@ -43,7 +43,7 @@ interface CellPosition {
   colIndex: number;
 }
 
-export default function EditableDataGrid<T extends Record<string, unknown>>({
+export default function EditableDataGrid<T extends { [key: string]: any }>({
   data,
   columns,
   onCellChange,
@@ -105,11 +105,13 @@ export default function EditableDataGrid<T extends Record<string, unknown>>({
           : String(value);
       case 'date':
         if (value instanceof Date) {
-          return value.toISOString().split('T')[0] || '';
+          const dateStr = value.toISOString().split('T')[0];
+          return dateStr ?? '';
         }
         if (typeof value === 'string') {
           if (value.includes('T')) {
-            return value.split('T')[0] || value;
+            const dateStr = value.split('T')[0];
+            return dateStr ?? value;
           }
           return value;
         }
@@ -269,12 +271,16 @@ export default function EditableDataGrid<T extends Record<string, unknown>>({
         e.preventDefault();
         selectedCells.forEach(cellKey => {
           const parts = cellKey.split('-');
-          const rIdx = parts[0] ? Number(parts[0]) : undefined;
-          const cIdx = parts[1] ? Number(parts[1]) : undefined;
-          if (rIdx !== undefined && cIdx !== undefined) {
-            const col = columns[cIdx];
-            if (col && col.editable) {
-              handleCellChange(rIdx, cIdx, col.type === 'number' || col.type === 'currency' ? 0 : '');
+          const rIdxStr = parts[0];
+          const cIdxStr = parts[1];
+          if (rIdxStr !== undefined && cIdxStr !== undefined) {
+            const rIdx = Number(rIdxStr);
+            const cIdx = Number(cIdxStr);
+            if (!isNaN(rIdx) && !isNaN(cIdx)) {
+              const col = columns[cIdx];
+              if (col && col.editable) {
+                handleCellChange(rIdx, cIdx, col.type === 'number' || col.type === 'currency' ? 0 : '');
+              }
             }
           }
         });
