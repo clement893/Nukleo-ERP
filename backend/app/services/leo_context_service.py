@@ -633,10 +633,23 @@ class LeoContextService:
     ) -> str:
         """Format data into readable context string"""
         context_parts = []
+        query_lower = query.lower()
+        
+        # Detect counting queries
+        is_counting_query = any(phrase in query_lower for phrase in [
+            "combien", "how many", "nombre", "total", "count"
+        ])
         
         if data.get("contacts"):
-            context_parts.append("=== CONTACTS ===")
-            for contact in data["contacts"][:10]:  # Limit to 10 for context
+            total_contacts = len(data["contacts"])
+            if is_counting_query:
+                context_parts.append(f"=== CONTACTS (TOTAL: {total_contacts}) ===")
+            else:
+                context_parts.append("=== CONTACTS ===")
+            
+            # For counting queries, show more items or just the count
+            max_contacts = 50 if is_counting_query else 10
+            for contact in data["contacts"][:max_contacts]:
                 parts = [f"- {contact['nom_complet']}"]
                 if contact.get("email"):
                     parts.append(f"({contact['email']})")
@@ -647,20 +660,54 @@ class LeoContextService:
                 if contact.get("ville"):
                     parts.append(f"- {contact['ville']}")
                 context_parts.append(" ".join(parts))
+            
+            if is_counting_query and total_contacts > max_contacts:
+                context_parts.append(f"... et {total_contacts - max_contacts} autres contacts")
             context_parts.append("")
         
         if data.get("companies"):
-            context_parts.append("=== ENTREPRISES ===")
-            for company in data["companies"][:10]:
-                parts = [f"- {company['name']}"]
-                if company.get("ville") or company.get("pays"):
-                    location = ", ".join(filter(None, [company.get("ville"), company.get("pays")]))
-                    parts.append(f"- {location}")
-                if company.get("is_client"):
+            total_companies = len(data["companies"])
+            clients_count = sum(1 for c in data["companies"] if c.get("is_client"))
+            
+            if is_counting_query:
+                context_parts.append(f"=== ENTREPRISES (TOTAL: {total_companies}, CLIENTS: {clients_count}) ===")
+            else:
+                context_parts.append("=== ENTREPRISES ===")
+            
+            # For counting queries, show more items or prioritize clients
+            max_companies = 100 if is_counting_query else 10
+            
+            # If counting query and asking about clients, prioritize showing clients
+            if is_counting_query and any(word in query_lower for word in ["client", "clients"]):
+                # Show all clients first, then prospects
+                clients = [c for c in data["companies"] if c.get("is_client")]
+                prospects = [c for c in data["companies"] if not c.get("is_client")]
+                
+                for company in clients[:max_companies]:
+                    parts = [f"- {company['name']}"]
+                    if company.get("ville") or company.get("pays"):
+                        location = ", ".join(filter(None, [company.get("ville"), company.get("pays")]))
+                        parts.append(f"- {location}")
                     parts.append("- Client")
-                else:
-                    parts.append("- Prospect")
-                context_parts.append(" ".join(parts))
+                    context_parts.append(" ".join(parts))
+                
+                if len(clients) > max_companies:
+                    context_parts.append(f"... et {len(clients) - max_companies} autres clients")
+            else:
+                # Regular display
+                for company in data["companies"][:max_companies]:
+                    parts = [f"- {company['name']}"]
+                    if company.get("ville") or company.get("pays"):
+                        location = ", ".join(filter(None, [company.get("ville"), company.get("pays")]))
+                        parts.append(f"- {location}")
+                    if company.get("is_client"):
+                        parts.append("- Client")
+                    else:
+                        parts.append("- Prospect")
+                    context_parts.append(" ".join(parts))
+            
+            if is_counting_query and total_companies > max_companies and not any(word in query_lower for word in ["client", "clients"]):
+                context_parts.append(f"... et {total_companies - max_companies} autres entreprises")
             context_parts.append("")
         
         if data.get("opportunities"):
