@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Card, Button, Badge, Select } from '@/components/ui';
+import { Card, Button, Select } from '@/components/ui';
 import { projectTasksAPI, type ProjectTask } from '@/lib/api/project-tasks';
 import { handleApiError } from '@/lib/errors/api';
 import { 
-  Calendar, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, 
+  Calendar, ChevronLeft, ChevronRight, 
   Maximize2, Minimize2, Clock, User, AlertCircle, CheckCircle2
 } from 'lucide-react';
 import Loading from '@/components/ui/Loading';
@@ -177,7 +177,7 @@ export default function ProjectGanttChart({
           priority: task.priority,
           assignee: task.assignee_name || undefined,
           progress: task.status === 'completed' ? 100 : task.status === 'in_progress' ? 50 : 0,
-          color: STATUS_COLORS[task.status] || STATUS_COLORS.todo,
+          color: STATUS_COLORS[task.status] || STATUS_COLORS.todo || 'bg-gray-400',
         });
       }
     });

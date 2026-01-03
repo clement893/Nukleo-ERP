@@ -194,7 +194,7 @@ function ProjectDetailContent() {
         slack_url: 'Slack',
         echeancier_url: 'Échéancier',
       };
-      setLinkFormData({ url: currentUrl, label: labels[linkType] });
+      setLinkFormData({ url: currentUrl, label: labels[linkType] || '' });
     } else {
       setEditingLinkType(null);
       setLinkFormData({ url: '', label: '' });
@@ -1217,7 +1217,7 @@ function ProjectDetailContent() {
                   slack_url: 'Slack',
                   echeancier_url: 'Échéancier',
                 };
-                setLinkFormData({ url: currentUrl, label: labels[linkType] });
+                setLinkFormData({ url: currentUrl, label: labels[linkType] || '' });
               }}
               options={[
                 { label: 'Sélectionner un type', value: '' },
