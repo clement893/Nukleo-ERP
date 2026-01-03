@@ -258,8 +258,16 @@ class InvitationService:
 
         return invitation
 
-    async def cancel_invitation(self, invitation_id: int) -> bool:
-        """Cancel an invitation"""
+    async def cancel_invitation(self, invitation_id: int, force: bool = False) -> bool:
+        """Cancel an invitation
+        
+        Args:
+            invitation_id: ID of the invitation to cancel
+            force: If True, cancel regardless of status (for superadmins)
+        
+        Returns:
+            True if cancelled successfully, False otherwise
+        """
         result = await self.db.execute(
             select(Invitation).where(Invitation.id == invitation_id)
         )
@@ -267,7 +275,7 @@ class InvitationService:
         if not invitation:
             return False
 
-        if invitation.status != "pending":
+        if not force and invitation.status != "pending":
             return False
 
         invitation.status = "cancelled"

@@ -170,6 +170,7 @@ async def cancel_invitation(
     """Cancel an invitation"""
     from app.models import Invitation
     from sqlalchemy import select
+    from app.dependencies import is_superadmin
     
     result = await db.execute(
         select(Invitation).where(Invitation.id == invitation_id)
@@ -179,17 +180,34 @@ async def cancel_invitation(
     if not invitation:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
     
-    # Check permissions
-    if invitation.invited_by_id != current_user.id:
-        if invitation.team_id:
-            await require_team_permission(invitation.team_id, "teams:invitations:cancel", current_user, db)
-        else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    # Check if user is superadmin
+    user_is_superadmin = await is_superadmin(current_user, db)
+    
+    # Check permissions (superadmins can delete any invitation)
+    if not user_is_superadmin:
+        if invitation.invited_by_id != current_user.id:
+            if invitation.team_id:
+                await require_team_permission(invitation.team_id, "teams:invitations:cancel", current_user, db)
+            else:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     
     invitation_service = InvitationService(db)
-    success = await invitation_service.cancel_invitation(invitation_id)
+    
+    # If superadmin, allow deletion even if status is not pending
+    if user_is_superadmin:
+        # For superadmin, we can delete regardless of status
+        success = await invitation_service.cancel_invitation(invitation_id, force=True)
+    else:
+        # For regular users, use the service method which checks status
+        success = await invitation_service.cancel_invitation(invitation_id, force=False)
     
     if not success:
+        # Provide a more specific error message
+        if invitation.status != "pending":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot cancel invitation with status '{invitation.status}'. Only pending invitations can be cancelled.",
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot cancel this invitation",
