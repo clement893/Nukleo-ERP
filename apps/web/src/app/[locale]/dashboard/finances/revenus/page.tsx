@@ -9,7 +9,7 @@ import {
   TrendingUp, Plus, Edit, Trash2, Search, Calendar,
   DollarSign, Filter, FileText, CheckCircle2, AlertCircle, Upload, Download
 } from 'lucide-react';
-import { Button, Badge, Input, Select, Modal, Textarea, Loading, useToast, Tabs, TabList, Tab, TabPanels, TabPanel } from '@/components/ui';
+import { Button, Badge, Input, Select, Modal, Textarea, Loading, useToast, Tabs, TabList, Tab } from '@/components/ui';
 import { transactionsAPI, type Transaction, type TransactionCreate, type TransactionUpdate, type TransactionStatus } from '@/lib/api/finances/transactions';
 import { handleApiError } from '@/lib/errors/api';
 
