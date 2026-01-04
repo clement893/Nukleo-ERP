@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { 
-  Sparkles, Plus, Edit, Trash2, Eye, Users, Settings, 
-  FileText, Mail, Calendar, DollarSign, Target, Briefcase,
-  AlertCircle, CheckCircle, Info, XCircle, HelpCircle, Save,
+  Sparkles, Plus, Edit, Users, Settings, 
+  FileText, Target, Briefcase,
+  AlertCircle, CheckCircle, Info, XCircle,
   Bell, MessageSquare, Activity, TrendingUp, BarChart, Zap,
   Clock, Tag, Folder, Star, Heart, Share2
 } from 'lucide-react';
-import Modal, { ConfirmModal } from '@/components/ui/Modal';
+import Modal from '@/components/ui/Modal';
 import Drawer from '@/components/ui/Drawer';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -513,12 +513,13 @@ export default function ModalsAdvancedDemo() {
                 <Select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                >
-                  <option value="user">Utilisateur</option>
-                  <option value="admin">Administrateur</option>
-                  <option value="manager">Manager</option>
-                  <option value="developer">Développeur</option>
-                </Select>
+                  options={[
+                    { label: 'Utilisateur', value: 'user' },
+                    { label: 'Administrateur', value: 'admin' },
+                    { label: 'Manager', value: 'manager' },
+                    { label: 'Développeur', value: 'developer' },
+                  ]}
+                />
               </div>
             </div>
 
@@ -747,11 +748,13 @@ export default function ModalsAdvancedDemo() {
           </div>
           <div>
             <label className="block text-sm font-semibold mb-2">Statut</label>
-            <Select>
-              <option>En cours</option>
-              <option>Terminé</option>
-              <option>En attente</option>
-            </Select>
+            <Select
+              options={[
+                { label: 'En cours', value: 'in-progress' },
+                { label: 'Terminé', value: 'completed' },
+                { label: 'En attente', value: 'pending' },
+              ]}
+            />
           </div>
           <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
             <Button
