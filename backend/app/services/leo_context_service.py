@@ -1507,6 +1507,21 @@ class LeoContextService:
                 total_expenses = sum(float(t.get("amount", 0) or 0) for t in expenses)
                 if is_counting_query:
                     summary_parts.append(f"TRANSACTIONS: {len(transactions)} (Dépenses: {len(expenses)}, Total: {total_expenses:,.2f}€)")
+            if data.get("time_entries"):
+                time_entries = data["time_entries"]
+                aggregation = time_entries[0].get("_aggregation") if time_entries else None
+                total_hours = aggregation.get("total_hours", 0) if aggregation else sum(te.get("duration_hours", 0) for te in time_entries)
+                if is_counting_query:
+                    summary_parts.append(f"FEUILLES DE TEMPS: {len(time_entries)} entrées ({total_hours:.2f}h)")
+            if data.get("invoices"):
+                invoices = data["invoices"]
+                open_invoices = [i for i in invoices if i.get("status") == "open"]
+                total_open = sum(float(i.get("amount_due", 0) or 0) for i in open_invoices)
+                if is_counting_query:
+                    if any(word in query_lower for word in ["impayé", "unpaid", "en attente"]):
+                        summary_parts.append(f"FACTURES EN ATTENTE: {len(open_invoices)} ({total_open:,.2f}€)")
+                    else:
+                        summary_parts.append(f"FACTURES: {len(invoices)} ({len(open_invoices)} en attente = {total_open:,.2f}€)")
             
             if summary_parts:
                 context_parts.append("RÉSUMÉ: " + " | ".join(summary_parts))
@@ -1732,6 +1747,92 @@ class LeoContextService:
                         line = f"- {trans['description']}"
                         if trans.get("amount"):
                             line += f": {trans['amount']:,.2f} {trans.get('currency', 'EUR')}"
+                        context_parts.append(line)
+            context_parts.append("")
+        
+        if data.get("time_entries"):
+            time_entries = data["time_entries"]
+            query_lower = query.lower()
+            wants_list = any(phrase in query_lower for phrase in ["nomme", "liste", "list", "donne", "montre", "affiche"])
+            
+            # Extract aggregation if available
+            aggregation = None
+            if time_entries and time_entries[0].get("_aggregation"):
+                aggregation = time_entries[0].pop("_aggregation")
+            
+            if is_counting_query and not wants_list:
+                # Just show totals
+                total_hours = aggregation.get("total_hours", 0) if aggregation else sum(te.get("duration_hours", 0) for te in time_entries)
+                context_parts.append(f"FEUILLES DE TEMPS: {len(time_entries)} entrées, Total: {total_hours:.2f}h")
+                if aggregation and aggregation.get("by_employee"):
+                    context_parts.append("Par employé:")
+                    for emp, hours in list(aggregation["by_employee"].items())[:5]:
+                        context_parts.append(f"  - {emp}: {hours:.2f}h")
+            else:
+                # Show detailed list
+                context_parts.append(f"=== FEUILLES DE TEMPS ({len(time_entries)}) ===")
+                if aggregation:
+                    total_hours = aggregation.get("total_hours", 0)
+                    context_parts.append(f"Total heures: {total_hours:.2f}h")
+                    if aggregation.get("by_employee"):
+                        context_parts.append("Par employé:")
+                        for emp, hours in list(aggregation["by_employee"].items())[:10]:
+                            context_parts.append(f"  - {emp}: {hours:.2f}h")
+                    if aggregation.get("by_project"):
+                        context_parts.append("Par projet:")
+                        for proj, hours in list(aggregation["by_project"].items())[:10]:
+                            context_parts.append(f"  - {proj}: {hours:.2f}h")
+                context_parts.append("Détails:")
+                for te in time_entries[:20]:
+                    line = f"- {te.get('description', 'Sans description')}"
+                    if te.get("duration_hours"):
+                        line += f": {te['duration_hours']:.2f}h"
+                    if te.get("employee"):
+                        line += f" [{te['employee']}]"
+                    if te.get("project"):
+                        line += f" (Projet: {te['project']})"
+                    if te.get("date"):
+                        line += f" - {te['date'][:10]}"
+                    context_parts.append(line)
+            context_parts.append("")
+        
+        if data.get("invoices"):
+            invoices = data["invoices"]
+            query_lower = query.lower()
+            wants_list = any(phrase in query_lower for phrase in ["nomme", "liste", "list", "donne", "montre", "affiche"])
+            
+            # Group by status
+            open_invoices = [i for i in invoices if i.get("status") == "open"]
+            paid_invoices = [i for i in invoices if i.get("status") == "paid"]
+            total_open = sum(float(i.get("amount_due", 0) or 0) for i in open_invoices)
+            total_paid = sum(float(i.get("amount_paid", 0) or 0) for i in paid_invoices)
+            
+            if is_counting_query and not wants_list:
+                # Just show counts and totals
+                if any(word in query_lower for word in ["impayé", "unpaid", "en attente", "open"]):
+                    context_parts.append(f"FACTURES EN ATTENTE: {len(open_invoices)} (Total: {total_open:,.2f}€)")
+                else:
+                    context_parts.append(f"FACTURES: {len(invoices)} (Ouvertes: {len(open_invoices)} = {total_open:,.2f}€, Payées: {len(paid_invoices)} = {total_paid:,.2f}€)")
+            else:
+                # Show detailed list
+                context_parts.append(f"=== FACTURES ({len(invoices)}) ===")
+                if open_invoices:
+                    context_parts.append(f"En attente ({len(open_invoices)}, Total: {total_open:,.2f}€):")
+                    for inv in open_invoices[:20]:
+                        line = f"- {inv.get('invoice_number', f'FACT-{inv.get('id')}')}"
+                        if inv.get("amount_due"):
+                            line += f": {inv['amount_due']:,.2f} {inv.get('currency', 'EUR')}"
+                        if inv.get("due_date"):
+                            line += f" - Échéance: {inv['due_date'][:10]}"
+                        if inv.get("user"):
+                            line += f" [{inv['user']}]"
+                        context_parts.append(line)
+                if paid_invoices and wants_list:
+                    context_parts.append(f"Payées ({len(paid_invoices)}, Total: {total_paid:,.2f}€):")
+                    for inv in paid_invoices[:10]:
+                        line = f"- {inv.get('invoice_number', f'FACT-{inv.get('id')}')}"
+                        if inv.get("amount_paid"):
+                            line += f": {inv['amount_paid']:,.2f} {inv.get('currency', 'EUR')}"
                         context_parts.append(line)
             context_parts.append("")
         
