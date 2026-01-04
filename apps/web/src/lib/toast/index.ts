@@ -6,6 +6,7 @@
  */
 
 import { create } from 'zustand';
+import { useMemo } from 'react';
 
 export interface ToastData {
   id: string;
@@ -67,12 +68,13 @@ export const useToastStore = create<ToastStore>((set) => ({
  * Provides convenient methods for different toast types
  */
 export function useToast() {
-  const { addToast, removeToast, clearToasts } = useToastStore();
+  const addToast = useToastStore((state) => state.addToast);
+  const removeToast = useToastStore((state) => state.removeToast);
+  const clearToasts = useToastStore((state) => state.clearToasts);
   
-  return {
-    showToast: (toast: Omit<ToastData, 'id'>) => {
-      addToast(toast);
-    },
+  // Use useMemo to stabilize the returned object and prevent unnecessary re-renders
+  return useMemo(() => ({
+    showToast: addToast,
     success: (message: string, options?: Omit<ToastData, 'id' | 'message' | 'type'>) => {
       addToast({ message, type: 'success', ...options });
     },
@@ -87,5 +89,5 @@ export function useToast() {
     },
     removeToast,
     clearToasts,
-  };
+  }), [addToast, removeToast, clearToasts]);
 }
