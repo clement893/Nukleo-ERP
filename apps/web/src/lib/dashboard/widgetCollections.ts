@@ -1,7 +1,16 @@
 /**
  * Widget Collections
  * 
- * Collections de widgets organisées par thème pour faciliter la navigation
+ * Collections de widgets organisées par thème pour faciliter la navigation.
+ * 
+ * Les collections permettent de regrouper des widgets logiquement liés,
+ * facilitant leur découverte et leur ajout au dashboard depuis l'interface utilisateur.
+ * 
+ * Chaque collection est associée à un module et peut contenir plusieurs widgets.
+ * Les collections sont utilisées dans la WidgetLibrary pour organiser l'affichage
+ * des widgets disponibles.
+ * 
+ * @module widgetCollections
  */
 
 import type { DashboardModule, WidgetType } from './types';
@@ -220,7 +229,25 @@ const widgetCollections: WidgetCollection[] = [
 
 /**
  * Obtenir les collections disponibles selon le module et les permissions
- * Les collections sont triées par module pour une meilleure organisation
+ * 
+ * Les collections sont filtrées par module si spécifié, puis par permissions si fourni,
+ * et enfin triées par module selon un ordre prédéfini pour une meilleure organisation.
+ * 
+ * @param module - Le module pour lequel filtrer les collections ('commercial', 'projects', etc.) ou 'all' pour toutes (défaut: undefined = toutes)
+ * @param hasModuleAccess - Fonction optionnelle pour vérifier les permissions d'accès à un module
+ * @returns Un tableau de collections filtrées et triées par module
+ * 
+ * @example
+ * ```ts
+ * // Récupérer toutes les collections
+ * const allCollections = getAvailableCollections();
+ * 
+ * // Récupérer les collections du module commercial
+ * const commercialCollections = getAvailableCollections('commercial');
+ * 
+ * // Récupérer avec vérification des permissions
+ * const collections = getAvailableCollections('projects', (mod) => userHasAccess(mod));
+ * ```
  */
 export function getAvailableCollections(
   module?: DashboardModule | 'all',
@@ -269,6 +296,25 @@ export function getAvailableCollections(
 
 /**
  * Obtenir les collections groupées par module
+ * 
+ * Retourne un objet où chaque clé est un module et chaque valeur est un tableau
+ * de collections associées à ce module. Utile pour l'affichage organisé par onglets
+ * ou sections dans l'interface utilisateur.
+ * 
+ * @param module - Le module pour lequel filtrer les collections ou 'all' pour toutes (défaut: undefined = toutes)
+ * @param hasModuleAccess - Fonction optionnelle pour vérifier les permissions d'accès à un module
+ * @returns Un objet Record où chaque clé est un DashboardModule et chaque valeur est un tableau de WidgetCollection
+ * 
+ * @example
+ * ```ts
+ * const collectionsByModule = getCollectionsByModule();
+ * // {
+ * //   commercial: [...],
+ * //   projects: [...],
+ * //   finances: [...],
+ * //   ...
+ * // }
+ * ```
  */
 export function getCollectionsByModule(
   module?: DashboardModule | 'all',
@@ -289,6 +335,19 @@ export function getCollectionsByModule(
 
 /**
  * Obtenir les widgets d'une collection spécifique
+ * 
+ * Récupère tous les widgets appartenant à une collection donnée en utilisant
+ * leur ID de type. Retourne un objet Record où chaque clé est un WidgetType
+ * et chaque valeur est la définition correspondante du widget.
+ * 
+ * @param collectionId - L'ID de la collection (ex: 'commercial-opportunities', 'projects-analytics')
+ * @returns Un objet Record contenant les définitions de widgets de la collection, ou un objet vide si la collection n'existe pas
+ * 
+ * @example
+ * ```ts
+ * const widgets = getWidgetsByCollection('commercial-opportunities');
+ * // Retourne les widgets: opportunities-list, opportunities-pipeline, opportunities-needing-action
+ * ```
  */
 export function getWidgetsByCollection(collectionId: string): Record<WidgetType, typeof widgetRegistry[WidgetType]> {
   const collection = widgetCollections.find((c) => c.id === collectionId);

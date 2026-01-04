@@ -1,5 +1,23 @@
 /**
  * Registre des widgets disponibles
+ * 
+ * Ce fichier contient le registre central de tous les widgets disponibles
+ * dans le système de dashboard. Chaque widget est défini avec ses métadonnées
+ * (nom, description, catégorie, icône, composant, tailles, etc.).
+ * 
+ * Le registre est utilisé par :
+ * - La WidgetLibrary pour afficher les widgets disponibles
+ * - Le système de dashboard pour instancier les widgets
+ * - Les collections pour référencer les widgets
+ * 
+ * Pour ajouter un nouveau widget :
+ * 1. Créer le composant widget dans components/dashboard/widgets/
+ * 2. Exporter le composant dans components/dashboard/widgets/index.ts
+ * 3. Ajouter le type dans lib/dashboard/types.ts (WidgetType)
+ * 4. Ajouter la définition ici dans widgetRegistry
+ * 5. Ajouter le widget aux collections appropriées dans widgetCollections.ts
+ * 
+ * @module widgetRegistry
  */
 
 import {
@@ -1055,20 +1073,48 @@ export const widgetRegistry: Record<WidgetType, WidgetDefinition> = {
 
 /**
  * Obtenir un widget par son type
+ * 
+ * @param type - Le type de widget à récupérer
+ * @returns La définition du widget ou undefined si non trouvé
+ * 
+ * @example
+ * ```ts
+ * const widget = getWidget('revenue-chart');
+ * if (widget) {
+ *   console.log(widget.name); // "Revenus"
+ * }
+ * ```
  */
 export function getWidget(type: WidgetType): WidgetDefinition | undefined {
   return widgetRegistry[type];
 }
 
 /**
- * Obtenir tous les widgets d'une catégorie
+ * Obtenir tous les widgets d'une catégorie spécifique
+ * 
+ * @param category - La catégorie de widgets à récupérer (commercial, projects, finances, etc.)
+ * @returns Un tableau de définitions de widgets de la catégorie spécifiée
+ * 
+ * @example
+ * ```ts
+ * const commercialWidgets = getWidgetsByCategory('commercial');
+ * // Retourne tous les widgets de la catégorie commercial
+ * ```
  */
 export function getWidgetsByCategory(category: string): WidgetDefinition[] {
   return Object.values(widgetRegistry).filter(w => w.category === category);
 }
 
 /**
- * Obtenir toutes les catégories disponibles
+ * Obtenir toutes les catégories de widgets disponibles
+ * 
+ * @returns Un tableau de toutes les catégories uniques présentes dans le registre
+ * 
+ * @example
+ * ```ts
+ * const categories = getCategories();
+ * // ['commercial', 'projects', 'finances', 'team', 'performance', 'system']
+ * ```
  */
 export function getCategories(): string[] {
   const categories = new Set(Object.values(widgetRegistry).map(w => w.category));
@@ -1077,6 +1123,21 @@ export function getCategories(): string[] {
 
 /**
  * Filtre les widgets par module
+ * 
+ * Retourne tous les widgets disponibles pour un module spécifique, incluant :
+ * - Les widgets directement associés au module
+ * - Les widgets globaux (disponibles dans tous les modules)
+ * - Les widgets avec le flag is_global activé
+ * 
+ * @param module - Le module pour lequel filtrer les widgets ('commercial', 'projects', etc.) ou 'all' pour tous
+ * @param registry - Le registre de widgets à utiliser (par défaut: widgetRegistry)
+ * @returns Un objet Record contenant les widgets filtrés par module
+ * 
+ * @example
+ * ```ts
+ * const commercialWidgets = getWidgetsByModule('commercial');
+ * // Retourne tous les widgets disponibles pour le module commercial
+ * ```
  */
 export function getWidgetsByModule(
   module: DashboardModule | 'all',
@@ -1094,7 +1155,20 @@ export function getWidgetsByModule(
 }
 
 /**
- * Obtient tous les widgets globaux (graphiques génériques)
+ * Obtient tous les widgets globaux (disponibles dans tous les modules)
+ * 
+ * Un widget est considéré comme global si :
+ * - Il a le flag is_global défini à true
+ * - Il est associé au module 'global'
+ * 
+ * @param registry - Le registre de widgets à utiliser (par défaut: widgetRegistry)
+ * @returns Un objet Record contenant uniquement les widgets globaux
+ * 
+ * @example
+ * ```ts
+ * const globalWidgets = getGlobalWidgets();
+ * // Retourne les widgets comme 'kpi-custom', 'dashboard-scorecard', etc.
+ * ```
  */
 export function getGlobalWidgets(
   registry: Record<WidgetType, WidgetDefinition> = widgetRegistry
