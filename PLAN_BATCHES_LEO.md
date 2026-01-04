@@ -78,8 +78,10 @@
 - [x] CalendarEvent
 - [x] Détection temporelle avancée
 
-### Batch 3: ⏳ En attente
-- [ ] Détection améliorée
+### Batch 3: ✅ TERMINÉ
+- [x] Détection temporelle complète
+- [x] Détection de requêtes multiples
+- [x] Tolérance aux fautes améliorée
 
 ### Batch 4: ⏳ En attente
 - [ ] Calculs financiers

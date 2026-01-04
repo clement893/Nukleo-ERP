@@ -3,10 +3,11 @@ Leo Context Service
 Service for building ERP context for Leo AI assistant
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, func, and_
 from sqlalchemy.orm import selectinload
+import difflib
 
 from app.core.logging import logger
 from app.core.tenancy import scope_query
@@ -1519,7 +1520,48 @@ class LeoContextService:
         data_types: Dict[str, bool],
         query: str
     ) -> Dict[str, List[Dict[str, Any]]]:
-        """Get relevant data based on data types"""
+        """Get relevant data based on data types, handling multiple queries if needed"""
+        # Check if query contains multiple questions
+        sub_queries = self._split_multiple_queries(query)
+        
+        # If multiple queries, process each and merge results
+        if len(sub_queries) > 1:
+            logger.info(f"Detected multiple queries, splitting into {len(sub_queries)} sub-queries")
+            all_results = {}
+            
+            for sub_query in sub_queries:
+                # Analyze each sub-query
+                sub_data_types = self.analyze_query(sub_query)
+                # Merge data types (OR logic - if any sub-query needs it, include it)
+                for key, value in sub_data_types.items():
+                    if value:
+                        data_types[key] = True
+                
+                # Get data for this sub-query
+                sub_result = await self._get_relevant_data_single(user_id, sub_data_types, sub_query)
+                
+                # Merge results (combine lists, avoid duplicates by ID)
+                for key, items in sub_result.items():
+                    if key not in all_results:
+                        all_results[key] = []
+                    # Add items that aren't already present (by ID)
+                    existing_ids = {item.get("id") for item in all_results[key]}
+                    for item in items:
+                        if item.get("id") not in existing_ids:
+                            all_results[key].append(item)
+            
+            return all_results
+        
+        # Single query - process normally
+        return await self._get_relevant_data_single(user_id, data_types, query)
+    
+    async def _get_relevant_data_single(
+        self,
+        user_id: int,
+        data_types: Dict[str, bool],
+        query: str
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """Get relevant data for a single query"""
         result = {}
         
         if data_types.get("contacts"):
@@ -1565,6 +1607,38 @@ class LeoContextService:
             result["calendar_events"] = await self.get_relevant_calendar_events(user_id, query)
         
         return result
+    
+    def analyze_query_enhanced(self, query: str) -> Dict[str, Any]:
+        """
+        Enhanced query analysis with typo tolerance and multiple query detection
+        Returns both data_types and metadata about the analysis
+        """
+        # Normalize query for typo tolerance
+        query_normalized = " ".join([self._normalize_word(w) for w in query.split()])
+        
+        # Check for multiple queries
+        sub_queries = self._split_multiple_queries(query)
+        is_multiple = len(sub_queries) > 1
+        
+        # Analyze main query (or first sub-query)
+        data_types = self.analyze_query(query_normalized if not is_multiple else sub_queries[0])
+        
+        # If multiple queries, analyze all and merge
+        if is_multiple:
+            for sub_query in sub_queries[1:]:
+                sub_data_types = self.analyze_query(self._normalize_word(sub_query))
+                # Merge (OR logic)
+                for key, value in sub_data_types.items():
+                    if value:
+                        data_types[key] = True
+        
+        return {
+            "data_types": data_types,
+            "is_multiple": is_multiple,
+            "sub_queries": sub_queries,
+            "original_query": query,
+            "normalized_query": query_normalized
+        }
 
     async def get_structure_context(self) -> str:
         """Get structural context about the ERP system (pages, tables, structure)"""
