@@ -3,12 +3,15 @@ Leo Context Service
 Service for building ERP context for Leo AI assistant
 """
 
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, TYPE_CHECKING
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, func, and_
 from sqlalchemy.orm import selectinload
 import difflib
 import asyncio
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 from app.core.logging import logger
 from app.core.tenancy import scope_query
@@ -2140,8 +2143,8 @@ class LeoContextService:
     async def calculate_financial_ratios(
         self,
         user_id: int,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None
+        start_date: Optional["datetime"] = None,
+        end_date: Optional["datetime"] = None
     ) -> Dict[str, Any]:
         """
         Calculate financial ratios and metrics
