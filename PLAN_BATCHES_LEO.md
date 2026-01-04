@@ -1,3 +1,4 @@
+
 # Plan d'Implémentation Leo par Batch
 
 ## 📋 Structure des Batches
@@ -83,11 +84,15 @@
 - [x] Détection de requêtes multiples
 - [x] Tolérance aux fautes améliorée
 
-### Batch 4: ⏳ En attente
-- [ ] Calculs financiers
+### Batch 4: ✅ TERMINÉ
+- [x] Calculs financiers
+- [x] Prévisions de trésorerie
+- [x] Ratios financiers (marge brute, taux de conversion)
 
-### Batch 5: ⏳ En attente
-- [ ] Optimisations
+### Batch 5: ✅ TERMINÉ
+- [x] Optimisations
+- [x] Requêtes parallèles avec asyncio.gather()
+- [x] Limites adaptatives intelligentes
 
 ### Batch 6: ⏳ En attente
 - [ ] Améliorations UX

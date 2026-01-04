@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, func, and_
 from sqlalchemy.orm import selectinload
 import difflib
+import asyncio
 
 from app.core.logging import logger
 from app.core.tenancy import scope_query
@@ -145,6 +146,8 @@ class LeoContextService:
     """Service for building ERP context for Leo"""
 
     MAX_ITEMS_PER_TYPE = 20  # Maximum items per data type
+    MAX_ITEMS_COUNTING_QUERY = 500  # Maximum items for counting queries
+    MAX_ITEMS_DETAILED_QUERY = 50  # Maximum items for detailed listing queries
 
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -163,6 +166,7 @@ class LeoContextService:
         vacation_keywords = ["vacance", "vacances", "congé", "congés", "holiday", "holidays", "demande", "demandes", "request", "requests"]
         expense_keywords = ["dépense", "dépenses", "expense", "expenses", "compte de dépense", "expense account", "remboursement", "reimbursement"]
         transaction_keywords = ["transaction", "transactions", "finances", "trésorerie", "argent", "cash", "liquidité", "liquidités", "manquer d'argent"]
+        financial_calc_keywords = ["prévision", "forecast", "prévisions", "forecasts", "ratio", "ratios", "marge", "marge brute", "gross margin", "taux de conversion", "conversion rate", "cash flow", "flux de trésorerie", "trésorerie prévue", "performance financière", "métriques financières"]
         time_entry_keywords = ["feuille de temps", "time entry", "time entries", "heures", "heures travaillées", "temps travaillé", "timesheet", "timesheets", "régie", "régies"]
         invoice_keywords = ["facture", "factures", "invoice", "invoices", "facturation", "facturé", "facturée", "impayé", "impayée", "unpaid", "en attente de paiement"]
         quote_keywords = ["devis", "quote", "quotation", "quotations", "estimation", "estimations", "proposition", "propositions"]
@@ -229,6 +233,7 @@ class LeoContextService:
             "calendar_events": any(word in query_lower for word in calendar_event_keywords),
             "events": any(word in query_lower for word in event_keywords),
             "employees": is_employee_query if emp_available else False,
+            "financial_calculations": any(word in query_lower for word in financial_calc_keywords),
         }
 
     def _extract_keywords(self, query: str) -> List[str]:
@@ -1555,56 +1560,187 @@ class LeoContextService:
         # Single query - process normally
         return await self._get_relevant_data_single(user_id, data_types, query)
     
+    def _determine_adaptive_limit(self, query: str, is_counting_query: bool) -> Optional[int]:
+        """
+        Determine adaptive limit based on query type and content
+        
+        Args:
+            query: The user query
+            is_counting_query: Whether this is a counting query
+            
+        Returns:
+            Limit to use, or None to use default
+        """
+        query_lower = query.lower()
+        
+        # For counting queries, use higher limit
+        if is_counting_query:
+            return self.MAX_ITEMS_COUNTING_QUERY
+        
+        # Check for explicit requests for lists/details
+        if any(phrase in query_lower for phrase in [
+            "liste", "list", "tous", "all", "tout", "montre-moi", "montre moi",
+            "affiche", "afficher", "donne-moi", "donne moi", "tous les", "toutes les"
+        ]):
+            return self.MAX_ITEMS_DETAILED_QUERY
+        
+        # Check for "premiers" / "derniers" / "first" / "last" with number
+        import re
+        numbers = re.findall(r'\d+', query)
+        if numbers:
+            try:
+                requested_count = int(numbers[0])
+                # Cap at reasonable maximum
+                return min(requested_count, self.MAX_ITEMS_DETAILED_QUERY)
+            except ValueError:
+                pass
+        
+        # Default limit for regular queries
+        return None
+    
     async def _get_relevant_data_single(
         self,
         user_id: int,
         data_types: Dict[str, bool],
         query: str
     ) -> Dict[str, List[Dict[str, Any]]]:
-        """Get relevant data for a single query"""
-        result = {}
+        """
+        Get relevant data for a single query
+        Uses parallel execution with asyncio.gather() for better performance
+        """
+        # Determine if this is a counting query for adaptive limits
+        query_lower = query.lower()
+        is_counting_query = any(phrase in query_lower for phrase in [
+            "combien", "how many", "nombre", "total", "count", "quantité"
+        ])
+        adaptive_limit = self._determine_adaptive_limit(query, is_counting_query)
+        
+        # Build list of coroutines to execute in parallel
+        tasks = []
+        task_keys = []
         
         if data_types.get("contacts"):
-            result["contacts"] = await self.get_relevant_contacts(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_contacts(user_id, query, limit))
+            task_keys.append("contacts")
         
         if data_types.get("companies"):
-            result["companies"] = await self.get_relevant_companies(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_companies(user_id, query, limit))
+            task_keys.append("companies")
         
         if data_types.get("opportunities"):
-            result["opportunities"] = await self.get_relevant_opportunities(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_opportunities(user_id, query, limit))
+            task_keys.append("opportunities")
         
         if data_types.get("projects"):
-            result["projects"] = await self.get_relevant_projects(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_projects(user_id, query, limit))
+            task_keys.append("projects")
         
         if data_types.get("employees"):
-            result["employees"] = await self.get_relevant_employees(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_employees(user_id, query, limit))
+            task_keys.append("employees")
         
         if data_types.get("pipelines"):
-            result["pipelines"] = await self.get_relevant_pipelines(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_pipelines(user_id, query, limit))
+            task_keys.append("pipelines")
         
         if data_types.get("tasks"):
-            result["tasks"] = await self.get_relevant_tasks(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_tasks(user_id, query, limit))
+            task_keys.append("tasks")
         
         if data_types.get("vacation_requests"):
-            result["vacation_requests"] = await self.get_relevant_vacation_requests(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_vacation_requests(user_id, query, limit))
+            task_keys.append("vacation_requests")
         
         if data_types.get("expense_accounts"):
-            result["expense_accounts"] = await self.get_relevant_expense_accounts(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_expense_accounts(user_id, query, limit))
+            task_keys.append("expense_accounts")
         
         if data_types.get("transactions"):
-            result["transactions"] = await self.get_relevant_transactions(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_transactions(user_id, query, limit))
+            task_keys.append("transactions")
         
         if data_types.get("time_entries"):
-            result["time_entries"] = await self.get_relevant_time_entries(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_time_entries(user_id, query, limit))
+            task_keys.append("time_entries")
         
         if data_types.get("invoices"):
-            result["invoices"] = await self.get_relevant_invoices(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_invoices(user_id, query, limit))
+            task_keys.append("invoices")
         
         if data_types.get("quotes"):
-            result["quotes"] = await self.get_relevant_quotes(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_quotes(user_id, query, limit))
+            task_keys.append("quotes")
         
         if data_types.get("calendar_events"):
-            result["calendar_events"] = await self.get_relevant_calendar_events(user_id, query)
+            limit = adaptive_limit if adaptive_limit else self.MAX_ITEMS_PER_TYPE
+            tasks.append(self.get_relevant_calendar_events(user_id, query, limit))
+            task_keys.append("calendar_events")
+        
+        # Execute all tasks in parallel
+        result = {}
+        if tasks:
+            try:
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                
+                # Map results to keys, handling exceptions gracefully
+                for key, res in zip(task_keys, results):
+                    if isinstance(res, Exception):
+                        logger.error(f"Error fetching {key}: {res}", exc_info=res)
+                        result[key] = []
+                    else:
+                        result[key] = res
+            except Exception as e:
+                logger.error(f"Error in parallel data fetching: {e}", exc_info=True)
+                # Fallback: return empty results for all requested types
+                for key in task_keys:
+                    result[key] = []
+        
+        # Calculate financial data if requested (these can also run in parallel with data queries)
+        if data_types.get("financial_calculations"):
+            query_lower = query.lower()
+            
+            # Detect what type of financial calculation is needed
+            is_cash_flow_query = any(phrase in query_lower for phrase in [
+                "prévision", "forecast", "prévisions", "forecasts", "cash flow", 
+                "flux de trésorerie", "trésorerie prévue", "trésorerie future"
+            ])
+            
+            is_ratio_query = any(phrase in query_lower for phrase in [
+                "ratio", "ratios", "marge", "marge brute", "gross margin", 
+                "taux de conversion", "conversion rate", "performance financière", 
+                "métriques financières"
+            ])
+            
+            if is_cash_flow_query:
+                # Extract days ahead if specified (default: 30)
+                days_ahead = 30
+                if "30 jours" in query_lower or "30 days" in query_lower:
+                    days_ahead = 30
+                elif "60 jours" in query_lower or "60 days" in query_lower:
+                    days_ahead = 60
+                elif "90 jours" in query_lower or "90 days" in query_lower:
+                    days_ahead = 90
+                elif "7 jours" in query_lower or "7 days" in query_lower or "semaine" in query_lower:
+                    days_ahead = 7
+                
+                result["cash_flow_forecast"] = await self.calculate_cash_flow_forecast(user_id, days_ahead)
+            
+            if is_ratio_query or is_cash_flow_query:
+                # Always calculate ratios if financial calculations are requested
+                result["financial_ratios"] = await self.calculate_financial_ratios(user_id)
         
         return result
     
@@ -1713,6 +1849,338 @@ class LeoContextService:
         structure_parts.append("")
         
         return "\n".join(structure_parts)
+    
+    async def calculate_cash_flow_forecast(
+        self,
+        user_id: int,
+        days_ahead: int = 30
+    ) -> Dict[str, Any]:
+        """
+        Calculate cash flow forecast for the next N days
+        
+        Args:
+            user_id: User ID for tenant scoping
+            days_ahead: Number of days to forecast (default: 30)
+            
+        Returns:
+            Dictionary with forecast data including:
+            - projected_inflows: Expected revenue/income
+            - projected_outflows: Expected expenses
+            - net_cash_flow: Net cash flow
+            - daily_breakdown: Day-by-day breakdown
+        """
+        from datetime import datetime, timedelta
+        from decimal import Decimal
+        
+        try:
+            Transaction, TransactionStatus = _get_transaction_model()
+            Invoice, InvoiceStatus = _get_invoice_model()
+            Opportunite = _get_opportunite_model()
+            
+            if Transaction is None and Invoice is None:
+                return {
+                    "projected_inflows": 0.0,
+                    "projected_outflows": 0.0,
+                    "net_cash_flow": 0.0,
+                    "daily_breakdown": [],
+                    "error": "Financial models not available"
+                }
+            
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = today + timedelta(days=days_ahead)
+            
+            projected_inflows = Decimal("0.0")
+            projected_outflows = Decimal("0.0")
+            daily_breakdown = {}
+            
+            # Initialize daily breakdown
+            current_date = today
+            while current_date <= end_date:
+                daily_breakdown[current_date.date().isoformat()] = {
+                    "inflows": Decimal("0.0"),
+                    "outflows": Decimal("0.0"),
+                    "net": Decimal("0.0")
+                }
+                current_date += timedelta(days=1)
+            
+            # Get expected revenue from pending transactions (revenue type with expected_payment_date)
+            if Transaction:
+                from app.models import TransactionType
+                from sqlalchemy import and_
+                
+                revenue_stmt = select(Transaction).where(
+                    and_(
+                        Transaction.type == TransactionType.REVENUE,
+                        Transaction.status == TransactionStatus.PENDING,
+                        Transaction.expected_payment_date.isnot(None),
+                        Transaction.expected_payment_date >= today,
+                        Transaction.expected_payment_date <= end_date
+                    )
+                )
+                revenue_stmt = scope_query(revenue_stmt, Transaction)
+                
+                result = await self.db.execute(revenue_stmt)
+                revenue_transactions = result.scalars().all()
+                
+                for trans in revenue_transactions:
+                    amount = Decimal(str(trans.amount)) if trans.amount else Decimal("0.0")
+                    projected_inflows += amount
+                    
+                    if trans.expected_payment_date:
+                        date_key = trans.expected_payment_date.date().isoformat()
+                        if date_key in daily_breakdown:
+                            daily_breakdown[date_key]["inflows"] += amount
+                            daily_breakdown[date_key]["net"] += amount
+            
+            # Get expected expenses from pending transactions (expense type with expected_payment_date)
+            if Transaction:
+                expense_stmt = select(Transaction).where(
+                    and_(
+                        Transaction.type == TransactionType.EXPENSE,
+                        Transaction.status == TransactionStatus.PENDING,
+                        Transaction.expected_payment_date.isnot(None),
+                        Transaction.expected_payment_date >= today,
+                        Transaction.expected_payment_date <= end_date
+                    )
+                )
+                expense_stmt = scope_query(expense_stmt, Transaction)
+                
+                result = await self.db.execute(expense_stmt)
+                expense_transactions = result.scalars().all()
+                
+                for trans in expense_transactions:
+                    amount = Decimal(str(trans.amount)) if trans.amount else Decimal("0.0")
+                    projected_outflows += amount
+                    
+                    if trans.expected_payment_date:
+                        date_key = trans.expected_payment_date.date().isoformat()
+                        if date_key in daily_breakdown:
+                            daily_breakdown[date_key]["outflows"] += amount
+                            daily_breakdown[date_key]["net"] -= amount
+            
+            # Get expected payments from unpaid invoices (due_date)
+            if Invoice:
+                from sqlalchemy import and_
+                
+                invoice_stmt = select(Invoice).where(
+                    and_(
+                        Invoice.status == InvoiceStatus.OPEN,
+                        Invoice.due_date.isnot(None),
+                        Invoice.due_date >= today,
+                        Invoice.due_date <= end_date
+                    )
+                )
+                invoice_stmt = scope_query(invoice_stmt, Invoice)
+                
+                result = await self.db.execute(invoice_stmt)
+                unpaid_invoices = result.scalars().all()
+                
+                for inv in unpaid_invoices:
+                    amount_due = Decimal(str(inv.amount_due)) if inv.amount_due else Decimal("0.0")
+                    projected_inflows += amount_due
+                    
+                    if inv.due_date:
+                        date_key = inv.due_date.date().isoformat()
+                        if date_key in daily_breakdown:
+                            daily_breakdown[date_key]["inflows"] += amount_due
+                            daily_breakdown[date_key]["net"] += amount_due
+            
+            # Calculate net cash flow
+            net_cash_flow = projected_inflows - projected_outflows
+            
+            # Convert daily breakdown to list format
+            daily_list = [
+                {
+                    "date": date_key,
+                    "inflows": float(inflows),
+                    "outflows": float(outflows),
+                    "net": float(net)
+                }
+                for date_key, data in sorted(daily_breakdown.items())
+            ]
+            
+            return {
+                "projected_inflows": float(projected_inflows),
+                "projected_outflows": float(projected_outflows),
+                "net_cash_flow": float(net_cash_flow),
+                "daily_breakdown": daily_list,
+                "forecast_period_days": days_ahead,
+                "forecast_start_date": today.date().isoformat(),
+                "forecast_end_date": end_date.date().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating cash flow forecast: {e}", exc_info=True)
+            return {
+                "projected_inflows": 0.0,
+                "projected_outflows": 0.0,
+                "net_cash_flow": 0.0,
+                "daily_breakdown": [],
+                "error": str(e)
+            }
+    
+    async def calculate_financial_ratios(
+        self,
+        user_id: int,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
+    ) -> Dict[str, Any]:
+        """
+        Calculate financial ratios and metrics
+        
+        Args:
+            user_id: User ID for tenant scoping
+            start_date: Start date for period (default: 30 days ago)
+            end_date: End date for period (default: today)
+            
+        Returns:
+            Dictionary with financial ratios:
+            - gross_margin: Gross margin percentage
+            - conversion_rate: Opportunity to deal conversion rate
+            - revenue_total: Total revenue for period
+            - expenses_total: Total expenses for period
+            - net_profit: Net profit for period
+            - opportunities_won: Number of won opportunities
+            - opportunities_total: Total number of opportunities
+        """
+        from datetime import datetime, timedelta
+        from decimal import Decimal
+        
+        try:
+            Transaction, TransactionStatus = _get_transaction_model()
+            Opportunite = _get_opportunite_model()
+            
+            if Transaction is None:
+                return {
+                    "gross_margin": 0.0,
+                    "conversion_rate": 0.0,
+                    "revenue_total": 0.0,
+                    "expenses_total": 0.0,
+                    "net_profit": 0.0,
+                    "opportunities_won": 0,
+                    "opportunities_total": 0,
+                    "error": "Transaction model not available"
+                }
+            
+            # Default to last 30 days if no dates provided
+            if end_date is None:
+                end_date = datetime.now()
+            if start_date is None:
+                start_date = end_date - timedelta(days=30)
+            
+            # Ensure dates are timezone-aware or set to start/end of day
+            if start_date.tzinfo is None:
+                start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            if end_date.tzinfo is None:
+                end_date = end_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            
+            from app.models import TransactionType
+            from sqlalchemy import and_, func
+            
+            # Calculate revenue (paid revenue transactions)
+            revenue_stmt = select(func.sum(Transaction.amount)).where(
+                and_(
+                    Transaction.type == TransactionType.REVENUE,
+                    Transaction.status == TransactionStatus.PAID,
+                    Transaction.payment_date.isnot(None),
+                    Transaction.payment_date >= start_date,
+                    Transaction.payment_date <= end_date
+                )
+            )
+            revenue_stmt = scope_query(revenue_stmt, Transaction)
+            
+            result = await self.db.execute(revenue_stmt)
+            revenue_total = result.scalar() or Decimal("0.0")
+            
+            # Calculate expenses (paid expense transactions)
+            expense_stmt = select(func.sum(Transaction.amount)).where(
+                and_(
+                    Transaction.type == TransactionType.EXPENSE,
+                    Transaction.status == TransactionStatus.PAID,
+                    Transaction.payment_date.isnot(None),
+                    Transaction.payment_date >= start_date,
+                    Transaction.payment_date <= end_date
+                )
+            )
+            expense_stmt = scope_query(expense_stmt, Transaction)
+            
+            result = await self.db.execute(expense_stmt)
+            expenses_total = result.scalar() or Decimal("0.0")
+            
+            # Calculate gross margin: (Revenue - Expenses) / Revenue * 100
+            gross_margin = 0.0
+            if revenue_total > 0:
+                net_profit = revenue_total - expenses_total
+                gross_margin = float((net_profit / revenue_total) * Decimal("100.0"))
+            
+            net_profit = revenue_total - expenses_total
+            
+            # Calculate conversion rate (opportunities won / total opportunities)
+            conversion_rate = 0.0
+            opportunities_won = 0
+            opportunities_total = 0
+            
+            if Opportunite:
+                # Count won opportunities in period
+                won_stmt = select(func.count(Opportunite.id)).where(
+                    and_(
+                        Opportunite.status == "won",
+                        Opportunite.closed_at.isnot(None),
+                        Opportunite.closed_at >= start_date,
+                        Opportunite.closed_at <= end_date
+                    )
+                )
+                won_stmt = scope_query(won_stmt, Opportunite)
+                result = await self.db.execute(won_stmt)
+                opportunities_won = result.scalar() or 0
+                
+                # Count total opportunities (opened in period or closed in period)
+                total_stmt = select(func.count(Opportunite.id)).where(
+                    and_(
+                        or_(
+                            and_(
+                                Opportunite.created_at >= start_date,
+                                Opportunite.created_at <= end_date
+                            ),
+                            and_(
+                                Opportunite.closed_at.isnot(None),
+                                Opportunite.closed_at >= start_date,
+                                Opportunite.closed_at <= end_date
+                            )
+                        )
+                    )
+                )
+                total_stmt = scope_query(total_stmt, Opportunite)
+                result = await self.db.execute(total_stmt)
+                opportunities_total = result.scalar() or 0
+                
+                if opportunities_total > 0:
+                    conversion_rate = (opportunities_won / opportunities_total) * 100.0
+            
+            return {
+                "gross_margin": gross_margin,
+                "conversion_rate": conversion_rate,
+                "revenue_total": float(revenue_total),
+                "expenses_total": float(expenses_total),
+                "net_profit": float(net_profit),
+                "opportunities_won": opportunities_won,
+                "opportunities_total": opportunities_total,
+                "period_start": start_date.date().isoformat() if start_date else None,
+                "period_end": end_date.date().isoformat() if end_date else None
+            }
+            
+        except Exception as e:
+            logger.error(f"Error calculating financial ratios: {e}", exc_info=True)
+            return {
+                "gross_margin": 0.0,
+                "conversion_rate": 0.0,
+                "revenue_total": 0.0,
+                "expenses_total": 0.0,
+                "net_profit": 0.0,
+                "opportunities_won": 0,
+                "opportunities_total": 0,
+                "error": str(e)
+            }
     
     async def build_context_string(
         self,
@@ -2236,6 +2704,35 @@ class LeoContextService:
                     if is_hire_date_query and employee.get("date_embauche"):
                         line += f" - Date d'embauche: {employee['date_embauche']}"
                     context_parts.append(line)
+                context_parts.append("")
+        
+        # Financial calculations
+        if data.get("cash_flow_forecast"):
+            forecast = data["cash_flow_forecast"]
+            if not forecast.get("error"):
+                context_parts.append("=== PRÉVISION DE TRÉSORERIE ===")
+                context_parts.append(f"Période: {forecast.get('forecast_start_date', 'N/A')} au {forecast.get('forecast_end_date', 'N/A')} ({forecast.get('forecast_period_days', 30)} jours)")
+                context_parts.append(f"Entrées prévues: {forecast.get('projected_inflows', 0):,.2f}€")
+                context_parts.append(f"Sorties prévues: {forecast.get('projected_outflows', 0):,.2f}€")
+                context_parts.append(f"Flux net prévu: {forecast.get('net_cash_flow', 0):,.2f}€")
+                if forecast.get("daily_breakdown") and len(forecast["daily_breakdown"]) > 0:
+                    context_parts.append("Répartition journalière (7 premiers jours):")
+                    for day in forecast["daily_breakdown"][:7]:
+                        context_parts.append(f"  - {day['date']}: +{day['inflows']:,.2f}€ / -{day['outflows']:,.2f}€ (Net: {day['net']:,.2f}€)")
+                context_parts.append("")
+        
+        if data.get("financial_ratios"):
+            ratios = data["financial_ratios"]
+            if not ratios.get("error"):
+                context_parts.append("=== RATIOS FINANCIERS ===")
+                if ratios.get("period_start") and ratios.get("period_end"):
+                    context_parts.append(f"Période: {ratios.get('period_start', 'N/A')} au {ratios.get('period_end', 'N/A')}")
+                context_parts.append(f"Revenus totaux: {ratios.get('revenue_total', 0):,.2f}€")
+                context_parts.append(f"Dépenses totales: {ratios.get('expenses_total', 0):,.2f}€")
+                context_parts.append(f"Profit net: {ratios.get('net_profit', 0):,.2f}€")
+                context_parts.append(f"Marge brute: {ratios.get('gross_margin', 0):.2f}%")
+                if ratios.get("opportunities_total", 0) > 0:
+                    context_parts.append(f"Taux de conversion: {ratios.get('conversion_rate', 0):.2f}% ({ratios.get('opportunities_won', 0)}/{ratios.get('opportunities_total', 0)} opportunités)")
                 context_parts.append("")
         
         # Always add a brief structure summary at the end for context awareness
