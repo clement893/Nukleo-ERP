@@ -78,8 +78,13 @@ interface Invoice {
 }
 
 export default function DepensesPage() {
-  const { showToast } = useToast();
+  const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Debug: Log hook calls to track React error #310
+  if (typeof window !== 'undefined') {
+    console.log('[DepensesPage] Component render - hooks count check');
+  }
   
   // State
   const [activeTab, setActiveTab] = useState('expenses');
@@ -131,6 +136,9 @@ export default function DepensesPage() {
 
   // Load data function - memoized with useCallback (defined early so callbacks can use it)
   const loadData = useCallback(async () => {
+    if (typeof window !== 'undefined') {
+      console.log('[DepensesPage] loadData called', { activeTab, statusFilter });
+    }
     try {
       setLoading(true);
       if (activeTab === 'expenses') {
@@ -257,14 +265,11 @@ export default function DepensesPage() {
     } catch (error) {
       logger.error('Error loading expenses data', error);
       const appError = handleApiError(error);
-      showToast({
-        message: appError.message || 'Erreur lors du chargement des données',
-        type: 'error',
-      });
+      toast.error(appError.message || 'Erreur lors du chargement des données');
     } finally {
       setLoading(false);
     }
-  }, [activeTab, statusFilter, showToast]);
+  }, [activeTab, statusFilter, toast]);
 
   // Handle cell change with debounce
   const handleCellChange = useCallback((rowId: string | number, columnKey: string, value: any) => {
@@ -330,17 +335,14 @@ export default function DepensesPage() {
           // Refresh data
           loadData();
         }
-      } catch (err) {
+        } catch (err) {
         const appError = handleApiError(err);
-        showToast({
-          message: appError.message || 'Erreur lors de la mise à jour',
-          type: 'error',
-        });
+        toast.error(appError.message || 'Erreur lors de la mise à jour');
         // Revert optimistic update
         loadData();
       }
     }, 500);
-  }, [expenses, showToast, loadData]);
+  }, [expenses, toast, loadData]);
 
   // Handle row add
   const handleRowAdd = useCallback(async () => {
@@ -361,18 +363,12 @@ export default function DepensesPage() {
       };
       await transactionsAPI.create(newExpense);
       loadData();
-      showToast({
-        message: 'Nouvelle dépense créée',
-        type: 'success',
-      });
+      toast.success('Nouvelle dépense créée');
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la création',
-        type: 'error',
-      });
+      toast.error(appError.message || 'Erreur lors de la création');
     }
-  }, [loadData, showToast]);
+  }, [loadData, toast]);
 
   // Handle bulk update
   const handleBulkUpdate = useCallback(async (updates: CellUpdate[]) => {
@@ -393,19 +389,13 @@ export default function DepensesPage() {
       );
 
       loadData();
-      showToast({
-        message: `${updatesByRow.size} dépense(s) mise(s) à jour`,
-        type: 'success',
-      });
+      toast.success(`${updatesByRow.size} dépense(s) mise(s) à jour`);
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({
-        message: appError.message || 'Erreur lors de la mise à jour en lot',
-        type: 'error',
-      });
+      toast.error(appError.message || 'Erreur lors de la mise à jour en lot');
       loadData();
     }
-  }, [loadData, showToast]);
+  }, [loadData, toast]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -467,6 +457,9 @@ export default function DepensesPage() {
 
   // Load data when activeTab or statusFilter changes
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('[DepensesPage] useEffect loadData triggered', { activeTab, statusFilter });
+    }
     loadData();
   }, [loadData]);
 
@@ -476,10 +469,7 @@ export default function DepensesPage() {
       
       // Validate required fields
       if (!formData.description.trim()) {
-        showToast({ 
-          message: 'Veuillez remplir la description', 
-          type: 'error' 
-        });
+        toast.error('Veuillez remplir la description');
         setIsSubmitting(false);
         return;
       }
@@ -489,29 +479,20 @@ export default function DepensesPage() {
       if (typeof formData.amount === 'string') {
         const parsed = parseFloat(formData.amount);
         if (isNaN(parsed) || parsed <= 0) {
-          showToast({ 
-            message: 'Le montant doit être supérieur à 0', 
-            type: 'error' 
-          });
+          toast.error('Le montant doit être supérieur à 0');
           setIsSubmitting(false);
           return;
         }
         amountValue = parsed;
       } else if (typeof formData.amount === 'number') {
         if (formData.amount <= 0) {
-          showToast({ 
-            message: 'Le montant doit être supérieur à 0', 
-            type: 'error' 
-          });
+          toast.error('Le montant doit être supérieur à 0');
           setIsSubmitting(false);
           return;
         }
         amountValue = formData.amount;
       } else {
-        showToast({ 
-          message: 'Veuillez entrer un montant valide', 
-          type: 'error' 
-        });
+        toast.error('Veuillez entrer un montant valide');
         setIsSubmitting(false);
         return;
       }
@@ -527,16 +508,10 @@ export default function DepensesPage() {
       await loadData();
       setShowCreateModal(false);
       resetForm();
-      showToast({ 
-        message: 'Dépense créée avec succès', 
-        type: 'success' 
-      });
+      toast.success('Dépense créée avec succès');
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({ 
-        message: appError.message || 'Erreur lors de la création', 
-        type: 'error' 
-      });
+      toast.error(appError.message || 'Erreur lors de la création');
     } finally {
       setIsSubmitting(false);
     }
@@ -554,20 +529,14 @@ export default function DepensesPage() {
         if (typeof formData.amount === 'string') {
           const parsed = parseFloat(formData.amount);
           if (isNaN(parsed) || parsed <= 0) {
-            showToast({ 
-              message: 'Le montant doit être supérieur à 0', 
-              type: 'error' 
-            });
+            toast.error('Le montant doit être supérieur à 0');
             setIsSubmitting(false);
             return;
           }
           amountValue = parsed;
         } else if (typeof formData.amount === 'number') {
           if (formData.amount <= 0) {
-            showToast({ 
-              message: 'Le montant doit être supérieur à 0', 
-              type: 'error' 
-            });
+            toast.error('Le montant doit être supérieur à 0');
             setIsSubmitting(false);
             return;
           }
@@ -594,16 +563,10 @@ export default function DepensesPage() {
       setShowEditModal(false);
       setSelectedExpense(null);
       resetForm();
-      showToast({ 
-        message: 'Dépense modifiée avec succès', 
-        type: 'success' 
-      });
+      toast.success('Dépense modifiée avec succès');
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({ 
-        message: appError.message || 'Erreur lors de la modification', 
-        type: 'error' 
-      });
+      toast.error(appError.message || 'Erreur lors de la modification');
     } finally {
       setIsSubmitting(false);
     }
@@ -615,16 +578,10 @@ export default function DepensesPage() {
     try {
       await transactionsAPI.delete(id);
       await loadData();
-      showToast({ 
-        message: 'Dépense supprimée avec succès', 
-        type: 'success' 
-      });
+      toast.success('Dépense supprimée avec succès');
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({ 
-        message: appError.message || 'Erreur lors de la suppression', 
-        type: 'error' 
-      });
+      toast.error(appError.message || 'Erreur lors de la suppression');
     }
   };
 
@@ -704,10 +661,7 @@ export default function DepensesPage() {
     try {
       setIsSubmitting(true);
       if (!invoiceFormData.invoice_number.trim() || !invoiceFormData.supplier_name.trim()) {
-        showToast({ 
-          message: 'Veuillez remplir tous les champs requis (numéro de facture, fournisseur, montant)', 
-          type: 'error' 
-        });
+        toast.error('Veuillez remplir tous les champs requis (numéro de facture, fournisseur, montant)');
         setIsSubmitting(false);
         return;
       }
@@ -715,10 +669,7 @@ export default function DepensesPage() {
       // Validate and convert amount
       const amountValue = parseFloat(invoiceFormData.amount);
       if (isNaN(amountValue) || amountValue <= 0) {
-        showToast({ 
-          message: 'Le montant doit être supérieur à 0', 
-          type: 'error' 
-        });
+        toast.error('Le montant doit être supérieur à 0');
         setIsSubmitting(false);
         return;
       }
@@ -742,16 +693,10 @@ export default function DepensesPage() {
       await loadData();
       setShowInvoiceModal(false);
       resetInvoiceForm();
-      showToast({ 
-        message: 'Facture ajoutée avec succès', 
-        type: 'success' 
-      });
+      toast.success('Facture ajoutée avec succès');
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({ 
-        message: appError.message || 'Erreur lors de la création de la facture', 
-        type: 'error' 
-      });
+      toast.error(appError.message || 'Erreur lors de la création de la facture');
     } finally {
       setIsSubmitting(false);
     }
@@ -761,10 +706,7 @@ export default function DepensesPage() {
     try {
       setIsSubmitting(true);
       if (!supplierFormData.name.trim()) {
-        showToast({ 
-          message: 'Veuillez remplir le nom du fournisseur', 
-          type: 'error' 
-        });
+        toast.error('Veuillez remplir le nom du fournisseur');
         return;
       }
 
@@ -795,16 +737,10 @@ export default function DepensesPage() {
       await loadData();
       setShowSupplierModal(false);
       resetSupplierForm();
-      showToast({ 
-        message: 'Fournisseur ajouté avec succès', 
-        type: 'success' 
-      });
+      toast.success('Fournisseur ajouté avec succès');
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({ 
-        message: appError.message || 'Erreur lors de la création du fournisseur', 
-        type: 'error' 
-      });
+      toast.error(appError.message || 'Erreur lors de la création du fournisseur');
     } finally {
       setIsSubmitting(false);
     }
@@ -814,10 +750,7 @@ export default function DepensesPage() {
     try {
       setIsSubmitting(true);
       if (!recurringFormData.description.trim()) {
-        showToast({ 
-          message: 'Veuillez remplir la description', 
-          type: 'error' 
-        });
+        toast.error('Veuillez remplir la description');
         setIsSubmitting(false);
         return;
       }
@@ -825,10 +758,7 @@ export default function DepensesPage() {
       // Validate and convert amount
       const amountValue = parseFloat(recurringFormData.amount);
       if (isNaN(amountValue) || amountValue <= 0) {
-        showToast({ 
-          message: 'Le montant doit être supérieur à 0', 
-          type: 'error' 
-        });
+        toast.error('Le montant doit être supérieur à 0');
         setIsSubmitting(false);
         return;
       }
@@ -855,16 +785,10 @@ export default function DepensesPage() {
       await loadData();
       setShowRecurringModal(false);
       resetRecurringForm();
-      showToast({ 
-        message: 'Dépense récurrente ajoutée avec succès', 
-        type: 'success' 
-      });
+      toast.success('Dépense récurrente ajoutée avec succès');
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({ 
-        message: appError.message || 'Erreur lors de la création de la dépense récurrente', 
-        type: 'error' 
-      });
+      toast.error(appError.message || 'Erreur lors de la création de la dépense récurrente');
     } finally {
       setIsSubmitting(false);
     }
@@ -881,16 +805,10 @@ export default function DepensesPage() {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      showToast({ 
-        message: 'Modèle téléchargé avec succès', 
-        type: 'success' 
-      });
+      toast.success('Modèle téléchargé avec succès');
     } catch (err) {
       const appError = handleApiError(err);
-      showToast({ 
-        message: appError.message || 'Erreur lors du téléchargement', 
-        type: 'error' 
-      });
+      toast.error(appError.message || 'Erreur lors du téléchargement');
     }
   };
   
@@ -898,10 +816,7 @@ export default function DepensesPage() {
 
   const handleUpload = async () => {
     if (!uploadFile) {
-      showToast({
-        message: 'Veuillez sélectionner un fichier',
-        type: 'error',
-      });
+      toast.error('Veuillez sélectionner un fichier');
       return;
     }
 
@@ -933,10 +848,7 @@ export default function DepensesPage() {
         // Wait a bit to ensure backend has committed the transactions
         await new Promise(resolve => setTimeout(resolve, 500));
         await loadData();
-        showToast({
-          message: `${result.created_count} transaction(s) importée(s) avec succès`,
-          type: 'success',
-        });
+        toast.success(`${result.created_count} transaction(s) importée(s) avec succès`);
       } else if (result.created_count === 0) {
         const totalRows = result.created_count + result.error_count;
         createLog('warn', 'Aucune transaction créée lors de l\'import', {
@@ -953,10 +865,7 @@ export default function DepensesPage() {
           error_count: result.error_count,
           errors: result.errors
         }, 'import-transactions');
-        showToast({
-          message: `${result.error_count} erreur(s) lors de l'import`,
-          type: 'error',
-        });
+        toast.error(`${result.error_count} erreur(s) lors de l'import`);
       }
       
       if (result.warnings && result.warnings.length > 0) {
@@ -980,10 +889,7 @@ export default function DepensesPage() {
       logger.error('Error uploading file', error);
       const appError = handleApiError(error);
       createLog('error', `Erreur lors de l'import: ${appError.message || 'Erreur inconnue'}`, { error: appError }, 'import-transactions');
-      showToast({
-        message: appError.message || 'Erreur lors de l\'import du fichier',
-        type: 'error',
-      });
+      toast.error(appError.message || 'Erreur lors de l\'import du fichier');
     } finally {
       setUploading(false);
     }
@@ -1418,10 +1324,7 @@ export default function DepensesPage() {
                               variant="outline"
                               onClick={() => {
                                 // TODO: Open supplier edit modal
-                                showToast({
-                                  message: 'Fonctionnalité à venir',
-                                  type: 'info',
-                                });
+                                toast.info('Fonctionnalité à venir');
                               }}
                             >
                               <Edit className="w-4 h-4" />
