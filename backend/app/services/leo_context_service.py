@@ -121,6 +121,24 @@ def _get_invoice_model():
         logger.debug(f"Invoice model not available: {e}")
         return None, None
 
+def _get_quote_model():
+    """Get Quote model from app.models to avoid MetaData conflicts"""
+    try:
+        from app.models import Quote
+        return Quote
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"Quote model not available: {e}")
+        return None
+
+def _get_calendar_event_model():
+    """Get CalendarEvent model from app.models to avoid MetaData conflicts"""
+    try:
+        from app.models import CalendarEvent
+        return CalendarEvent
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"CalendarEvent model not available: {e}")
+        return None
+
 
 class LeoContextService:
     """Service for building ERP context for Leo"""
@@ -146,6 +164,8 @@ class LeoContextService:
         transaction_keywords = ["transaction", "transactions", "finances", "trésorerie", "argent", "cash", "liquidité", "liquidités", "manquer d'argent"]
         time_entry_keywords = ["feuille de temps", "time entry", "time entries", "heures", "heures travaillées", "temps travaillé", "timesheet", "timesheets", "régie", "régies"]
         invoice_keywords = ["facture", "factures", "invoice", "invoices", "facturation", "facturé", "facturée", "impayé", "impayée", "unpaid", "en attente de paiement"]
+        quote_keywords = ["devis", "quote", "quotation", "quotations", "estimation", "estimations", "proposition", "propositions"]
+        calendar_event_keywords = ["événement", "event", "events", "calendrier", "calendar", "rendez-vous", "rdv", "meeting", "réunion", "réunions", "appointment", "appointments"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
         employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés", "qui sont nos", "qui sont mes", "anniversaire", "anniversaires", "birthday", "date d'embauche", "hire date"]
         
@@ -204,6 +224,8 @@ class LeoContextService:
             "transactions": any(word in query_lower for word in transaction_keywords),
             "time_entries": any(word in query_lower for word in time_entry_keywords),
             "invoices": any(word in query_lower for word in invoice_keywords),
+            "quotes": any(word in query_lower for word in quote_keywords),
+            "calendar_events": any(word in query_lower for word in calendar_event_keywords),
             "events": any(word in query_lower for word in event_keywords),
             "employees": is_employee_query if emp_available else False,
         }
@@ -1090,6 +1112,19 @@ class LeoContextService:
         
         now = datetime.now()
         
+        # "aujourd'hui" / "today"
+        if any(phrase in query_lower for phrase in ["aujourd'hui", "today", "aujourd hui"]):
+            start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+            return (start, end)
+        
+        # "demain" / "tomorrow"
+        if any(phrase in query_lower for phrase in ["demain", "tomorrow"]):
+            tomorrow = now + timedelta(days=1)
+            start = tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = tomorrow.replace(hour=23, minute=59, second=59, microsecond=999999)
+            return (start, end)
+        
         # "ce mois" / "this month"
         if any(phrase in query_lower for phrase in ["ce mois", "this month", "ce mois-ci"]):
             start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -1120,6 +1155,12 @@ class LeoContextService:
                 from calendar import monthrange
                 last_day = monthrange(now.year, now.month - 1)[1]
                 end = now.replace(month=now.month - 1, day=last_day, hour=23, minute=59, second=59)
+            return (start, end)
+        
+        # "l'année dernière" / "last year"
+        if any(phrase in query_lower for phrase in ["l'année dernière", "last year", "annee derniere", "année dernière"]):
+            start = now.replace(year=now.year - 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end = now.replace(year=now.year - 1, month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
             return (start, end)
         
         return None
@@ -1305,6 +1346,173 @@ class LeoContextService:
             logger.error(f"Error getting relevant invoices: {e}", exc_info=True)
             return []
 
+    async def get_relevant_quotes(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant quotes based on query"""
+        Quote = _get_quote_model()
+        if Quote is None:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            query_lower = query.lower()
+            
+            # Detect status filters
+            status_filter = None
+            if any(phrase in query_lower for phrase in ["en attente", "pending", "envoyé", "sent", "en attente de signature"]):
+                status_filter = "sent"
+            elif any(phrase in query_lower for phrase in ["accepté", "accepted", "acceptée", "acceptées", "signé", "signed"]):
+                status_filter = "accepted"
+            elif any(phrase in query_lower for phrase in ["refusé", "rejected", "refusée", "refusées"]):
+                status_filter = "rejected"
+            elif any(phrase in query_lower for phrase in ["brouillon", "draft"]):
+                status_filter = "draft"
+            
+            # Check if counting query
+            is_counting_query = any(phrase in query_lower for phrase in [
+                "combien", "how many", "nombre", "total", "count", "quantité"
+            ])
+            
+            # Build query with tenant scoping
+            stmt = select(Quote)
+            stmt = scope_query(stmt, Quote)
+            
+            # Apply status filter if detected
+            if status_filter and hasattr(Quote, 'status'):
+                stmt = stmt.where(Quote.status == status_filter)
+            
+            # For counting queries, increase limit significantly
+            if is_counting_query:
+                limit = min(limit * 10, 500)
+                logger.info(f"Counting quote query detected - returning all (limit: {limit})")
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            quotes = result.scalars().all()
+            
+            # Format results
+            formatted = []
+            for quote in quotes:
+                formatted.append({
+                    "id": quote.id,
+                    "quote_number": getattr(quote, 'quote_number', None) or getattr(quote, 'number', None),
+                    "title": getattr(quote, 'title', None) or getattr(quote, 'name', None),
+                    "total_amount": float(getattr(quote, 'total_amount', 0) or getattr(quote, 'amount', 0) or 0),
+                    "status": getattr(quote, 'status', None),
+                    "client": getattr(quote, 'client', {}).get('name') if hasattr(quote, 'client') and quote.client else None,
+                    "created_at": quote.created_at.isoformat() if hasattr(quote, 'created_at') and quote.created_at else None,
+                    "expires_at": getattr(quote, 'expires_at', None).isoformat() if hasattr(quote, 'expires_at') and quote.expires_at else None,
+                })
+            
+            logger.debug(f"Found {len(formatted)} quotes for query: {query}")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant quotes: {e}", exc_info=True)
+            return []
+
+    async def get_relevant_calendar_events(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant calendar events based on query"""
+        CalendarEvent = _get_calendar_event_model()
+        if CalendarEvent is None:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            query_lower = query.lower()
+            
+            # Extract time range if present
+            time_range = self._extract_time_range(query)
+            
+            # Check if counting query
+            is_counting_query = any(phrase in query_lower for phrase in [
+                "combien", "how many", "nombre", "total", "count", "quantité"
+            ])
+            
+            # Build query with tenant scoping
+            stmt = select(CalendarEvent)
+            stmt = scope_query(stmt, CalendarEvent)
+            
+            # Apply time range filter
+            if time_range:
+                start_date, end_date = time_range
+                # CalendarEvent might have start_date, start_time, or date field
+                if hasattr(CalendarEvent, 'start_date'):
+                    stmt = stmt.where(CalendarEvent.start_date >= start_date, CalendarEvent.start_date <= end_date)
+                elif hasattr(CalendarEvent, 'date'):
+                    stmt = stmt.where(CalendarEvent.date >= start_date, CalendarEvent.date <= end_date)
+                elif hasattr(CalendarEvent, 'start_time'):
+                    stmt = stmt.where(CalendarEvent.start_time >= start_date, CalendarEvent.start_time <= end_date)
+            else:
+                # Default: show upcoming events (next 30 days)
+                from datetime import datetime, timedelta
+                future_date = datetime.now() + timedelta(days=30)
+                if hasattr(CalendarEvent, 'start_date'):
+                    stmt = stmt.where(CalendarEvent.start_date >= datetime.now(), CalendarEvent.start_date <= future_date)
+                elif hasattr(CalendarEvent, 'date'):
+                    stmt = stmt.where(CalendarEvent.date >= datetime.now(), CalendarEvent.date <= future_date)
+            
+            # Order by date ascending
+            if hasattr(CalendarEvent, 'start_date'):
+                stmt = stmt.order_by(CalendarEvent.start_date.asc())
+            elif hasattr(CalendarEvent, 'date'):
+                stmt = stmt.order_by(CalendarEvent.date.asc())
+            
+            # For counting queries, increase limit significantly
+            if is_counting_query:
+                limit = min(limit * 10, 500)
+                logger.info(f"Counting calendar event query detected - returning all (limit: {limit})")
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            events = result.scalars().all()
+            
+            # Format results
+            formatted = []
+            for event in events:
+                # Get date field (try different possible field names)
+                event_date = None
+                if hasattr(event, 'start_date') and event.start_date:
+                    event_date = event.start_date
+                elif hasattr(event, 'date') and event.date:
+                    event_date = event.date
+                elif hasattr(event, 'start_time') and event.start_time:
+                    event_date = event.start_time
+                
+                formatted.append({
+                    "id": event.id,
+                    "title": getattr(event, 'title', None) or getattr(event, 'name', None),
+                    "description": getattr(event, 'description', None),
+                    "date": event_date.isoformat() if event_date else None,
+                    "start_time": getattr(event, 'start_time', None).isoformat() if hasattr(event, 'start_time') and event.start_time else None,
+                    "end_time": getattr(event, 'end_time', None).isoformat() if hasattr(event, 'end_time') and event.end_time else None,
+                    "location": getattr(event, 'location', None),
+                })
+            
+            logger.debug(f"Found {len(formatted)} calendar events for query: {query}")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant calendar events: {e}", exc_info=True)
+            return []
+
     async def get_relevant_data(
         self,
         user_id: int,
@@ -1349,6 +1557,12 @@ class LeoContextService:
         
         if data_types.get("invoices"):
             result["invoices"] = await self.get_relevant_invoices(user_id, query)
+        
+        if data_types.get("quotes"):
+            result["quotes"] = await self.get_relevant_quotes(user_id, query)
+        
+        if data_types.get("calendar_events"):
+            result["calendar_events"] = await self.get_relevant_calendar_events(user_id, query)
         
         return result
 
@@ -1522,6 +1736,19 @@ class LeoContextService:
                         summary_parts.append(f"FACTURES EN ATTENTE: {len(open_invoices)} ({total_open:,.2f}€)")
                     else:
                         summary_parts.append(f"FACTURES: {len(invoices)} ({len(open_invoices)} en attente = {total_open:,.2f}€)")
+            if data.get("quotes"):
+                quotes = data["quotes"]
+                pending = [q for q in quotes if q.get("status") in ["sent", "pending"]]
+                total_pending = sum(float(q.get("total_amount", 0) or 0) for q in pending)
+                if is_counting_query:
+                    if any(word in query_lower for word in ["en attente", "pending", "envoyé"]):
+                        summary_parts.append(f"DEVIS EN ATTENTE: {len(pending)} ({total_pending:,.2f}€)")
+                    else:
+                        summary_parts.append(f"DEVIS: {len(quotes)} ({len(pending)} en attente = {total_pending:,.2f}€)")
+            if data.get("calendar_events"):
+                events = data["calendar_events"]
+                if is_counting_query:
+                    summary_parts.append(f"ÉVÉNEMENTS: {len(events)}")
             
             if summary_parts:
                 context_parts.append("RÉSUMÉ: " + " | ".join(summary_parts))
@@ -1834,6 +2061,77 @@ class LeoContextService:
                         if inv.get("amount_paid"):
                             line += f": {inv['amount_paid']:,.2f} {inv.get('currency', 'EUR')}"
                         context_parts.append(line)
+            context_parts.append("")
+        
+        if data.get("quotes"):
+            quotes = data["quotes"]
+            query_lower = query.lower()
+            wants_list = any(phrase in query_lower for phrase in ["nomme", "liste", "list", "donne", "montre", "affiche"])
+            
+            # Group by status
+            pending = [q for q in quotes if q.get("status") in ["sent", "pending"]]
+            accepted = [q for q in quotes if q.get("status") == "accepted"]
+            rejected = [q for q in quotes if q.get("status") == "rejected"]
+            total_pending = sum(float(q.get("total_amount", 0) or 0) for q in pending)
+            
+            if is_counting_query and not wants_list:
+                # Just show counts and totals
+                if any(word in query_lower for word in ["en attente", "pending", "envoyé"]):
+                    context_parts.append(f"DEVIS EN ATTENTE: {len(pending)} (Total: {total_pending:,.2f}€)")
+                else:
+                    context_parts.append(f"DEVIS: {len(quotes)} (En attente: {len(pending)} = {total_pending:,.2f}€, Acceptés: {len(accepted)}, Refusés: {len(rejected)})")
+            else:
+                # Show detailed list
+                context_parts.append(f"=== DEVIS ({len(quotes)}) ===")
+                if pending:
+                    context_parts.append(f"En attente ({len(pending)}, Total: {total_pending:,.2f}€):")
+                    for quote in pending[:20]:
+                        line = f"- {quote.get('quote_number', f'DEVIS-{quote.get('id')}')}"
+                        if quote.get("title"):
+                            line += f": {quote['title']}"
+                        if quote.get("total_amount"):
+                            line += f" - {quote['total_amount']:,.2f}€"
+                        if quote.get("client"):
+                            line += f" [{quote['client']}]"
+                        if quote.get("expires_at"):
+                            line += f" - Expire: {quote['expires_at'][:10]}"
+                        context_parts.append(line)
+                if accepted and wants_list:
+                    context_parts.append(f"Acceptés ({len(accepted)}):")
+                    for quote in accepted[:10]:
+                        line = f"- {quote.get('quote_number', f'DEVIS-{quote.get('id')}')}"
+                        if quote.get("title"):
+                            line += f": {quote['title']}"
+                        context_parts.append(line)
+            context_parts.append("")
+        
+        if data.get("calendar_events"):
+            events = data["calendar_events"]
+            query_lower = query.lower()
+            wants_list = any(phrase in query_lower for phrase in ["nomme", "liste", "list", "donne", "montre", "affiche"])
+            
+            if is_counting_query and not wants_list:
+                context_parts.append(f"ÉVÉNEMENTS CALENDRIER: {len(events)}")
+            else:
+                context_parts.append(f"=== ÉVÉNEMENTS CALENDRIER ({len(events)}) ===")
+                for event in events[:20]:
+                    line = f"- {event.get('title', 'Sans titre')}"
+                    if event.get("date"):
+                        # Format date nicely
+                        try:
+                            from datetime import datetime
+                            event_dt = datetime.fromisoformat(event['date'].replace('Z', '+00:00'))
+                            date_str = event_dt.strftime("%d/%m/%Y")
+                            if event.get("start_time"):
+                                time_str = event_dt.strftime("%H:%M")
+                                line += f" - {date_str} à {time_str}"
+                            else:
+                                line += f" - {date_str}"
+                        except:
+                            line += f" - {event['date'][:10]}"
+                    if event.get("location"):
+                        line += f" [{event['location']}]"
+                    context_parts.append(line)
             context_parts.append("")
         
         if data.get("projects"):

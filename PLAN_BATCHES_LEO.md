@@ -73,10 +73,10 @@
 - [x] Invoice
 - [x] Détection temporelle basique
 
-### Batch 2: ⏳ En attente
-- [ ] Quote
-- [ ] CalendarEvent
-- [ ] Détection temporelle avancée
+### Batch 2: ✅ TERMINÉ
+- [x] Quote
+- [x] CalendarEvent
+- [x] Détection temporelle avancée
 
 ### Batch 3: ⏳ En attente
 - [ ] Détection améliorée
