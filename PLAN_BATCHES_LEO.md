@@ -68,10 +68,10 @@
 
 ## 📊 Rapport de Progression
 
-### Batch 1: ✅ En cours
-- [ ] TimeEntry
-- [ ] Invoice
-- [ ] Détection temporelle basique
+### Batch 1: ✅ TERMINÉ
+- [x] TimeEntry
+- [x] Invoice
+- [x] Détection temporelle basique
 
 ### Batch 2: ⏳ En attente
 - [ ] Quote
