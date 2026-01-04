@@ -94,5 +94,8 @@
 - [x] Requêtes parallèles avec asyncio.gather()
 - [x] Limites adaptatives intelligentes
 
-### Batch 6: ⏳ En attente
-- [ ] Améliorations UX
+### Batch 6: ✅ TERMINÉ
+- [x] Améliorations UX
+- [x] Génération de tableaux markdown
+- [x] Suggestions d'actions
+- [x] Liens contextuels améliorés

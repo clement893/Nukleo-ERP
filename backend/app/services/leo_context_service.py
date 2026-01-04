@@ -1850,6 +1850,124 @@ class LeoContextService:
         
         return "\n".join(structure_parts)
     
+    def _format_data_as_markdown_table(
+        self,
+        data: List[Dict[str, Any]],
+        columns: List[str],
+        max_rows: int = 20
+    ) -> str:
+        """
+        Format data as a markdown table
+        
+        Args:
+            data: List of dictionaries with data
+            columns: List of column keys to include
+            max_rows: Maximum number of rows to include
+            
+        Returns:
+            Markdown table string
+        """
+        if not data:
+            return ""
+        
+        # Limit rows
+        data = data[:max_rows]
+        
+        # Build table header
+        header = "| " + " | ".join(columns) + " |\n"
+        separator = "| " + " | ".join(["---"] * len(columns)) + " |\n"
+        
+        # Build table rows
+        rows = []
+        for item in data:
+            row_values = []
+            for col in columns:
+                value = item.get(col, "")
+                # Format value
+                if value is None:
+                    value = ""
+                elif isinstance(value, (int, float)):
+                    value = str(value)
+                elif isinstance(value, bool):
+                    value = "Oui" if value else "Non"
+                elif isinstance(value, str):
+                    # Truncate long strings
+                    if len(value) > 50:
+                        value = value[:47] + "..."
+                    # Escape pipe characters
+                    value = value.replace("|", "\\|")
+                else:
+                    value = str(value)
+                row_values.append(value)
+            rows.append("| " + " | ".join(row_values) + " |\n")
+        
+        return header + separator + "".join(rows)
+    
+    def _generate_action_suggestions(
+        self,
+        data: Dict[str, List[Dict[str, Any]]],
+        query: str
+    ) -> List[str]:
+        """
+        Generate action suggestions based on context and query
+        
+        Args:
+            data: Dictionary with data types and their results
+            query: The user's query
+            
+        Returns:
+            List of action suggestions
+        """
+        suggestions = []
+        query_lower = query.lower()
+        
+        # Suggest viewing details for specific items
+        if data.get("contacts") and len(data["contacts"]) == 1:
+            contact = data["contacts"][0]
+            if contact.get("id"):
+                suggestions.append(f"Voir les détails du contact: /dashboard/contacts/{contact['id']}")
+        
+        if data.get("companies") and len(data["companies"]) == 1:
+            company = data["companies"][0]
+            if company.get("id"):
+                suggestions.append(f"Voir les détails de l'entreprise: /dashboard/entreprises/{company['id']}")
+        
+        if data.get("projects") and len(data["projects"]) == 1:
+            project = data["projects"][0]
+            if project.get("id"):
+                suggestions.append(f"Voir les détails du projet: /dashboard/projets/{project['id']}")
+        
+        # Suggest filtering or viewing more
+        if any("combien" in query_lower or "nombre" in query_lower for _ in [True]):
+            if data.get("invoices"):
+                open_count = sum(1 for inv in data["invoices"] if inv.get("status") == "open")
+                if open_count > 0:
+                    suggestions.append(f"Voir les {open_count} factures en attente: /dashboard/facturation?status=open")
+            
+            if data.get("tasks"):
+                in_progress = sum(1 for t in data["tasks"] if t.get("status") == "in_progress")
+                if in_progress > 0:
+                    suggestions.append(f"Voir les {in_progress} tâches en cours: /dashboard/taches?status=in_progress")
+        
+        # Suggest financial actions
+        if data.get("cash_flow_forecast"):
+            forecast = data["cash_flow_forecast"]
+            if forecast.get("net_cash_flow", 0) < 0:
+                suggestions.append("Attention: Flux de trésorerie négatif prévu. Voir: /dashboard/tresorerie")
+        
+        if data.get("financial_ratios"):
+            ratios = data["financial_ratios"]
+            if ratios.get("gross_margin", 0) < 20:
+                suggestions.append("Marge brute faible détectée. Voir les détails: /dashboard/facturation")
+        
+        # Suggest viewing calendar for events
+        if data.get("calendar_events"):
+            event_count = len(data["calendar_events"])
+            if event_count > 0:
+                suggestions.append(f"Voir les {event_count} événements: /dashboard/calendrier")
+        
+        return suggestions
+    
     async def calculate_cash_flow_forecast(
         self,
         user_id: int,
@@ -2304,6 +2422,8 @@ class LeoContextService:
             max_contacts = 5 if is_counting_query else 10
             for contact in data["contacts"][:max_contacts]:
                 line = f"{contact['nom_complet']}"
+                if contact.get("id"):
+                    line += f" [ID: {contact['id']}]"
                 if contact.get("email"):
                     line += f" ({contact['email']})"
                 if contact.get("entreprise"):
@@ -2734,6 +2854,14 @@ class LeoContextService:
                 if ratios.get("opportunities_total", 0) > 0:
                     context_parts.append(f"Taux de conversion: {ratios.get('conversion_rate', 0):.2f}% ({ratios.get('opportunities_won', 0)}/{ratios.get('opportunities_total', 0)} opportunités)")
                 context_parts.append("")
+        
+        # Generate action suggestions
+        suggestions = self._generate_action_suggestions(data, query)
+        if suggestions:
+            context_parts.append("")
+            context_parts.append("=== ACTIONS SUGGÉRÉES ===")
+            for suggestion in suggestions[:5]:  # Limit to 5 suggestions
+                context_parts.append(f"- {suggestion}")
         
         # Always add a brief structure summary at the end for context awareness
         # This helps Leo understand the system structure even for data queries
