@@ -103,6 +103,24 @@ def _get_transaction_model():
         logger.debug(f"Transaction model not available: {e}")
         return None, None
 
+def _get_time_entry_model():
+    """Get TimeEntry model from app.models to avoid MetaData conflicts"""
+    try:
+        from app.models import TimeEntry
+        return TimeEntry
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"TimeEntry model not available: {e}")
+        return None
+
+def _get_invoice_model():
+    """Get Invoice model from app.models to avoid MetaData conflicts"""
+    try:
+        from app.models import Invoice, InvoiceStatus
+        return Invoice, InvoiceStatus
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"Invoice model not available: {e}")
+        return None, None
+
 
 class LeoContextService:
     """Service for building ERP context for Leo"""
@@ -126,7 +144,8 @@ class LeoContextService:
         vacation_keywords = ["vacance", "vacances", "congé", "congés", "holiday", "holidays", "demande", "demandes", "request", "requests"]
         expense_keywords = ["dépense", "dépenses", "expense", "expenses", "compte de dépense", "expense account", "remboursement", "reimbursement"]
         transaction_keywords = ["transaction", "transactions", "finances", "trésorerie", "argent", "cash", "liquidité", "liquidités", "manquer d'argent"]
-        invoice_keywords = ["facture", "invoice", "facturation", "facturé"]
+        time_entry_keywords = ["feuille de temps", "time entry", "time entries", "heures", "heures travaillées", "temps travaillé", "timesheet", "timesheets", "régie", "régies"]
+        invoice_keywords = ["facture", "factures", "invoice", "invoices", "facturation", "facturé", "facturée", "impayé", "impayée", "unpaid", "en attente de paiement"]
         event_keywords = ["événement", "event", "rdv", "réunion", "meeting", "rendez-vous"]
         employee_keywords = ["employé", "employés", "employee", "employees", "collègue", "collègues", "équipe", "team", "mes employés", "nos employés", "qui sont nos", "qui sont mes", "anniversaire", "anniversaires", "birthday", "date d'embauche", "hire date"]
         
@@ -183,6 +202,7 @@ class LeoContextService:
             "vacation_requests": any(word in query_lower for word in vacation_keywords),
             "expense_accounts": any(word in query_lower for word in expense_keywords),
             "transactions": any(word in query_lower for word in transaction_keywords),
+            "time_entries": any(word in query_lower for word in time_entry_keywords),
             "invoices": any(word in query_lower for word in invoice_keywords),
             "events": any(word in query_lower for word in event_keywords),
             "employees": is_employee_query if emp_available else False,
@@ -1060,6 +1080,231 @@ class LeoContextService:
             logger.error(f"Error getting relevant transactions: {e}", exc_info=True)
             return []
 
+    def _extract_time_range(self, query: str) -> Optional[tuple]:
+        """
+        Extrait une plage de dates de la requête
+        Retourne (start_date, end_date) ou None
+        """
+        from datetime import datetime, timedelta
+        query_lower = query.lower()
+        
+        now = datetime.now()
+        
+        # "ce mois" / "this month"
+        if any(phrase in query_lower for phrase in ["ce mois", "this month", "ce mois-ci"]):
+            start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end = now
+            return (start, end)
+        
+        # "cette semaine" / "this week"
+        if any(phrase in query_lower for phrase in ["cette semaine", "this week", "cette semaine-ci"]):
+            # Lundi de cette semaine
+            days_since_monday = now.weekday()
+            start = now - timedelta(days=days_since_monday)
+            start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = now
+            return (start, end)
+        
+        # "le mois dernier" / "last month"
+        if any(phrase in query_lower for phrase in ["le mois dernier", "last month", "mois dernier"]):
+            # Premier jour du mois dernier
+            if now.month == 1:
+                start = now.replace(year=now.year - 1, month=12, day=1, hour=0, minute=0, second=0, microsecond=0)
+            else:
+                start = now.replace(month=now.month - 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            # Dernier jour du mois dernier
+            if now.month == 1:
+                end = now.replace(year=now.year - 1, month=12, day=31, hour=23, minute=59, second=59)
+            else:
+                # Calculer le dernier jour du mois précédent
+                from calendar import monthrange
+                last_day = monthrange(now.year, now.month - 1)[1]
+                end = now.replace(month=now.month - 1, day=last_day, hour=23, minute=59, second=59)
+            return (start, end)
+        
+        return None
+
+    async def get_relevant_time_entries(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant time entries based on query"""
+        TimeEntry = _get_time_entry_model()
+        if TimeEntry is None:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            query_lower = query.lower()
+            
+            # Check if counting query
+            is_counting_query = any(phrase in query_lower for phrase in [
+                "combien", "how many", "nombre", "total", "count", "quantité"
+            ])
+            
+            # Extract time range if present
+            time_range = self._extract_time_range(query)
+            
+            # Detect if query is about specific employee or project
+            Employee = _get_employee_model()
+            Project = _get_project_model()
+            Project = Project[0] if Project and isinstance(Project, tuple) else Project
+            
+            # Build query with tenant scoping
+            stmt = select(TimeEntry).options(
+                selectinload(TimeEntry.user),
+                selectinload(TimeEntry.project),
+                selectinload(TimeEntry.task)
+            )
+            stmt = scope_query(stmt, TimeEntry)
+            
+            # Apply time range filter
+            if time_range:
+                start_date, end_date = time_range
+                stmt = stmt.where(TimeEntry.date >= start_date, TimeEntry.date <= end_date)
+            
+            # For counting queries, increase limit significantly
+            if is_counting_query:
+                limit = min(limit * 10, 500)
+                logger.info(f"Counting time entry query detected - returning all (limit: {limit})")
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            time_entries = result.scalars().all()
+            
+            # Format results with aggregation
+            formatted = []
+            total_hours = 0
+            by_employee = {}
+            by_project = {}
+            
+            for te in time_entries:
+                hours = te.duration / 3600.0 if te.duration else 0
+                total_hours += hours
+                
+                # Aggregate by employee
+                employee_name = None
+                if te.user:
+                    if Employee and te.user.employee:
+                        employee_name = f"{te.user.employee.first_name} {te.user.employee.last_name}"
+                    else:
+                        employee_name = f"{te.user.first_name} {te.user.last_name}"
+                
+                if employee_name:
+                    by_employee[employee_name] = by_employee.get(employee_name, 0) + hours
+                
+                # Aggregate by project
+                project_name = te.project.name if te.project else None
+                if project_name:
+                    by_project[project_name] = by_project.get(project_name, 0) + hours
+                
+                formatted.append({
+                    "id": te.id,
+                    "description": te.description,
+                    "duration_hours": hours,
+                    "date": te.date.isoformat() if te.date else None,
+                    "employee": employee_name,
+                    "project": project_name,
+                    "task": te.task.title if te.task else None,
+                })
+            
+            # Add aggregation info to first entry or as metadata
+            if formatted:
+                formatted[0]["_aggregation"] = {
+                    "total_hours": total_hours,
+                    "by_employee": by_employee,
+                    "by_project": by_project,
+                }
+            
+            logger.debug(f"Found {len(formatted)} time entries for query: {query} (total: {total_hours:.2f}h)")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant time entries: {e}", exc_info=True)
+            return []
+
+    async def get_relevant_invoices(
+        self,
+        user_id: int,
+        query: str,
+        limit: int = None
+    ) -> List[Dict[str, Any]]:
+        """Get relevant invoices based on query"""
+        Invoice, InvoiceStatus = _get_invoice_model()
+        if Invoice is None:
+            return []
+        
+        if limit is None:
+            limit = self.MAX_ITEMS_PER_TYPE
+        
+        try:
+            query_lower = query.lower()
+            
+            # Detect status filters
+            status_filter = None
+            if any(phrase in query_lower for phrase in ["en attente", "pending", "impayé", "impayée", "unpaid", "en attente de paiement", "ouvert", "open"]):
+                status_filter = InvoiceStatus.OPEN
+            elif any(phrase in query_lower for phrase in ["payé", "paid", "payée", "payées"]):
+                status_filter = InvoiceStatus.PAID
+            elif any(phrase in query_lower for phrase in ["annulé", "void", "annulée", "annulées"]):
+                status_filter = InvoiceStatus.VOID
+            elif any(phrase in query_lower for phrase in ["brouillon", "draft"]):
+                status_filter = InvoiceStatus.DRAFT
+            
+            # Check if counting query
+            is_counting_query = any(phrase in query_lower for phrase in [
+                "combien", "how many", "nombre", "total", "count", "quantité"
+            ])
+            
+            # Build query with tenant scoping
+            stmt = select(Invoice).options(
+                selectinload(Invoice.user)
+            )
+            stmt = scope_query(stmt, Invoice)
+            
+            # Apply status filter if detected
+            if status_filter:
+                stmt = stmt.where(Invoice.status == status_filter)
+            
+            # For counting queries, increase limit significantly
+            if is_counting_query:
+                limit = min(limit * 10, 500)
+                logger.info(f"Counting invoice query detected - returning all (limit: {limit})")
+            
+            # Limit results
+            stmt = stmt.limit(limit)
+            
+            # Execute
+            result = await self.db.execute(stmt)
+            invoices = result.scalars().all()
+            
+            # Format results
+            formatted = []
+            for inv in invoices:
+                formatted.append({
+                    "id": inv.id,
+                    "invoice_number": inv.invoice_number,
+                    "amount_due": float(inv.amount_due) if inv.amount_due else 0.0,
+                    "amount_paid": float(inv.amount_paid) if inv.amount_paid else 0.0,
+                    "status": inv.status.value if hasattr(inv.status, 'value') else str(inv.status),
+                    "due_date": inv.due_date.isoformat() if inv.due_date else None,
+                    "paid_at": inv.paid_at.isoformat() if inv.paid_at else None,
+                    "currency": inv.currency,
+                    "user": f"{inv.user.first_name} {inv.user.last_name}" if inv.user else None,
+                })
+            
+            logger.debug(f"Found {len(formatted)} invoices for query: {query}")
+            return formatted
+        except Exception as e:
+            logger.error(f"Error getting relevant invoices: {e}", exc_info=True)
+            return []
+
     async def get_relevant_data(
         self,
         user_id: int,
@@ -1098,6 +1343,12 @@ class LeoContextService:
         
         if data_types.get("transactions"):
             result["transactions"] = await self.get_relevant_transactions(user_id, query)
+        
+        if data_types.get("time_entries"):
+            result["time_entries"] = await self.get_relevant_time_entries(user_id, query)
+        
+        if data_types.get("invoices"):
+            result["invoices"] = await self.get_relevant_invoices(user_id, query)
         
         return result
 
