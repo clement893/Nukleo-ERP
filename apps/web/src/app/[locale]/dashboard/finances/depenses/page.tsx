@@ -1419,10 +1419,7 @@ export default function DepensesPage() {
                               variant="outline"
                               onClick={() => {
                                 // TODO: Open recurring expense edit modal
-                                showToast({
-                                  message: 'Fonctionnalité à venir',
-                                  type: 'info',
-                                });
+                                toast.info('Fonctionnalité à venir');
                               }}
                             >
                               <Edit className="w-4 h-4" />
@@ -1512,10 +1509,7 @@ export default function DepensesPage() {
                                 variant="outline"
                                 onClick={() => {
                                   // TODO: Open invoice details
-                                  showToast({
-                                    message: 'Fonctionnalité à venir',
-                                    type: 'info',
-                                  });
+                                  toast.info('Fonctionnalité à venir');
                                 }}
                               >
                                 <Eye className="w-4 h-4" />
